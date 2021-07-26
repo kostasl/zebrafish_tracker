@@ -8,10 +8,10 @@
 
 library("pixmap")
 
-
-initKC <- function(m){
+## Initialiaze the random Weight vector of an L1 (KC) neuron  
+init_random_W <- function(m,p){
   # Draw random Number N of Sampled Inputs From Binomial
-  n <- rbinom(1,NROW(m),N_SYN_per_KC/n_top_px)
+  n <- rbinom(1,NROW(m),p)
   ## Set N random synapses as inputs to KC
   idx <- sample(1:NROW(m),n)
   
@@ -19,14 +19,29 @@ initKC <- function(m){
   return (m)
 }
 
-KC_activation <- function(X)
+## Sigmoid//logistic Transfer Function
+N_transfer <- function(activation)
+{
+  return (1/(1+exp(-activation)))
+}
+
+
+## Derivative Sigmoid/logistic Transfer Function
+N_transfer_D <- function(activation)
+{
+  return (N_transfer(activation)*(1-N_transfer(activation)) )
+}
+
+N_activation <- function(X,W,B)
 {
   ## If more Than Half input units (based on Avg inputs) is active - then activate KC
-  if ( sum(X) > KC_THRES )
-    return (1)
-  else
-    return (0)
+ 
+ #  if ( sum(X) > KC_THRES )
+#    return (1)
+ # else
+    return (X%*%W -B)
 }
+
 ## Copies A Smaller Matrix To the Middle of a larger one - (Pasting Image on larger canvas)
 matrix_paste <- function(src,target)
 {
@@ -36,26 +51,18 @@ matrix_paste <- function(src,target)
   return(target)
 }
 
-img_dim <- c(38,28)
-n_top_px <- img_dim[2]*img_dim[1]
-N_KC = n_top_px*5 ## Number of Kenyon Cells (Input layer High Dim Coding)
-N_SYN_per_KC <- n_top_px/5 ## Number of pic Features each KC neuron Codes for
-KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
-INPUT_SPARSENESS = 0.20
-## Make Sparse Random Synaptic Weight matrix Selecting Inputs for each KC
-mat_KC <<- matrix(0,nrow=n_top_px,ncol=N_KC)
-sMat <<- apply(mat_KC,2,initKC)
-hist(colSums(sMat),main="Number of inputs per KC")
 
-##Layer 2 (Output Perceptron)
-L2_Neurons <<- 2
-W_L2 <<- matrix(0,ncol=L2_Neurons,nrow=N_KC)
 
 ## Process 2 Layer Network - Return Last Node Output produced for each input image
 ## Target_output is vector of desired output for each output Neuron these I chose to be L2_1=1 (Fish) L2_2=1 (Non Fish)
 net_proc_images <- function(img_list,learningRate = 0.0,Target_output = c(1,-1))  
 {
-  L2_out <- list()
+
+  L_X     <- list() ## Output Of Layer k
+  L_A     <- list() ## Activation of  Layer k
+  L_delta <- list()  ## Delta is the "cost attributable to (the value of) that node". 
+
+  
   fileidx <- 0
   ## TRAIN /TEST ##
   for (in_img in img_list)
@@ -84,11 +91,12 @@ net_proc_images <- function(img_list,learningRate = 0.0,Target_output = c(1,-1))
     
     ##mypic = new("pixmapGrey", size=dim(mat_img),grey = mat_img);plot(mypic)
     dim(X) <- c(1,length(X)) ## Make into Row Vector
-    ## Binarize Input Image ##
-    
+    ## Binarize Input Image / Set Sparsensess ##
     pxsparse = 1.0
     thres_bin = mean(X)
     max_iter = 100
+    
+    
     while (pxsparse > INPUT_SPARSENESS & max_iter > 0)
     {
       X_bin <-  as.numeric(X > thres_bin)
@@ -96,17 +104,53 @@ net_proc_images <- function(img_list,learningRate = 0.0,Target_output = c(1,-1))
       thres_bin = thres_bin + 0.01;
       max_iter = max_iter + 1
     }
-    message("Sparseness:",pxsparse)
+    ##Layer 1
+      ##Output
+      L_X[[1]] <- X_bin
+      ##Activation 
+      L_A[[1]] <- X
+      
+    message("Input Sparseness:",pxsparse)
     
-    KC_out_act = X_bin %*% sMat 
+    ## TRAIN Network ### 
+    outError = 0
+    ## Forward Propagation ## 
+    for (i in 2:(N_Layers+1) )
+    {
+      L_A[[i]] <- N_activation(L_X[[i-1]], mat_W[[i-1]],v_Layer_Bias[i])  
+      L_X[[i]] <- N_transfer(L_A[[i]])
+    }
+    outError = sum((Target_output - L_X[[i]])^2)
+    
+    ## Back Prop 
+    for (l in (N_Layers+1):2 )
+    {
+      ##On Output Layer
+      if (l == (N_Layers+1))
+      {
+        ## Element Wise Product (hadamart Product)
+        L_delta[[l]] <- ((N_transfer_D(L_X[[l]])) * (L_X[[l]] - Target_output)) ##*N_transfer_D(L_X[[l]])
+      }else{
+        #L_delta[[l]] <- L_delta[[l+1]] %*% t(mat_W[[l]])*N_transfer_D(L_X[[l]])
+        L_delta[[l]] <-   (L_delta[[l+1]]) %*% t(mat_W[[l]]) *N_transfer_D(L_X[[l]]) ## %*% t(N_transfer_D(L_X[[l-1]]) )
+      }
+      
+        dE <- t(L_A[[l-1]]) %*% (L_delta[[l]])  
+        dW <- learningRate*dE
+        mat_W[[l-1]] = mat_W[[l-1]] -  dW
+    }
+      
+    
+    L_delta[[l]]*
+    
     #hist( KC_out_act[1,])
     ## Calc Layer 1 output based on Activation Threshold Funciton for Units
-    KC_output <- apply(KC_out_act, 2, KC_activation)
+    KC_output <- apply(KC_out_act, 2, N_transfer)
     dim(KC_output) <-c(1,length(KC_output)) ## Make into Row Vector
     
     ## Learn Positive Samples - Simple Perceptron Learning Rule - Over an augmented input X which is projected To High dim via sparse random matrix in L1##
     ## Take Active L1 outputs And Set L2 Input synapses of Output Neuron to High
-     # Continuous output /
+    # Continuous output /
     L2_Neurons_out <<- (as.numeric(( KC_output %*%  W_L2)/N_KC))
     # Weight Gradient -
     DW <- t(KC_output)%*% (Target_output - L2_Neurons_out)/2
@@ -118,7 +162,7 @@ net_proc_images <- function(img_list,learningRate = 0.0,Target_output = c(1,-1))
     
     stopifnot(ncol(KC_output) == nrow(W_L2))
     ## Calc Output Neuron - Perceptron 
-   
+    
     
     L2_out[[fileidx]] <- list(L2_F=L2_Neurons_out[1],
                               L2_NF=L2_Neurons_out[2],
@@ -126,7 +170,7 @@ net_proc_images <- function(img_list,learningRate = 0.0,Target_output = c(1,-1))
                               KC_total = length(KC_output),
                               input_sparse= pxsparse,
                               file=in_img
-                              )
+    )
     message("Recognition Output for Img ",in_img," is F:",L2_Neurons_out[1]," non-F:",L2_Neurons_out[2]," Active KC:",L2_out[[fileidx]]$KC_active/N_KC )
     dim(X_bin) = dim(mat_img)
     
@@ -137,9 +181,37 @@ net_proc_images <- function(img_list,learningRate = 0.0,Target_output = c(1,-1))
     #title(main = paste(in_img,strRes," R:",L2_Neurons_out[1]-L2_Neurons_out[2]), font.main = 4)
   }
   
- 
+  
   return( data.frame( do.call(rbind,L2_out ) ))
 }
+
+
+img_dim <- c(38,28)
+N_Layers <- 2
+
+n_top_px <- img_dim[2]*img_dim[1]
+N_KC = n_top_px*5 ## Number of Kenyon Cells (Input layer High Dim Coding)
+N_SYN_per_KC <- n_top_px/5 ## Number of pic Features each KC neuron Codes for
+v_Layer_N <- c(n_top_px, N_KC, 2)
+v_Layer_Bias <- c(N_SYN_per_KC*0.25, 0,0) ## Number of INput that need to be active for Neuron to fire/Activate
+INPUT_SPARSENESS = 0.20
+
+mat_W <- list() # List Of Weight Matrices
+## Make Sparse Random Synaptic Weight matrix Selecting Inputs for each KC
+for (k in 1:N_Layers)
+{
+  mat_W[[k]] <- matrix(0,nrow=v_Layer_N[k],ncol=v_Layer_N[k+1])
+  ## Init Random
+  mat_W[[k]] <- apply(mat_W[[k]],2,init_random_W, N_SYN_per_KC/n_top_px)
+}
+
+  hist(colSums(mat_W[[1]]),main="Number of inputs per KC")
+
+  
+  
+##Layer 2 (Output Perceptron)
+L2_Neurons <<- 2
+W_L2 <<- mat_W[[2]] #matrix(0,ncol=L2_Neurons,nrow=N_KC)
 
 ## Apply Input Image ##
 ## list training files 
@@ -154,7 +226,7 @@ img_list_test_fish =  list.files(path=sPathTestingSamplesFish,pattern="*pgm",ful
 img_list_train_nonfish =  list.files(path=sPathTrainingNonSamples,pattern="*pgm",full.names = T)
 img_list_test_nonfish =  list.files(path=sPathTestingSamplesNonFish,pattern="*pgm",full.names = T)
 
-img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T)
+#img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T)
 
 # TRAIN On Fish Samples ##
 KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
@@ -164,7 +236,7 @@ lFitError <- list()
 dfitRecord <- data.frame()
 
 
-for (i in 1:100)
+for (i in 1:5)
 {
   
   dnetout_fish <- net_proc_images(img_list_train_fish,dLearningRate, c(1,-1))
