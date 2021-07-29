@@ -50,8 +50,8 @@ fishdetector::fishdetector()
     mW_L1 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/KC_SparseNet.pgm"));
     mW_L2 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/outputLayer_trained.pgm") );
 
-    cv::threshold(mW_L1,mW_L1,0.1,1,cv::THRESH_BINARY);
-    cv::threshold(mW_L2,mW_L2,0.1,1,cv::THRESH_BINARY);
+    //cv::threshold(mW_L1,mW_L1,0.1,1,cv::THRESH_BINARY);
+    //cv::threshold(mW_L2,mW_L2,0.1,1,cv::THRESH_BINARY);
 
     mW_L1.convertTo(mW_L1, CV_32FC1);
     mW_L2.convertTo(mW_L2, CV_32FC1);
@@ -68,9 +68,17 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 {
   cv::Mat imgFishAnterior,imgFishAnterior_Norm,imgFishAnterior_Norm_bin,imgFishAnterior_Norm_tmplcrop;
   cv::Mat imgFishAnterior_Norm_bin_dense; //Used to Find Contours
+
+  if ((fishblob.pt.x + gTrackerState.gFishBoundBoxSize) > frame.cols ||
+      (fishblob.pt.x - gTrackerState.gFishBoundBoxSize) < 0)
+      return(0.0f);
+  if ((fishblob.pt.y + gTrackerState.gFishBoundBoxSize) > frame.rows ||
+          (fishblob.pt.y - gTrackerState.gFishBoundBoxSize) < 0 )
+      return(0.0f);
+
   // Take bounding of blob,
   // get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
-   cv::RotatedRect fishRotAnteriorBox(fishblob.pt,
+  cv::RotatedRect fishRotAnteriorBox(fishblob.pt,
                                       cv::Size(gTrackerState.gFishBoundBoxSize,gTrackerState.gFishBoundBoxSize),
                                                 fishblob.angle);
    /// Size Of Norm Head Image
@@ -112,21 +120,24 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
   double activePixRatio = 1.0;
   int meanAdapt = 0;
   int maxIter = 20;
-  // Regulate Input Sparseness
+    /// Regulate Input Sparseness
+      while (activePixRatio > gTrackerState.fishnet_inputSparseness &&
+             maxIter > 0)
+      {
+        cv::adaptiveThreshold(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,1,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,szFishAnteriorNorm.width,meanAdapt);
+        activePixRatio = (cv::sum(imgFishAnterior_Norm_bin)[0])/(imgFishAnterior_Norm_bin.cols*imgFishAnterior_Norm_bin.rows);
+        meanAdapt += (int)255*(gTrackerState.fishnet_inputSparseness-activePixRatio)-2;
+        if (maxIter == 20) //Save First Binarized most Dense
+            imgFishAnterior_Norm_bin.copyTo(imgFishAnterior_Norm_bin_dense);
+        maxIter--;
+      }
+ /// \todo : add Sigmoid activation function
+ // imgFishAnterior_Norm.copyTo(imgFishAnterior_Norm_bin);
+  // Set to 1 to operate as input to Bias-Weight
+  if (imgFishAnterior_Norm_bin.rows > 1 && imgFishAnterior_Norm_bin.cols > 1)
+    imgFishAnterior_Norm_bin.at<float>(imgFishAnterior_Norm_bin.rows-1, imgFishAnterior_Norm_bin.cols-1) = 1.0f;
 
-  while (activePixRatio > gTrackerState.fishnet_inputSparseness &&
-         maxIter > 0)
-  {
-    cv::adaptiveThreshold(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,1,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,szFishAnteriorNorm.width,meanAdapt);
-    activePixRatio = (cv::sum(imgFishAnterior_Norm_bin)[0])/(imgFishAnterior_Norm_bin.cols*imgFishAnterior_Norm_bin.rows);
-    meanAdapt += (int)255*(gTrackerState.fishnet_inputSparseness-activePixRatio)-2;
-
-    if (maxIter == 20)
-        imgFishAnterior_Norm_bin.copyTo(imgFishAnterior_Norm_bin_dense);
-    maxIter--;
-
-  }
-
+  //imgFishAnterior_Norm_bin.at<float>(0,0) = 1.0f;
   //fishblob.angle += iAngleOffset;
  // Mrot = cv::getRotationMatrix2D(ptCentreCorrection, fishblob.angle,1.0); //Rotate Upwards
 
@@ -314,7 +325,7 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     //Calc Output
     mL2_out =  mL1_out*mW_L2;
 
-    //cv::imshow("L1 Out", mL1_out);
+    cv::imshow("L1 Out", mL1_out*255);
     //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)
     fFishClass = mL2_out.at<float>(0,0)/mW_L1.cols;
     // Check 2 row (neuron) output

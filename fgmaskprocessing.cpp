@@ -665,6 +665,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
         kp.pt = ptSearch;
         /// Classify Keypoint for fish
+
         float fR =  gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm, mask_fnetScore, QString::number(iHitCount).toStdString());
         QString strfRecScore = QString::number(fR,'g',3);
         iHitCount++;
