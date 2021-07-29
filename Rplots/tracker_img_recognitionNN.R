@@ -293,9 +293,9 @@ dfitRecord <- data.frame()
 
 
 #for (i in 1:10)
-#{
+#{  
   
-  dLearningRate =0.1
+  dLearningRate =0.01
   img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
 
   # TRAIN On Fish 
@@ -379,16 +379,16 @@ dfitRecord <- data.frame()
 # 
 # ## Shift Values
 ## L_W2 <- ##(W_L2/2.0)+0.5
- Lout_pic <- pixmapGrey(mat_W[[2]], nrow=nrow(L_W2),ncol=ncol(L_W2),cellres=1)
+ Lout_pic <- pixmapGrey(mat_W[[2]], nrow=dim(mat_W[[2]])[1],ncol=dim(mat_W[[2]])[2],cellres=1)
  plot(Lout_pic)
  write.pnm(Lout_pic,file="L2_W_SparseNet.pgm")
 
- Lout_pic <- pixmapGrey(Layer_Bias[[1]], nrow=nrow(L_W2),ncol=ncol(L_W2),cellres=1)
+ Lout_pic <- pixmapGrey(Layer_Bias[[1]], nrow=dim(Layer_Bias[[1]])[1],ncol=dim(Layer_Bias[[1]])[2],cellres=1)
  plot(Lout_pic)
  write.pnm(Lout_pic,file="L1_B_SparseNet.pgm")
  
  
- Lout_pic <- pixmapGrey(Layer_Bias[[2]], nrow=nrow(L_W2),ncol=ncol(L_W2),cellres=1)
+ Lout_pic <- pixmapGrey(Layer_Bias[[2]],  nrow=dim(Layer_Bias[[2]])[1],ncol=dim(Layer_Bias[[2]])[2],cellres=1)
  plot(Lout_pic)
  write.pnm(Lout_pic,file="L2_B_SparseNet.pgm")
  #

@@ -47,14 +47,19 @@ static cv::Mat loadImage(const std::string& name)
 
 fishdetector::fishdetector()
 {
-    mW_L1 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/KC_SparseNet.pgm"));
-    mW_L2 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/outputLayer_trained.pgm") );
+    mW_L1 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L1_W_SparseNet.pgm"));
+    mW_L2 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L2_W_SparseNet.pgm") );
+
+    mB_L1 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L1_B_SparseNet.pgm"));
+    mB_L2 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L2_B_SparseNet.pgm") );
 
     //cv::threshold(mW_L1,mW_L1,0.1,1,cv::THRESH_BINARY);
     //cv::threshold(mW_L2,mW_L2,0.1,1,cv::THRESH_BINARY);
 
     mW_L1.convertTo(mW_L1, CV_32FC1);
     mW_L2.convertTo(mW_L2, CV_32FC1);
+    mB_L1.convertTo(mB_L1, CV_32FC1);
+    mB_L2.convertTo(mB_L2, CV_32FC1);
 }
 
 /// \brief Two step classificiation of region : First, it uses Neural
@@ -297,6 +302,10 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 }
 
+float fishdetector::netNeuralTF(float a)
+{
+    return((1.0f/(1.0f+std::exp(-a))));
+}
 /// \brief Applies pre-trained MB like NN on Binarized Input image
 /// Networks supports two L2 neurons - These recognition nets suffer from decreases in input sparseness :
 /// More active inputs increase the output scores - reducing the networks selectivity
@@ -311,21 +320,28 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
 
     // operation multiplies matrix A of size [a x b] with matrix B of size [b x c]
     //to the Layer 1 output produce matrix C of size [a x c]
-    mL1_out = vIn*mW_L1;
+    mL1_out = vIn*mW_L1 + mB_L1;
 
+    //Apply Neural Transfer Function
+    for (int i=0; i<mL1_out.cols;i++)
+        mL1_out.at<float>(1,i) = netNeuralTF(mL1_out.at<float>(1,i));
 
     // Threshold for Activation Function
-    cv::threshold(mL1_out,mL1_out,fL1_activity_thres,1,cv::THRESH_BINARY);
+    //cv::threshold(mL1_out,mL1_out,fL1_activity_thres,1,cv::THRESH_BINARY);
 
     // Display KC Thresholded Output
-    //cv::Mat KC_show = mL1_out.reshape(1,imgRegion_bin.rows*5);
-    //KC_show.convertTo(KC_show,imgRegion_bin.type());
-    //cv::imshow("KC out",KC_show*255);
+    cv::Mat KC_show = mL1_out.reshape(1,76);
+    KC_show.convertTo(KC_show,imgRegion_bin.type());
+    cv::imshow("KC out",KC_show*255);
 
-    //Calc Output
-    mL2_out =  mL1_out*mW_L2;
+    //Calc Layer Activation
+    mL2_out =  mL1_out*mW_L2 + mB_L2;
 
-    cv::imshow("L1 Out", mL1_out*255);
+    //Apply Neural Transfer Function
+    for (int i=0; i<mL2_out.cols;i++)
+        mL2_out.at<float>(1,i) = netNeuralTF(mL2_out.at<float>(1,i));
+
+    //cv::imshow("L1 Out", mL1_out*255);
     //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)
     fFishClass = mL2_out.at<float>(0,0)/mW_L1.cols;
     // Check 2 row (neuron) output

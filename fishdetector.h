@@ -22,13 +22,15 @@ class fishdetector
 {
 public:
     fishdetector();
+    float netNeuralTF(float a);
     float netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
     float scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,std::string regTag);
     float fL1_activity_thres = 10; //# Number of INput that need to be active for KC to fire/Activate
 
 private:
-    cv::Mat mW_L1;
-    cv::Mat mW_L2; //
+
+    cv::Mat mW_L1,mB_L1; //Weights and Biases Layer 1
+    cv::Mat mW_L2,mB_L2; //Weights and Biases Layer 2
     cv::Mat mL1_out; ///Matrix Holding Result of Input*L1
     cv::Mat mL2_out;
 };
