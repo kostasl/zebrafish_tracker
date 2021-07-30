@@ -7,6 +7,8 @@
 # Output is saved as pgm images which are then loaded by tracker software so as to implemend the simple classifier net implemended here 
   
 library("pixmap")
+library("yaml")
+
 
 ## Initialiaze the random Weight vector of an L1 (KC) neuron  
 init_random_W <- function(m,p){
@@ -74,6 +76,37 @@ sparse_binarize <- function(X,INPUT_SPARSENESS)
   return(X_bin)
 }
 
+
+
+### EXPORT MAtrix to YAML for OPENCV##
+matrixToYamlForOpenCV <- function(mat)
+{
+  strHeader <- "!!opencv-matrix
+        rows: %d
+        cols: %d
+        dt: f
+        data: ["
+  
+  strHeader <- sprintf(strHeader,nrow(mat),ncol(mat))
+  strData = ""
+  lineWidth = 100#min(100,length(mat))
+  ##Long Strings Need to be broken by New Lines otherwise OPENCV FIle Storage FAils 
+  if (length(mat) > lineWidth){
+    fcon<- tempfile("matrixYaml")
+
+  
+    for (i in 1:lineWidth:length(mat) ){
+      write(mat, file = fcon,ncolumns = 100, append = TRUE, sep = ",")
+      write("\n",file = fcon)
+  }
+      #strData = paste0(strData,"\n", toString(mat[i:min(i+lineWidth,length(mat))],width=0))
+  }else
+    strData = toString(mat)
+  strRet=  paste0(strHeader,strData,"]\n") 
+  
+  
+  return(strRet)
+}
 
 ## Process 2 Layer Network - Return Last Node Output produced for each input image
 ## Note : Input Layer Is Simplified - No activation function needed or Bias - Input image intentities are taken as activations
@@ -305,6 +338,30 @@ dfitRecord <- data.frame()
   
   plot(unlist(dnetout$out$MSERR),main="Mean SQ Err")
 
+  
+  
+  fishNet <- list(LW1=mat_W[[1]],
+                  LW2=mat_W[[2]],
+                  LB1=Layer_Bias[[1]],
+                  LB2=Layer_Bias[[2]] 
+                  )
+  
+  
+  
+  #fishNet <- list(LW1=Layer_Bias[[2]]
+  #)
+  ## EXPORT TO YAML FOR OPENCV - Custom/hacked exporter routine specific to OPENCV
+  filename <- "fishNet.yml"
+  con <- file(filename, "w")
+  write("%YAML:1.0",con) ##Header Is necessary For OPENCV 
+  #write_yaml(fishNet, con, fileEncoding = "UTF-8", handlers=list(matrix=matrixToYamlForOpenCV))
+  str_yaml<- as.yaml(fishNet, handlers=list(matrix=matrixToYamlForOpenCV),line.sep="\n",indent=1)
+  ## the Var Type !!opencv-matrix needs to be on same line as vairable Name - For OpenCV file store - FIX
+  str_yaml <- gsub("|\n  !!opencv-matrix","!!opencv-matrix",str_yaml,fixed = T)
+  write(str_yaml,con) ##Header Is necessary For OPENCV 
+  close(con)
+
+
 #}
   
 #       ##Test 
@@ -371,29 +428,37 @@ dfitRecord <- data.frame()
 # colSums(W_L2)
 # 
 # 
- ## Save KC Matrix As Image (To Be loaded by Tracker)
- ## Save Trained Weights As Image (To load by Tracker)
- KC_sparse_pic <- pixmapGrey(mat_W[[1]], nrow=dim(mat_W[[1]])[1],ncol=dim(mat_W[[1]])[2],cellres=1)
- plot(KC_sparse_pic)
- write.pnm(KC_sparse_pic,file="L1_W_SparseNet.pgm")
+#  ## Save KC Matrix As Image (To Be loaded by Tracker)
+#  ## Save Trained Weights As Image (To load by Tracker)
+#  KC_sparse_pic <- pixmapGrey(mat_W[[1]], nrow=dim(mat_W[[1]])[1],ncol=dim(mat_W[[1]])[2])
+#  plot(KC_sparse_pic)
+#  write.pnm(KC_sparse_pic,file="L1_W_SparseNet.pgm")
+# # 
+# # ## Shift Values
+#  L_W2 <- (mat_W[[2]])+1.0
+#  L_W2 <- apply(L_W2,2,rev)
+#  Lout_pic <- pixmapGrey(L_W2, nrow=dim(mat_W[[2]])[1],ncol=dim(mat_W[[2]])[2],cellres=1)
+#  plot(Lout_pic)
+#  write.pnm(Lout_pic,file="L2_W_SparseNet.pgm")
 # 
-# ## Shift Values
-## L_W2 <- ##(W_L2/2.0)+0.5
- Lout_pic <- pixmapGrey(mat_W[[2]], nrow=dim(mat_W[[2]])[1],ncol=dim(mat_W[[2]])[2],cellres=1)
- plot(Lout_pic)
- write.pnm(Lout_pic,file="L2_W_SparseNet.pgm")
+#  Lout_pic <- pixmapGrey(Layer_Bias[[1]], nrow=dim(Layer_Bias[[1]])[1],ncol=dim(Layer_Bias[[1]])[2],cellres=1)
+#  plot(Lout_pic)
+#  write.pnm(Lout_pic,file="L1_B_SparseNet.pgm")
+#  
+#  
+#  Lout_pic <- pixmapGrey(Layer_Bias[[2]],  nrow=dim(Layer_Bias[[2]])[1],ncol=dim(Layer_Bias[[2]])[2],cellres=1)
+#  plot(Lout_pic)
+#  write.pnm(Lout_pic,file="L2_B_SparseNet.pgm")
+#  #
+#  # 
+# # 
+# ## Load Matrix And Test
+# imgT <- read.pnm(file="L1_W_SparseNet.pgm")
+# mat_WL1 <- getChannels(imgT)
+# 
+# imgT <- read.pnm(file="L2_W_SparseNet.pgm")
+# mat_WL2 <- getChannels(imgT)-1.0 ##Reverse Order
 
- Lout_pic <- pixmapGrey(Layer_Bias[[1]], nrow=dim(Layer_Bias[[1]])[1],ncol=dim(Layer_Bias[[1]])[2],cellres=1)
- plot(Lout_pic)
- write.pnm(Lout_pic,file="L1_B_SparseNet.pgm")
- 
- 
- Lout_pic <- pixmapGrey(Layer_Bias[[2]],  nrow=dim(Layer_Bias[[2]])[1],ncol=dim(Layer_Bias[[2]])[2],cellres=1)
- plot(Lout_pic)
- write.pnm(Lout_pic,file="L2_B_SparseNet.pgm")
- #
- # 
-# 
 # 
 # hist(W_L2)
 # 

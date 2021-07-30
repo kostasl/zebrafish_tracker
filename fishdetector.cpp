@@ -47,19 +47,28 @@ static cv::Mat loadImage(const std::string& name)
 
 fishdetector::fishdetector()
 {
-    mW_L1 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L1_W_SparseNet.pgm"));
-    mW_L2 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L2_W_SparseNet.pgm") );
+    String sDir = std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/fishNet.yml");
 
-    mB_L1 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L1_B_SparseNet.pgm"));
-    mB_L2 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L2_B_SparseNet.pgm") );
+    FileStorage fsNet;
+    fsNet.open( sDir, FileStorage::READ,String("UTF-8"));
+
+    fsNet["LW1"] >> mW_L1;
+    fsNet["LW2"] >> mW_L2;
+    fsNet["LB1"] >> mB_L1;
+    fsNet["LB2"] >> mB_L2;
+//    mW_L1 = loadImage();
+//    mW_L2 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L2_W_SparseNet.pgm") );
+
+//    mB_L1 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L1_B_SparseNet.pgm"));
+//    mB_L2 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L2_B_SparseNet.pgm") );
 
     //cv::threshold(mW_L1,mW_L1,0.1,1,cv::THRESH_BINARY);
     //cv::threshold(mW_L2,mW_L2,0.1,1,cv::THRESH_BINARY);
 
-    mW_L1.convertTo(mW_L1, CV_32FC1);
-    mW_L2.convertTo(mW_L2, CV_32FC1);
-    mB_L1.convertTo(mB_L1, CV_32FC1);
-    mB_L2.convertTo(mB_L2, CV_32FC1);
+//    mW_L1.convertTo(mW_L1, CV_32FC1);
+//    mW_L2.convertTo(mW_L2, CV_32FC1);
+//    mB_L1.convertTo(mB_L1, CV_32FC1);
+//    mB_L2.convertTo(mB_L2, CV_32FC1);
 }
 
 /// \brief Two step classificiation of region : First, it uses Neural
@@ -136,11 +145,11 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
             imgFishAnterior_Norm_bin.copyTo(imgFishAnterior_Norm_bin_dense);
         maxIter--;
       }
- /// \todo : add Sigmoid activation function
- // imgFishAnterior_Norm.copyTo(imgFishAnterior_Norm_bin);
-  // Set to 1 to operate as input to Bias-Weight
-  if (imgFishAnterior_Norm_bin.rows > 1 && imgFishAnterior_Norm_bin.cols > 1)
-    imgFishAnterior_Norm_bin.at<float>(imgFishAnterior_Norm_bin.rows-1, imgFishAnterior_Norm_bin.cols-1) = 1.0f;
+// /// \todo : add Sigmoid activation function
+// // imgFishAnterior_Norm.copyTo(imgFishAnterior_Norm_bin);
+//  // Set to 1 to operate as input to Bias-Weight
+//  if (imgFishAnterior_Norm_bin.rows > 1 && imgFishAnterior_Norm_bin.cols > 1)
+//    imgFishAnterior_Norm_bin.at<float>(imgFishAnterior_Norm_bin.rows-1, imgFishAnterior_Norm_bin.cols-1) = 1.0f;
 
   //imgFishAnterior_Norm_bin.at<float>(0,0) = 1.0f;
   //fishblob.angle += iAngleOffset;
@@ -304,7 +313,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 float fishdetector::netNeuralTF(float a)
 {
-    return((1.0f/(1.0f+std::exp(-a))));
+    return( (1.0f/( 1.0f+std::exp(-a) )) );
 }
 /// \brief Applies pre-trained MB like NN on Binarized Input image
 /// Networks supports two L2 neurons - These recognition nets suffer from decreases in input sparseness :
@@ -324,28 +333,28 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
 
     //Apply Neural Transfer Function
     for (int i=0; i<mL1_out.cols;i++)
-        mL1_out.at<float>(1,i) = netNeuralTF(mL1_out.at<float>(1,i));
+        mL1_out.at<float>(0,i) = netNeuralTF(mL1_out.at<float>(0,i));
 
     // Threshold for Activation Function
     //cv::threshold(mL1_out,mL1_out,fL1_activity_thres,1,cv::THRESH_BINARY);
 
     // Display KC Thresholded Output
-    cv::Mat KC_show = mL1_out.reshape(1,76);
-    KC_show.convertTo(KC_show,imgRegion_bin.type());
-    cv::imshow("KC out",KC_show*255);
+    //cv::Mat KC_show = mL1_out.reshape(1,76);
+    //KC_show.convertTo(KC_show,imgRegion_bin.type());
+    //cv::imshow("KC out",KC_show);
 
     //Calc Layer Activation
     mL2_out =  mL1_out*mW_L2 + mB_L2;
 
     //Apply Neural Transfer Function
     for (int i=0; i<mL2_out.cols;i++)
-        mL2_out.at<float>(1,i) = netNeuralTF(mL2_out.at<float>(1,i));
+        mL2_out.at<float>(0,i) = netNeuralTF(mL2_out.at<float>(0,i));
 
     //cv::imshow("L1 Out", mL1_out*255);
     //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)
-    fFishClass = mL2_out.at<float>(0,0)/mW_L1.cols;
+    fFishClass = mL2_out.at<float>(0,0);
     // Check 2 row (neuron) output
-    fNonFishClass = mL2_out.at<float>(0,1)/mW_L1.cols;
+    fNonFishClass = mL2_out.at<float>(0,1);
 
     //double minL1,maxL1;
     //cv::minMaxLoc(mL1_out,&minL1,&maxL1);
