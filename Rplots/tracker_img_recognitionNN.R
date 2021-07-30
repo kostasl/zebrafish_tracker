@@ -341,7 +341,7 @@ dfitRecord <- data.frame()
 #for (i in 1:10)
 #{  
 
-dLearningRate =0.1
+dLearningRate =0.03
 img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
 
 # TRAIN On Fish 
@@ -386,26 +386,6 @@ write(noquote(str_yaml),con,append=TRUE) ##Header Is necessary For OPENCV
 close(con)
 
 
-
-filename <- "fishNet.yml"
-con <- file(filename, "w")
-#write_yaml(fishNet$LB2,con, handlers=list(matrix=matrixToYamlForOpenCV))
-writeLines(noquote(str_yaml),con, useBytes = TRUE)
-
-#write(str_yaml,con,append=TRUE)
-close(con)
-
-
-
-matrixToYamlForOpenCV(fishNet$LB2)
-### custom handler with verbatim output to change how logical vectors are emitted
-str_yaml <- as.yaml(c(TRUE, FALSE), handlers = list(
-  logical = function(x) {
-    result <- ifelse(x, "true", "false")
-    class(result) <- "verbatim"
-    return(result)
-  }
-))
 
 #}
 

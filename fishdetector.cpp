@@ -195,7 +195,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           /// Score Number of Bin Pix In cropped region so as to push for regions that fully contain the eyes
           float activePixRatio = (1+cv::sum(imgFishAnterior_Norm_tmplcrop)[0])/(imgFishAnterior_Norm_tmplcrop.cols*imgFishAnterior_Norm_tmplcrop.rows);
           ///  Store recognition score in Mask at(row,col) -//
-          maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2, i+gTrackerState.gszTemplateImg.width/2) = (scoreFish/(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
+          maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2, i+gTrackerState.gszTemplateImg.width/2) = scoreFish;//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
           //qDebug() << "(" << i+sztemplate.width/2 << "," <<j+sztemplate.height/2<<") = " << round(sc1*100)/100.0;
 
         }//For Each Vertical
