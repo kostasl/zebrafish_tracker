@@ -5,7 +5,7 @@
 ## The connections in L1 Random Sparse Net are data independent, while L2 wights are trained via +ve larva head template samples to filter patterns that look like larva
 ## The input images are labeled as Fish and non fish according to the folder they are placed.
 # Output is saved as pgm images which are then loaded by tracker software so as to implemend the simple classifier net implemended here 
-  
+
 library("pixmap")
 library("yaml")
 
@@ -37,12 +37,12 @@ N_transfer_D <- function(activation)
 N_activation <- function(X,W,B)
 {
   ## If more Than Half input units (based on Avg inputs) is active - then activate KC
- 
- #  if ( sum(X) > KC_THRES )
-#    return (1)
- # else
+  
+  #  if ( sum(X) > KC_THRES )
+  #    return (1)
+  # else
   ## Bias is just another W attached to a fixed Input 1
-    return (X%*%W + B)
+  return (X%*%W + B)
 }
 
 ## Copies A Smaller Matrix To the Middle of a larger one - (Pasting Image on larger canvas)
@@ -78,47 +78,60 @@ sparse_binarize <- function(X,INPUT_SPARSENESS)
 
 
 
-### EXPORT MAtrix to YAML for OPENCV##
+### EXPORT MAtrix to YAML for !!opencv-matrix##
 matrixToYamlForOpenCV <- function(mat)
 {
-  strHeader <- "!!opencv-matrix
-        rows: %d
-        cols: %d
-        dt: f
-        data: ["
+  ##!!opencv-matrix
+  strHeader <- "!!opencv-matrix\n rows: %d\n cols: %d\n dt: f\n data:["
   
   strHeader <- sprintf(strHeader,nrow(mat),ncol(mat))
   strData = ""
   lineWidth = 100#min(100,length(mat))
-  ##Long Strings Need to be broken by New Lines otherwise OPENCV FIle Storage FAils 
-  if (length(mat) > lineWidth){
-    fcon<- tempfile("matrixYaml")
-
-  
-    for (i in 1:lineWidth:length(mat) ){
-      write(mat, file = fcon,ncolumns = 100, append = TRUE, sep = ",")
-      write("\n",file = fcon)
-  }
-      #strData = paste0(strData,"\n", toString(mat[i:min(i+lineWidth,length(mat))],width=0))
-  }else
+  ## COMMENTED OUT AS SUDDENLY as.yaml started adding new Lines in data automatically - The following routine does this manually
+  # ##Long Strings Need to be broken by New Lines otherwise OPENCV FIle Storage FAils
+  # if (length(mat) > lineWidth){
+  #   fcon<- tempfile("matrixYaml")
+  #   
+  #   ## Need to export To TEMP file as string Concat Is too SLOW
+  #   for (i in seq(1,length(mat),lineWidth) ){
+  #     write(mat[i:min(i+lineWidth-1,length(mat)-1)], file = fcon,ncolumns = 100, append = TRUE, sep = ", ")
+  #     ##cat(",",file = fcon, append = TRUE,fill=FALSE)
+  #     #strData = paste0(strData, toString(mat[i:min(i+lineWidth,length(mat))],"\n",width=0))
+  #   }
+  #   ## Join  All Lines Back INto One String - With Newlines and Commas and Intendation
+  #   #strData = noquote()
+  #   strData = noquote(paste0(
+  #                     readLines(con = fcon, n = -1L, ok = TRUE, warn = TRUE, skipNul = FALSE, encoding = "UTF-8"),
+  #                            collapse=",\n         ")) ##
+  #   #class(strData) <- "verbatim"
+  # }else
     strData = toString(mat)
-  strRet=  paste0(strHeader,strData,"]\n") 
   
   
-  return(strRet)
+  strRet=  noquote(paste0(strHeader,strData,"]")) 
+  
+  
+  ##Character vectors that have a class of ‘verbatim’ will not be quoted in the output YAML 
+  class(strRet) <- "verbatim"
+  ##class(strRet) <- "verbatim"
+  #write(strRet,file = fcon)  
+  return(noquote(strRet) )
 }
+
+
+
 
 ## Process 2 Layer Network - Return Last Node Output produced for each input image
 ## Note : Input Layer Is Simplified - No activation function needed or Bias - Input image intentities are taken as activations
 ## Target_output is vector of desired output for each output Neuron these I chose to be L2_1=1 (Fish) L2_2=1 (Non Fish)
 net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)  
 {
-
+  
   L_X     <- list() ## Output Of Layer k
   L_A     <- list() ## Activation of  Layer k
   L_delta <- list()  ## Delta is the "cost attributable to (the value of) that node". 
   L2_out <- list()
- 
+  
   Target_output = c(1,0)  
   fileidx <- 0
   outError = 0 #'Mean Sq Error Of File Batch'
@@ -155,8 +168,8 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
       mat_img <- matrix_paste(mat_img,mat_t)
       ##message("Converted  Dim:", dim(mat_img)[1],"x",dim(mat_img)[2],"=",dim(mat_img)[2]*dim(mat_img)[1])
     }
-
-        ##mypic = new("pixmapGrey", size=dim(mat_img),grey = mat_img);plot(mypic)
+    
+    ##mypic = new("pixmapGrey", size=dim(mat_img),grey = mat_img);plot(mypic)
     ## Convert to Col Vector
     X <- as.vector(mat_img)
     dim(X) <- c(1,length(X)) ## Make into Row Vector
@@ -166,21 +179,21 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
       next
     }
     
-   stopifnot(length(mat_X[fileidx,]) ==length(X) ) 
-   mat_X[fileidx,] <- X # Save In Vector to MAtrix
+    stopifnot(length(mat_X[fileidx,]) ==length(X) ) 
+    mat_X[fileidx,] <- X # Save In Vector to MAtrix
     
-
+    
     ##Input Layer Is Simplified - No activation function needed or Bias - Input image intentities are taken as activations
     ##Activation 
     L_A[[1]] <- X
     L_X[[1]] <- N_transfer(X)
     ## Due to R hell with numbers ecoming Factors I need to do this tricl
     mat_Y <- cbind( as.numeric(levels(label_list$F)[as.numeric(label_list$F)]),
-           as.numeric(levels(label_list$F)[as.numeric(label_list$NF)]) )
+                    as.numeric(levels(label_list$F)[as.numeric(label_list$NF)]) )
     
     Target_output <-mat_Y[fileidx,] 
-      ### 
-
+    ### 
+    
     ## Forward Propagation ## 
     for (i in 2:(N_Layers+1) )
     {
@@ -205,17 +218,17 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
         L_delta[[l]] <-   (L_delta[[l+1]]) %*% t(mat_W[[l+1]]) *N_transfer_D(L_X[[l+1]]) ## %*% t(N_transfer_D(L_X[[l-1]]) )
       }
       
-        dE <- t(L_A[[l]]) %*% (L_delta[[l]])  
-        dW <- learningRate*dE 
-        ##Add average change over batch samples
-        mat_W[[l]] <- mat_W[[l]] -  dW ##length(img_list)
-        Layer_Bias[[l]] <- Layer_Bias[[l]] - (L_delta[[l]])  
+      dE <- t(L_A[[l]]) %*% (L_delta[[l]])  
+      dW <- learningRate*dE 
+      ##Add average change over batch samples
+      mat_W[[l]] <- mat_W[[l]] -  dW ##length(img_list)
+      Layer_Bias[[l]] <- Layer_Bias[[l]] - (L_delta[[l]])  
     }
-     
+    
     #hist(Layer_Bias[[1]])
-     
-   #hist(mat_W[[1]],main="After")
-  
+    
+    #hist(mat_W[[1]],main="After")
+    
     #hist( KC_out_act[1,])
     ## Calc Layer 1 output based on Activation Threshold Funciton for Units
     #KC_output <- apply(KC_out_act, 2, N_transfer)
@@ -248,18 +261,18 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
                               L2_NF=L2[2],
                               KC_active = sum(L1[fileidx,][L1[fileidx,]>0.5]),
                               KC_total = length(L1[fileidx,]),
-                             # input_sparse= pxsparse,
+                              # input_sparse= pxsparse,
                               file=in_img
     )
     
-   
+    
     
     message("MSQERR:",MSQError,"  ",L_X[[3]][1],"-",L_X[[3]][2]," ERR: ", L2_out[[fileidx]]$Err ," ",in_img)
     
     ##message("Recognition Output for Img ",in_img," is F:",L_X[[3]][1]," non-F:",L_X[[3]][2]," Active KC:",L2_out[[fileidx]]$KC_active/N_KC )
     dim(X) = dim(mat_img)
     
- 
+    
     #image(X_bin)
     #title(main = paste(in_img,strRes," R:",L2_Neurons_out[1]-L2_Neurons_out[2]), font.main = 4)
   }
@@ -268,7 +281,7 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
                W=mat_W,
                B=Layer_Bias,
                out=data.frame( do.call(rbind,L2_out ) ))
- 
+  
   MSQError =  sum((mat_Y - L2)^2)/nrow(mat_X)
   
   return(lout  )
@@ -296,10 +309,10 @@ for (k in 1:N_Layers)
   Layer_Bias[[k]] <- rep(1,v_Layer_N[k+1]) ## Initialiaze Neural Biases
 }
 
-  hist(colSums(mat_W[[1]]),main="Number of inputs per KC")
+hist(colSums(mat_W[[1]]),main="Number of inputs per KC")
 
-  
-  
+
+
 ##Layer 2 (Output Perceptron)
 L2_Neurons <<- 2
 W_L2 <<- mat_W[[2]] #matrix(0,ncol=L2_Neurons,nrow=N_KC)
@@ -327,43 +340,75 @@ dfitRecord <- data.frame()
 
 #for (i in 1:10)
 #{  
-  
-  dLearningRate =0.01
-  img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
 
-  # TRAIN On Fish 
-  dnetout <- net_proc_images(img_list_suffled,mat_W,Layer_Bias, dLearningRate)
-  mat_W = dnetout$W
-  Layer_Bias = dnetout$B
-  
-  plot(unlist(dnetout$out$MSERR),main="Mean SQ Err")
+dLearningRate =0.1
+img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
 
-  
-  
-  fishNet <- list(LW1=mat_W[[1]],
-                  LW2=mat_W[[2]],
-                  LB1=Layer_Bias[[1]],
-                  LB2=Layer_Bias[[2]] 
-                  )
-  
-  
-  
-  #fishNet <- list(LW1=Layer_Bias[[2]]
-  #)
-  ## EXPORT TO YAML FOR OPENCV - Custom/hacked exporter routine specific to OPENCV
-  filename <- "fishNet.yml"
-  con <- file(filename, "w")
-  write("%YAML:1.0",con) ##Header Is necessary For OPENCV 
-  #write_yaml(fishNet, con, fileEncoding = "UTF-8", handlers=list(matrix=matrixToYamlForOpenCV))
-  str_yaml<- as.yaml(fishNet, handlers=list(matrix=matrixToYamlForOpenCV),line.sep="\n",indent=1)
-  ## the Var Type !!opencv-matrix needs to be on same line as vairable Name - For OpenCV file store - FIX
-  str_yaml <- gsub("|\n  !!opencv-matrix","!!opencv-matrix",str_yaml,fixed = T)
-  write(str_yaml,con) ##Header Is necessary For OPENCV 
-  close(con)
+# TRAIN On Fish 
+dnetout <- net_proc_images(img_list_suffled,mat_W,Layer_Bias, dLearningRate)
+mat_W = dnetout$W
+Layer_Bias = dnetout$B
 
+plot(unlist(dnetout$out$MSERR),main="Mean SQ Err")
+
+
+
+fishNet <- list(LW1=mat_W[[1]],
+                LW2=mat_W[[2]],
+                LB1=Layer_Bias[[1]],
+                LB2=Layer_Bias[[2]] 
+)
+
+
+#attr(fishNet$LW1, "tag") <- "!!opencv-matrix" ##Adding tags Also Change The Header to Verbatim, which does not work in OPENCV
+attr(fishNet$LW2, "tag") <- "!!opencv-matrix"
+attr(fishNet$LB1, "tag") <- "!!opencv-matrix"
+attr(fishNet$LB2, "tag") <- "!!opencv-matrix"
+
+
+
+#fishNet <- list(LW1=Layer_Bias[[2]]
+#)
+## EXPORT TO YAML FOR OPENCV - Custom/hacked exporter routine specific to OPENCV
+filename <- "fishNet.yml"
+con <- file(filename, "w")
+message("Exporting to YAML-Wait for it , this may take a while...")
+write("%YAML:1.0",con) ##Header Is necessary For OPENCV 
+## Indentation Needs to be 3
+str_yaml<- noquote(as.yaml(fishNet, handlers=list(matrix=matrixToYamlForOpenCV), line.sep="\n",indent=3,unicode=F))
+#  CLEAN UP String FRom Escape Chars
+## the Var Type tag !!opencv-matrix needs to be on same line as vairable Name - For OpenCV file store - FIX
+str_yaml <- gsub("\n  !!opencv-matrix","!!opencv-matrix",str_yaml,fixed = T)
+str_yaml <- gsub("\\n","\n",str_yaml,fixed = T)## Remove Escaped NewLines
+str_yaml <- gsub("\"","",str_yaml,fixed = T)#Remove Quates
+
+write(noquote(str_yaml),con,append=TRUE) ##Header Is necessary For OPENCV 
+close(con)
+
+
+
+filename <- "fishNet.yml"
+con <- file(filename, "w")
+#write_yaml(fishNet$LB2,con, handlers=list(matrix=matrixToYamlForOpenCV))
+writeLines(noquote(str_yaml),con, useBytes = TRUE)
+
+#write(str_yaml,con,append=TRUE)
+close(con)
+
+
+
+matrixToYamlForOpenCV(fishNet$LB2)
+### custom handler with verbatim output to change how logical vectors are emitted
+str_yaml <- as.yaml(c(TRUE, FALSE), handlers = list(
+  logical = function(x) {
+    result <- ifelse(x, "true", "false")
+    class(result) <- "verbatim"
+    return(result)
+  }
+))
 
 #}
-  
+
 #       ##Test 
 #   dnetout_tfish <- net_proc_images(img_list_test_fish,0.3, c(1,0))
 #   #hist(unlist(dnetout_fish$L2_F),breaks=10,main="Class Fish Responses to F+ samples" )

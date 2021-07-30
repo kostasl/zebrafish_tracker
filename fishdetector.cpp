@@ -185,7 +185,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           cv::Point ptTopLeftTemplate(i,j);
           cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate, gTrackerState.gszTemplateImg );
           //CROP Extract a Template sized subregion of Orthonormal Fish
-          imgFishAnterior_Norm_bin(rectFishTemplateBound).copyTo(imgFishAnterior_Norm_tmplcrop);
+          imgFishAnterior_Norm(rectFishTemplateBound).copyTo(imgFishAnterior_Norm_tmplcrop);
 
           dscore = this->netDetect(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreNonFish);
 
