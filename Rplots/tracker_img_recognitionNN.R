@@ -84,10 +84,11 @@ matrixToYamlForOpenCV <- function(mat)
 {
   ##!!opencv-matrix
   strHeader <- "!!opencv-matrix\n rows: %d\n cols: %d\n dt: f\n data:["
-  
+  ## Matrix Will Be saved Transposed Because Data serial Reading Order is by row in OpenCV while Here Serialization is By Column
   strHeader <- sprintf(strHeader,nrow(mat),ncol(mat))
   strData = ""
   lineWidth = 100#min(100,length(mat))
+  
   ## COMMENTED OUT AS SUDDENLY as.yaml started adding new Lines in data automatically - The following routine does this manually
   # ##Long Strings Need to be broken by New Lines otherwise OPENCV FIle Storage FAils
   # if (length(mat) > lineWidth){
@@ -106,7 +107,9 @@ matrixToYamlForOpenCV <- function(mat)
   #                            collapse=",\n         ")) ##
   #   #class(strData) <- "verbatim"
   # }else
-    strData = toString(mat)
+    
+  ## Need to TransposeBecause Data serial Reading Order is by row in OpenCV while Here Serialization is By Column
+  strData = toString(t(mat))
   
   
   strRet=  noquote(paste0(strHeader,strData,"]")) 
@@ -172,8 +175,11 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
     
     ##mypic = new("pixmapGrey", size=dim(mat_img),grey = mat_img);plot(mypic)
     ## Convert to Col Vector
-    X <- as.vector(mat_img)
+    X <- sparse_binarize(as.vector(mat_img),INPUT_SPARSENESS)
+    
+  
     dim(X) <- c(1,length(X)) ## Make into Row Vector
+    
     if (length(X) > n_top_px)
     {
       warning(in_img,"Image Too large. Skipping")
@@ -344,7 +350,7 @@ dfitRecord <- data.frame()
 for (i in 1:1)
 {  
   
-  dLearningRate =0.5
+  dLearningRate =0.01
   img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
   
   # TRAIN On Fish 

@@ -52,6 +52,7 @@ fishdetector::fishdetector()
     FileStorage fsNet;
     fsNet.open( sDir, FileStorage::READ,String("UTF-8"));
 
+    ///Matrices Are read Serialized per Column - not per row (as is the default R ser. of matrices)
     fsNet["LW1"] >> mW_L1;
     fsNet["LW2"] >> mW_L2;
     fsNet["LB1"] >> mB_L1;
@@ -78,7 +79,8 @@ fishdetector::fishdetector()
 /// @param regTag an Id for debugging purposes
 /// @outframeAnterior_Norm returns image of isolated head centered at best detection point according to NN
 
-float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,string regTag="0")
+float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,
+                                    cv::Mat& outmaskRegionScore,string regTag="0")
 {
   cv::Mat imgFishAnterior,imgFishAnterior_Norm,imgFishAnterior_Norm_bin,imgFishAnterior_Norm_tmplcrop;
   cv::Mat imgFishAnterior_Norm_bin_dense; //Used to Find Contours
@@ -145,6 +147,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
             imgFishAnterior_Norm_bin.copyTo(imgFishAnterior_Norm_bin_dense);
         maxIter--;
       }
+
+      cv::imshow(std::string("BIN") + regTag,imgFishAnterior_Norm_bin*255);
 // /// \todo : add Sigmoid activation function
 // // imgFishAnterior_Norm.copyTo(imgFishAnterior_Norm_bin);
 //  // Set to 1 to operate as input to Bias-Weight
@@ -185,7 +189,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           cv::Point ptTopLeftTemplate(i,j);
           cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate, gTrackerState.gszTemplateImg );
           //CROP Extract a Template sized subregion of Orthonormal Fish
-          imgFishAnterior_Norm(rectFishTemplateBound).copyTo(imgFishAnterior_Norm_tmplcrop);
+          imgFishAnterior_Norm_bin(rectFishTemplateBound).copyTo(imgFishAnterior_Norm_tmplcrop);
 
           dscore = this->netDetect(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreNonFish);
 
@@ -195,7 +199,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           /// Score Number of Bin Pix In cropped region so as to push for regions that fully contain the eyes
           float activePixRatio = (1+cv::sum(imgFishAnterior_Norm_tmplcrop)[0])/(imgFishAnterior_Norm_tmplcrop.cols*imgFishAnterior_Norm_tmplcrop.rows);
           ///  Store recognition score in Mask at(row,col) -//
-          maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2, i+gTrackerState.gszTemplateImg.width/2) = scoreFish;//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
+          maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2, i+gTrackerState.gszTemplateImg.width/2) = dscore;//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
           //qDebug() << "(" << i+sztemplate.width/2 << "," <<j+sztemplate.height/2<<") = " << round(sc1*100)/100.0;
 
         }//For Each Vertical
@@ -313,7 +317,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 float fishdetector::netNeuralTF(float a)
 {
-    return( (1.0f/( 1.0f+std::exp(-a) )) );
+    return( (1.0f/( 1.0f+ std::exp(-a) )) );
 }
 /// \brief Applies pre-trained MB like NN on Binarized Input image
 /// Networks supports two L2 neurons - These recognition nets suffer from decreases in input sparseness :
@@ -324,9 +328,22 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
 
     // Input Is converted to Row Vector So we can do Matrix Multiplation
     assert(imgRegion_bin.cols*imgRegion_bin.rows == mW_L1.rows);
-    cv::Mat vIn = imgRegion_bin.reshape(1,mW_L1.rows).t();  //Row Vector
+    cv::Mat vIn = imgRegion_bin.reshape(1,mW_L1.rows).t();  //Col Vector
     vIn.convertTo(vIn, CV_32FC1);
 
+
+    cv::imshow("Vin Out ", vIn.reshape(1,imgRegion_bin.rows)*255);
+
+
+    //Apply Neural Transfer Function
+    for (int i=0; i<vIn.cols;i++)
+        vIn.at<float>(0,i) = netNeuralTF(vIn.at<float>(0,i));
+
+
+    cv::imshow("Vin Out TF", vIn.reshape(1,imgRegion_bin.rows));
+
+
+    /// \TODO Matrices are not read correctly beyond 1st column mW_L1
     // operation multiplies matrix A of size [a x b] with matrix B of size [b x c]
     //to the Layer 1 output produce matrix C of size [a x c]
     mL1_out = vIn*mW_L1 + mB_L1;
@@ -334,14 +351,13 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     //Apply Neural Transfer Function
     for (int i=0; i<mL1_out.cols;i++)
         mL1_out.at<float>(0,i) = netNeuralTF(mL1_out.at<float>(0,i));
-
     // Threshold for Activation Function
     //cv::threshold(mL1_out,mL1_out,fL1_activity_thres,1,cv::THRESH_BINARY);
 
     // Display KC Thresholded Output
-    //cv::Mat KC_show = mL1_out.reshape(1,76);
+    cv::Mat KC_show = mL1_out.reshape(1,38*5);
     //KC_show.convertTo(KC_show,imgRegion_bin.type());
-    //cv::imshow("KC out",KC_show);
+    cv::imshow("L1 out TF",KC_show);
 
     //Calc Layer Activation
     mL2_out =  mL1_out*mW_L2 + mB_L2;
@@ -350,7 +366,7 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     for (int i=0; i<mL2_out.cols;i++)
         mL2_out.at<float>(0,i) = netNeuralTF(mL2_out.at<float>(0,i));
 
-    //cv::imshow("L1 Out", mL1_out*255);
+
     //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)
     fFishClass = mL2_out.at<float>(0,0);
     // Check 2 row (neuron) output
