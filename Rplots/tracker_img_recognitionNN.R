@@ -16,8 +16,9 @@ init_random_W <- function(m,p){
   n <- rbinom(1,NROW(m),p)
   ## Set N random synapses as inputs to KC
   idx <- sample(1:NROW(m),n)
-  
-  m[idx] <- 1/NROW(m)
+  m <- runif(NROW(m))/100 ##Weak Synapses
+  ## Likely Stronger Subset
+  m[idx] <- runif(n) #1/NROW(m)
   return (m)
 }
 
@@ -188,8 +189,7 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
     L_A[[1]] <- X
     L_X[[1]] <- N_transfer(X)
     ## Due to R hell with numbers ecoming Factors I need to do this tricl
-    mat_Y <- cbind( as.numeric(levels(label_list$F)[as.numeric(label_list$F)]),
-                    as.numeric(levels(label_list$F)[as.numeric(label_list$NF)]) )
+    mat_Y <- apply(as.matrix(label_list),2,strtoi)
     
     Target_output <-mat_Y[fileidx,] 
     ### 
@@ -255,10 +255,10 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
     MSQError =  sum((mat_Y - L2)^2)/nrow(mat_X)
     
     
-    L2_out[[fileidx]] <- list(Err=sum((Target_output - L2)),
+    L2_out[[fileidx]] <- list(Err=0.5*sum((Target_output - L2[fileidx,])^2),
                               MSERR=MSQError,
-                              L2_F=L2[1],
-                              L2_NF=L2[2],
+                              L2_F=L2[fileidx,1],
+                              L2_NF=L2[fileidx,2],
                               KC_active = sum(L1[fileidx,][L1[fileidx,]>0.5]),
                               KC_total = length(L1[fileidx,]),
                               # input_sparse= pxsparse,
@@ -267,7 +267,7 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
     
     
     
-    message("MSQERR:",MSQError,"  ",L_X[[3]][1],"-",L_X[[3]][2]," ERR: ", L2_out[[fileidx]]$Err ," ",in_img)
+    message(fileidx,". MSQERR:",MSQError,"  ", L2_out[[fileidx]]$L2_F, "-", L2_out[[fileidx]]$L2_NF, " ERR: ", L2_out[[fileidx]]$Err ," ",in_img)
     
     ##message("Recognition Output for Img ",in_img," is F:",L_X[[3]][1]," non-F:",L_X[[3]][2]," Active KC:",L2_out[[fileidx]]$KC_active/N_KC )
     dim(X) = dim(mat_img)
@@ -309,13 +309,13 @@ for (k in 1:N_Layers)
   Layer_Bias[[k]] <- rep(1,v_Layer_N[k+1]) ## Initialiaze Neural Biases
 }
 
+hist(mat_W[[1]])
 hist(colSums(mat_W[[1]]),main="Number of inputs per KC")
 
 
 
 ##Layer 2 (Output Perceptron)
-L2_Neurons <<- 2
-W_L2 <<- mat_W[[2]] #matrix(0,ncol=L2_Neurons,nrow=N_KC)
+#L2_Neurons <<- 2
 
 ## Apply Input Image ##
 ## list training files 
@@ -333,25 +333,28 @@ img_list_test_nonfish =  cbind(files=list.files(path=sPathTestingSamplesNonFish,
 img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_test_nonfish,stringsAsFactors = FALSE)
 #img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T) Samples ##
 
-dLearningRate <-0.05
+
+#img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,stringsAsFactors = FALSE)
+
+
 lFitError <- list()
 dfitRecord <- data.frame()
 
 
-#for (i in 1:10)
-#{  
+for (i in 1:1)
+{  
+  
+  dLearningRate =0.5
+  img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
+  
+  # TRAIN On Fish 
+  dnetout <- net_proc_images(img_list_suffled,mat_W,Layer_Bias, dLearningRate)
+  mat_W = dnetout$W
+  Layer_Bias = dnetout$B
+  
+  plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
 
-dLearningRate =0.03
-img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
-
-# TRAIN On Fish 
-dnetout <- net_proc_images(img_list_suffled,mat_W,Layer_Bias, dLearningRate)
-mat_W = dnetout$W
-Layer_Bias = dnetout$B
-
-plot(unlist(dnetout$out$MSERR),main="Mean SQ Err")
-
-
+}
 
 fishNet <- list(LW1=mat_W[[1]],
                 LW2=mat_W[[2]],
