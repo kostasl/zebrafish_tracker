@@ -66,10 +66,10 @@ fishdetector::fishdetector()
     //cv::threshold(mW_L1,mW_L1,0.1,1,cv::THRESH_BINARY);
     //cv::threshold(mW_L2,mW_L2,0.1,1,cv::THRESH_BINARY);
 
-//    mW_L1.convertTo(mW_L1, CV_32FC1);
-//    mW_L2.convertTo(mW_L2, CV_32FC1);
-//    mB_L1.convertTo(mB_L1, CV_32FC1);
-//    mB_L2.convertTo(mB_L2, CV_32FC1);
+    mW_L1.convertTo(mW_L1, CV_32FC1);
+    mW_L2.convertTo(mW_L2, CV_32FC1);
+    mB_L1.convertTo(mB_L1, CV_32FC1);
+    mB_L2.convertTo(mB_L2, CV_32FC1);
 }
 
 /// \brief Two step classificiation of region : First, it uses Neural
@@ -336,11 +336,11 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
 
 
     //Apply Neural Transfer Function
-    for (int i=0; i<vIn.cols;i++)
-        vIn.at<float>(0,i) = netNeuralTF(vIn.at<float>(0,i));
+    //for (int i=0; i<vIn.cols;i++)
+    //    vIn.at<float>(0,i) = netNeuralTF(vIn.at<float>(0,i));
 
 
-    cv::imshow("Vin Out TF", vIn.reshape(1,imgRegion_bin.rows));
+    //cv::imshow("Vin Out TF", vIn.reshape(1,imgRegion_bin.rows));
 
 
     /// \TODO Matrices are not read correctly beyond 1st column mW_L1
@@ -348,11 +348,20 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     //to the Layer 1 output produce matrix C of size [a x c]
     mL1_out = vIn*mW_L1 + mB_L1;
 
+
+    cv::imshow("L1 out ",mL1_out.reshape(1,38*5));
+
+
     //Apply Neural Transfer Function
     for (int i=0; i<mL1_out.cols;i++)
-        mL1_out.at<float>(0,i) = netNeuralTF(mL1_out.at<float>(0,i));
+    {
+        float fnOut = netNeuralTF(mL1_out.at<float>(0,i));
+        //qDebug() << "mL1_out " << mL1_out.at<float>(0,i) << "-> " << fnOut;
+        mL1_out.at<float>(0,i) = fnOut;
+    }
     // Threshold for Activation Function
     //cv::threshold(mL1_out,mL1_out,fL1_activity_thres,1,cv::THRESH_BINARY);
+
 
     // Display KC Thresholded Output
     cv::Mat KC_show = mL1_out.reshape(1,38*5);

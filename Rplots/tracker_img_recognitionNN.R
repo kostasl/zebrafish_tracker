@@ -13,12 +13,13 @@ library("yaml")
 ## Initialiaze the random Weight vector of an L1 (KC) neuron  
 init_random_W <- function(m,p){
   # Draw random Number N of Sampled Inputs From Binomial
-  n <- rbinom(1,NROW(m),p)
+  n <- rbinom(1,length(m),p)
   ## Set N random synapses as inputs to KC
-  idx <- sample(1:NROW(m),n)
-  m <- runif(NROW(m))/100 ##Weak Synapses
+  idx <- sample(1:length(m),n)
+  ##m <- runif(NROW(m))/(1000*NROW(m)) ##Weak Synapses
   ## Likely Stronger Subset
-  m[idx] <- runif(n) #1/NROW(m)
+  m[idx] <- runif(n)/(length(m)) #1/NROW(m)
+  #print(length(m))
   return (m)
 }
 
@@ -43,7 +44,7 @@ N_activation <- function(X,W,B)
   #    return (1)
   # else
   ## Bias is just another W attached to a fixed Input 1
-  return (X%*%W + B)
+  return (W%*%X + B)
 }
 
 ## Copies A Smaller Matrix To the Middle of a larger one - (Pasting Image on larger canvas)
@@ -128,7 +129,7 @@ matrixToYamlForOpenCV <- function(mat)
 ## Process 2 Layer Network - Return Last Node Output produced for each input image
 ## Note : Input Layer Is Simplified - No activation function needed or Bias - Input image intentities are taken as activations
 ## Target_output is vector of desired output for each output Neuron these I chose to be L2_1=1 (Fish) L2_2=1 (Non Fish)
-net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)  
+net_proc_images <- function(input_list,inmat_W,inLayer_Bias,learningRate = 0.0)  
 {
   
   L_X     <- list() ## Output Of Layer k
@@ -144,7 +145,7 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
   label_list <-cbind.data.frame(F=(input_list[,2]),NF=(input_list[,3]) )##Target output/labels
   
   ## Matrix Of  image Input Vectors  
-  mat_X = matrix(0,ncol=nrow(mat_W[[1]]),nrow=length(img_list) )
+  mat_X = matrix(0,nrow=ncol(inmat_W[[1]]),ncol=length(img_list) )
   
   for (in_img in img_list)
   {
@@ -178,7 +179,7 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
     X <- sparse_binarize(as.vector(mat_img),INPUT_SPARSENESS)
     
   
-    dim(X) <- c(1,length(X)) ## Make into Row Vector
+    dim(X) <- c(length(X),1) ## Make into Col Vector
     
     if (length(X) > n_top_px)
     {
@@ -186,14 +187,14 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
       next
     }
     
-    stopifnot(length(mat_X[fileidx,]) ==length(X) ) 
-    mat_X[fileidx,] <- X # Save In Vector to MAtrix
+    stopifnot(length(mat_X[,fileidx]) ==length(X) ) 
+    mat_X[,fileidx] <- X # Save In Vector to MAtrix
     
     
     ##Input Layer Is Simplified - No activation function needed or Bias - Input image intentities are taken as activations
     ##Activation 
     L_A[[1]] <- X
-    L_X[[1]] <- N_transfer(X)
+    L_X[[1]] <- X##N_transfer(X-0.5)
     ## Due to R hell with numbers ecoming Factors I need to do this tricl
     mat_Y <- apply(as.matrix(label_list),2,strtoi)
     
@@ -203,7 +204,7 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
     ## Forward Propagation ## 
     for (i in 2:(N_Layers+1) )
     {
-      L_A[[i]] <- N_activation(L_X[[i-1]], mat_W[[i-1]], Layer_Bias[[i-1]]) ## v_Layer_Bias[i]  
+      L_A[[i]] <- N_activation(L_X[[i-1]], inmat_W[[i-1]], inLayer_Bias[[i-1]]) ## v_Layer_Bias[i]  
       L_X[[i]] <- N_transfer(L_A[[i]])
     }
     
@@ -221,19 +222,20 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
         L_delta[[l]] <- ((N_transfer_D(L_X[[l+1]])) * (L_X[[l+1]] - Target_output)) ##*N_transfer_D(L_X[[l]])
       }else{
         #L_delta[[l]] <- L_delta[[l+1]] %*% t(mat_W[[l]])*N_transfer_D(L_X[[l]])
-        L_delta[[l]] <-   (L_delta[[l+1]]) %*% t(mat_W[[l+1]]) *N_transfer_D(L_X[[l+1]]) ## %*% t(N_transfer_D(L_X[[l-1]]) )
-      }
+        L_delta[[l]] <-   t(t(L_delta[[l+1]]) %*%(inmat_W[[l+1]])*t(N_transfer_D( L_X[[l+1]] )))    ## %*% t(N_transfer_D(L_X[[l-1]]) )
+
+          }
       
-      dE <- t(L_A[[l]]) %*% (L_delta[[l]])  
+      dE <- (L_delta[[l]])%*%t(L_A[[l]])  
       dW <- learningRate*dE 
       ##Add average change over batch samples
-      mat_W[[l]] <- mat_W[[l]] -  dW ##length(img_list)
-      Layer_Bias[[l]] <- Layer_Bias[[l]] - (L_delta[[l]])  
+      inmat_W[[l]] <- inmat_W[[l]] -  dW ##length(img_list)
+      inLayer_Bias[[l]] <- inLayer_Bias[[l]] - learningRate*(L_delta[[l]])  
     }
     
     #hist(Layer_Bias[[1]])
-    
-    #hist(mat_W[[1]],main="After")
+    if (fileidx %% 10 == 0)
+      hist(inmat_W[[1]], main="After")
     
     #hist( KC_out_act[1,])
     ## Calc Layer 1 output based on Activation Threshold Funciton for Units
@@ -256,15 +258,17 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
     ## Calc Output Neuron - Perceptron 
     ## FWD PROP CAlc MSQE - Fwd Propagate Entire Input Matrix 
     ## Forward Propagation ## 
-    L1 <- N_transfer(N_activation(mat_X, mat_W[[1]], matrix(rep(Layer_Bias[[1]],nrow(mat_X)),nrow=nrow(mat_X) ))) ## v_Layer_Bias[i]  
-    L2 <-  N_transfer(N_activation(L1,mat_W[[2]] , matrix(rep(Layer_Bias[[2]],nrow(mat_X)),nrow=nrow(mat_X) ) )  )
-    MSQError =  sum((mat_Y - L2)^2)/nrow(mat_X)
+    L1 <- N_transfer(N_activation(mat_X, inmat_W[[1]], matrix(inLayer_Bias[[1]],ncol=ncol(mat_X),nrow=length(inLayer_Bias[[1]])) ) ) ## v_Layer_Bias[i] matrix(rep(,nrow(mat_X)),nrow=nrow(mat_X) )  
+    ## L2 matrix of output Col vectors correspond 
+    L2 <-  N_transfer(N_activation(L1,inmat_W[[2]] , matrix(inLayer_Bias[[2]],ncol=ncol(mat_X),nrow=length(inLayer_Bias[[2]])) )  )  
+    
+    MSQError =  sum((t(mat_Y) - L2 )^2)/ ncol(mat_X)
     
     
-    L2_out[[fileidx]] <- list(Err=0.5*sum((Target_output - L2[fileidx,])^2),
+    L2_out[[fileidx]] <- list(Err=0.5*sum((Target_output - L2[,fileidx])^2),
                               MSERR=MSQError,
-                              L2_F=L2[fileidx,1],
-                              L2_NF=L2[fileidx,2],
+                              L2_F=L2[1,fileidx],
+                              L2_NF=L2[2,fileidx],
                               KC_active = sum(L1[fileidx,][L1[fileidx,]>0.5]),
                               KC_total = length(L1[fileidx,]),
                               # input_sparse= pxsparse,
@@ -284,11 +288,11 @@ net_proc_images <- function(input_list,mat_W,Layer_Bias,learningRate = 0.0)
   }
   
   lout <- list(X=mat_X,
-               W=mat_W,
-               B=Layer_Bias,
+               W=inmat_W,
+               B=inLayer_Bias,
                out=data.frame( do.call(rbind,L2_out ) ))
   
-  MSQError =  sum((mat_Y - L2)^2)/nrow(mat_X)
+  MSQError =  sum((t(mat_Y) - L2)^2)/nrow(mat_X)
   
   return(lout  )
 }
@@ -309,10 +313,10 @@ mat_W <<- list() # List Of Weight Matrices
 ## Make Sparse Random Synaptic Weight matrix Selecting Inputs for each KC
 for (k in 1:N_Layers)
 {
-  mat_W[[k]] <- matrix(0,nrow=v_Layer_N[k],ncol=v_Layer_N[k+1])
+  mat_W[[k]] <- matrix(0,ncol=v_Layer_N[k],nrow=v_Layer_N[k+1])
   ## Init Random
-  mat_W[[k]] <- apply(mat_W[[k]],2,init_random_W,N_SYN_per_KC/n_top_px) ##
-  Layer_Bias[[k]] <- rep(1,v_Layer_N[k+1]) ## Initialiaze Neural Biases
+  mat_W[[k]] <- t(apply(mat_W[[k]],1,init_random_W,N_SYN_per_KC/n_top_px)) ##
+  Layer_Bias[[k]] <- matrix(1,ncol=1,nrow=v_Layer_N[k+1] )  #rep(1,) ## Initialiaze Neural Biases
 }
 
 hist(mat_W[[1]])
@@ -337,35 +341,39 @@ img_list_train_nonfish =   cbind(files=list.files(path=sPathTrainingNonSamples,p
 img_list_test_nonfish =  cbind(files=list.files(path=sPathTestingSamplesNonFish,pattern="*pgm",full.names = T),F=0,NF=1)
 
 img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_test_nonfish,stringsAsFactors = FALSE)
+
 #img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T) Samples ##
 
 
-#img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,stringsAsFactors = FALSE)
+img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_test_nonfish[1:NROW(img_list_test_fish),],stringsAsFactors = FALSE)
 
 
 lFitError <- list()
 dfitRecord <- data.frame()
 
-
-for (i in 1:1)
+hist(mat_W[[1]],main="Before")
+for (i in 1:10)
 {  
   
-  dLearningRate =0.01
+  dLearningRate =0.001
   img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
   
   # TRAIN On Fish 
-  dnetout <- net_proc_images(img_list_suffled,mat_W,Layer_Bias, dLearningRate)
-  mat_W = dnetout$W
-  Layer_Bias = dnetout$B
+  dnetout <- net_proc_images(img_list_suffled,mat_W,Layer_Bias,0.0 )
+  mat_W <<-dnetout$W
+  Layer_Bias <<- dnetout$B
   
   plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
 
 }
 
-fishNet <- list(LW1=mat_W[[1]],
-                LW2=mat_W[[2]],
-                LB1=Layer_Bias[[1]],
-                LB2=Layer_Bias[[2]] 
+
+hist(dnetout$W[[1]],main="After")
+
+fishNet <- list(LW1=dnetout$W[[1]],
+                LW2=dnetout$W[[2]],
+                LB1=dnetout$B[[1]],
+                LB2=dnetout$B[[2]] 
 )
 
 
