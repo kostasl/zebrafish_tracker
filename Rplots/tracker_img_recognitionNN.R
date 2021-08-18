@@ -242,7 +242,7 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
       ##Add average change over batch samples
       inmat_W[[l]] <- inmat_W[[l]] -  dW ##length(img_list)
       ## Error Non-Conform
-      inmat_B[[l]] <- inmat_B[[l]] - learningRate*(L_delta[[l]])  
+      #inmat_B[[l]] <- inmat_B[[l]] - learningRate*(L_delta[[l]])  
     }
     
     #hist(Layer_Bias[[1]])
@@ -345,7 +345,8 @@ img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list
 batchSize = 5 # Number of Training IMages for Each Leanring Episode (which will define error graident )
 Nbatches = 10
 trainingN = 10 ##Training Cycles For Each Batch
-## Matrix Of Biases
+
+## TODO : Move this in Funct - Use One MAtrix For Net -Matrix Of Biases
 mat_B <- list()
 mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=(batchSize),nrow=length(Layer_Bias[[1]]))
 mat_B[[2]] <- matrix(Layer_Bias[[2]],ncol=(batchSize),nrow=length(Layer_Bias[[2]]) )
@@ -390,6 +391,26 @@ for (b in 1:Nbatches)
   }## Repeated Training On Batch 
 
 } ## Different Batch Suffles  
+
+
+### Calcl Final Performance 
+
+##Select Subset Batch
+img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
+mat_X <- makeInputMatrix(img_list_suffled,mat_W)
+label_list <-cbind.data.frame(F=(img_list_suffled[,2]),NF=(img_list_suffled[,3]) )##Target output/labels
+mat_Y <- t(apply(as.matrix(label_list),2,strtoi))
+
+## TODO : Move this in Funct - Use One MAtrix For Net -Matrix Of Biases
+mat_B <- list()
+mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[1]]))
+mat_B[[2]] <- matrix(Layer_Bias[[2]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[2]]) )
+
+
+dLearningRate    <- 0.0
+# TRAIN On Fish 
+dnetout <- net_proc_images_batch(mat_X,mat_W,mat_B,mat_Y,dLearningRate )
+message("Final MSQERR:",dnetout$MSQError)
 
   
 hist(dnetout$Target - dnetout$output)
