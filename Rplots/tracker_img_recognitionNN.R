@@ -73,10 +73,72 @@ sparse_binarize <- function(X,INPUT_SPARSENESS)
   }
   
   
-  message("Input Sparseness:",pxsparse)
+  ##message("Input Sparseness:",pxsparse)
   
   return(X_bin)
 }
+
+
+
+
+makeInputMatrix <- function(img_list,inmat_W)
+{
+  
+  ## TRAIN /TEST ##
+  img_list <- img_list[,1]
+ 
+  
+  
+  ## Matrix Of  image Input Vectors  
+  mat_X = matrix(0,nrow=ncol(inmat_W[[1]]),ncol=length(img_list) )
+  fileidx <- 0
+  for (in_img in img_list)
+  {
+    fileidx= fileidx + 1
+    
+    imgT <- read.pnm(as.character(in_img) )
+    mat_img <- getChannels(imgT)
+    X <- as.vector(mat_img)
+    ### Add Fixed input 1 - To operate As Adjustable Bias for each input   
+    ##X[length(X)] <- 1 # c(as.vector(mat_img),1)
+    
+    ##message(in_img," Input Dim:", dim(mat_img)[1],"x",dim(mat_img)[2],"=",dim(mat_img)[2]*dim(mat_img)[1])
+    
+    if (length(X) > n_top_px)
+    {
+      warning("input sample too big - skipping")
+      next
+    }
+    
+    ## If Loaded image is Smaller than INput - Then Resize (paste into) larger Matrix to fit
+    if (length(X) < n_top_px)
+    {
+      ##message("input sample Smaller than Canvas - pasting")
+      mat_t <- matrix(0,nrow=img_dim[1],ncol=img_dim[2])
+      mat_img <- matrix_paste(mat_img,mat_t)
+      ##message("Converted  Dim:", dim(mat_img)[1],"x",dim(mat_img)[2],"=",dim(mat_img)[2]*dim(mat_img)[1])
+    }
+    
+    ##mypic = new("pixmapGrey", size=dim(mat_img),grey = mat_img);plot(mypic)
+    ## Convert to Col Vector
+    X <- sparse_binarize(as.vector(mat_img),INPUT_SPARSENESS)
+    
+    
+    dim(X) <- c(length(X),1) ## Make into Col Vector
+    
+    if (length(X) > n_top_px)
+    {
+      warning(in_img,"Image Too large. Skipping")
+      next
+    }
+    
+    stopifnot(length(mat_X[,fileidx]) ==length(X) ) 
+    mat_X[,fileidx] <- X # Save In Vector to MAtrix
+    
+  }## Load All Input Vectors Into Matrix X
+  
+  return(mat_X)
+} ##Make INput List
 
 
 
@@ -124,6 +186,246 @@ matrixToYamlForOpenCV <- function(mat)
 }
 
 
+
+
+## Process 2 Layer Network - Return Last Node Output produced for each input image
+## Note : Input Layer Is Simplified - No activation function needed or Bias - Input image intentities are taken as activations
+## Target_output is vector of desired output for each output Neuron these I chose to be L2_1=1 (Fish) L2_2=1 (Non Fish)
+net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0)  
+{
+  
+  L_X     <- list() ## Output Of Layer k
+  L_A     <- list() ## Activation of  Layer k
+  L_delta <- list()  ## Delta is the "cost attributable to (the value of) that node". 
+  L2_out <- list()
+  
+  fileidx <- 0
+  outError = 0 #'Mean Sq Error Of File Batch'
+
+  
+  
+    ##Input Layer Is Simplified - No activation function needed or Bias - Input image intentities are taken as activations
+    ##Activation 
+    L_A[[1]] <- mat_X
+    L_X[[1]] <- mat_X##N_transfer(X-0.5)
+    ## Due to R hell with numbers ecoming Factors I need to do this tricl
+    
+    ##Target_output <- mat_Y[fileidx,] 
+     
+    ## Forward Propagation ##
+    L_A[[2]] <- N_activation(mat_X, inmat_W[[1]], inmat_B[[1]] )
+    L_X[[2]] <- N_transfer( L_A[[2]])
+    
+    ##  matrix of output Col vectors correspond to output
+    L_A[[3]] <- N_activation(L_X[[2]],inmat_W[[2]] , inmat_B[[2]] )  
+    L_X[[3]] <- N_transfer( L_A[[3]]) ## v_Layer_Bias[i] matrix(rep(,nrow(mat_X)),nrow=nrow(mat_X) )  
+
+    
+    MSQError =  sum(((mat_Y) - L_X[[3]] )^2)/ ncol(mat_X)
+
+    ## Note Indexes L_X and mat/biases are off by one because LX_1 is considerened an input layer, while neural layer is l=2
+    ## Back Propagation ##
+    for (l in (N_Layers):1 )
+    {
+      ##On Output Layer
+      if (l == (N_Layers))
+      {
+        ## Element Wise Product (hadamart Product)
+        L_delta[[l]] <- ( N_transfer_D( L_X[[l+1]] )   * (L_X[[l+1]] - mat_Y)) ##*N_transfer_D(L_X[[l]])
+      }else{
+        #L_delta[[l]] <- L_delta[[l+1]] %*% t(mat_W[[l]])*N_transfer_D(L_X[[l]])
+        L_delta[[l]] <-   t(t(L_delta[[l+1]]) %*%(inmat_W[[l+1]])*t(N_transfer_D( L_X[[l+1]] )))    ## %*% t(N_transfer_D(L_X[[l-1]]) )
+        
+      }
+      
+      dE <- (L_delta[[l]])%*%t(L_A[[l]])  
+      dW <- learningRate*dE 
+      ##Add average change over batch samples
+      inmat_W[[l]] <- inmat_W[[l]] -  dW ##length(img_list)
+      ## Error Non-Conform
+      inmat_B[[l]] <- inmat_B[[l]] - learningRate*(L_delta[[l]])  
+    }
+    
+    #hist(Layer_Bias[[1]])
+    if (fileidx %% 10 == 0)
+      hist(inmat_W[[1]], main="After")
+    
+    
+    ## Forward Propagation ## 
+    L1 <- N_transfer(N_activation(mat_X, inmat_W[[1]],inmat_B[[1]]  ) ) ## v_Layer_Bias[i] matrix(rep(,nrow(mat_X)),nrow=nrow(mat_X) )  
+    ## L2 matrix of output Col vectors correspond 
+    L2 <-  N_transfer(N_activation(L1,inmat_W[[2]] ,  inmat_B[[2]] )  )  
+    
+    MSQError =  sum(((mat_Y) - L2 )^2)/ ncol(mat_X)
+    
+    
+    #L2_out[[fileidx]] <- list(Err=0.5*sum((Target_output - L2[,fileidx])^2),
+    #                          MSERR=MSQError,
+    #                          L2_F=L2[1,fileidx],
+    #                          L2_NF=L2[2,fileidx],
+    #                          KC_active = sum(L1[fileidx,][L1[fileidx,]>0.5]),
+    #                          KC_total = length(L1[fileidx,]),
+                              # input_sparse= pxsparse,
+    #                          file=in_img
+    #)
+    
+    #message(fileidx,". MSQERR:",MSQError,"  ", L2_out[[fileidx]]$L2_F, "-", L2_out[[fileidx]]$L2_NF, " ERR: ", L2_out[[fileidx]]$Err ," ",in_img)
+    message(fileidx,". MSQERR:",MSQError,"  ")
+    
+    
+    ##message("Recognition Output for Img ",in_img," is F:",L_X[[3]][1]," non-F:",L_X[[3]][2]," Active KC:",L2_out[[fileidx]]$KC_active/N_KC )
+    #dim(X) = img_dim##dim(mat_img)
+    
+    
+    #image(X_bin)
+    #title(main = paste(in_img,strRes," R:",L2_Neurons_out[1]-L2_Neurons_out[2]), font.main = 4)
+  
+  
+  lout <- list(X=mat_X,
+               W=inmat_W,
+               B=inmat_B,
+               output=L2,
+               Target=mat_Y,
+               #out=data.frame( do.call(rbind,L2_out ) ),
+               MSQError=MSQError )
+  
+  #MSQError =  sum(((mat_Y) - L2)^2)/nrow(mat_X)
+  
+  return(lout  )
+}
+
+
+
+img_dim <- c(38,28)
+N_Layers <- 2
+
+n_top_px <- img_dim[2]*img_dim[1]
+N_KC = n_top_px*5 ## Number of Kenyon Cells (Input layer High Dim Coding)
+N_SYN_per_KC <- n_top_px/5 ## Number of pic Features each KC neuron Codes for
+KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
+v_Layer_N <- c(n_top_px, N_KC, 2)
+Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
+INPUT_SPARSENESS = 0.20
+
+mat_W <<- list() # List Of Weight Matrices
+## Make Sparse Random Synaptic Weight matrix Selecting Inputs for each KC
+for (k in 1:N_Layers)
+{
+  mat_W[[k]] <- matrix(0,ncol=v_Layer_N[k],nrow=v_Layer_N[k+1])
+  ## Init Random
+  mat_W[[k]] <- t(apply(mat_W[[k]],1,init_random_W,N_SYN_per_KC/n_top_px)) ##
+  Layer_Bias[[k]] <- matrix(1,ncol=1,nrow=v_Layer_N[k+1] )  #rep(1,) ## Initialiaze Neural Biases
+}
+
+hist(mat_W[[1]])
+hist(colSums(mat_W[[1]]),main="Number of inputs per KC")
+
+##Layer 2 (Output Perceptron)
+#L2_Neurons <<- 2
+
+## Apply Input Image ##
+## list training files 
+setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+sPathTrainingSamples="../img/trainset/fish"
+sPathTrainingNonSamples="../img/trainset/nonfish/"
+sPathTestingSamplesFish="../img/fish/"
+sPathTestingSamplesNonFish="../img/nonfish/"
+
+img_list_train_fish =  cbind(files=list.files(path=sPathTrainingSamples,pattern="*pgm",full.names = T),F=1,NF=0) 
+img_list_test_fish = cbind(files=list.files(path=sPathTestingSamplesFish,pattern="*pgm",full.names = T),F=1,NF=0)
+img_list_train_nonfish =   cbind(files=list.files(path=sPathTrainingNonSamples,pattern="*pgm",full.names = T),F=0,NF=1)
+img_list_test_nonfish =  cbind(files=list.files(path=sPathTestingSamplesNonFish,pattern="*pgm",full.names = T),F=0,NF=1)
+
+img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_test_nonfish,stringsAsFactors = FALSE)
+
+#img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T) Samples ##
+
+
+img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_test_nonfish[1:NROW(img_list_test_fish),],stringsAsFactors = FALSE)
+
+
+
+lFitError <- list()
+dfitRecord <- data.frame()
+
+
+##Make Matrix -For All net inputs
+mat_B <- list()
+mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[1]]))
+mat_B[[2]] <- matrix(Layer_Bias[[2]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[2]]) )
+
+vTrainingError <- vector()
+
+
+hist(mat_W[[1]],main="Before")
+
+for (i in 1:15)
+{  
+  
+  dLearningRate    <- 0.00001
+  img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
+
+  
+  mat_X <- makeInputMatrix(img_list_suffled,mat_W)
+  
+  label_list <-cbind.data.frame(F=(img_list_suffled[,2]),NF=(img_list_suffled[,3]) )##Target output/labels
+  mat_Y <- t(apply(as.matrix(label_list),2,strtoi))  
+  
+  
+  # TRAIN On Fish 
+  dnetout <- net_proc_images_batch(mat_X,mat_W,mat_B,mat_Y,dLearningRate )
+  mat_W   <<-dnetout$W
+  Layer_Bias <<- dnetout$B
+  
+  vTrainingError[i] = dnetout$MSQError  #plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
+
+}
+
+
+plot(vTrainingError)
+
+hist(dnetout$W[[1]],main="After")
+
+
+
+
+## FOR EXAPORT TO YAML
+
+fishNet <- list(LW1=dnetout$W[[1]],
+                LW2=dnetout$W[[2]],
+                LB1=dnetout$B[[1]],
+                LB2=dnetout$B[[2]] 
+)
+
+#attr(fishNet$LW1, "tag") <- "!!opencv-matrix" ##Adding tags Also Change The Header to Verbatim, which does not work in OPENCV
+attr(fishNet$LW2, "tag") <- "!!opencv-matrix"
+attr(fishNet$LB1, "tag") <- "!!opencv-matrix"
+attr(fishNet$LB2, "tag") <- "!!opencv-matrix"
+
+
+
+#fishNet <- list(LW1=Layer_Bias[[2]]
+#)
+## EXPORT TO YAML FOR OPENCV - Custom/hacked exporter routine specific to OPENCV
+#  filename <- "fishNet.yml"
+#  con <- file(filename, "w")
+#  message("Exporting to YAML-Wait for it , this may take a while...")
+#  write("%YAML:1.0",con) ##Header Is necessary For OPENCV 
+  ## Indentation Needs to be 3
+#  str_yaml<- noquote(as.yaml(fishNet, handlers=list(matrix=matrixToYamlForOpenCV), line.sep="\n",indent=3,unicode=F))
+  #  CLEAN UP String FRom Escape Chars
+  ## the Var Type tag !!opencv-matrix needs to be on same line as vairable Name - For OpenCV file store - FIX
+#  str_yaml <- gsub("\n  !!opencv-matrix","!!opencv-matrix",str_yaml,fixed = T)
+#  str_yaml <- gsub("\\n","\n",str_yaml,fixed = T)## Remove Escaped NewLines
+#  str_yaml <- gsub("\"","",str_yaml,fixed = T)#Remove Quates
+
+#  write(noquote(str_yaml),con,append=TRUE) ##Header Is necessary For OPENCV 
+#  close(con)
+
+
+
+
+############## 
 
 
 ## Process 2 Layer Network - Return Last Node Output produced for each input image
@@ -178,7 +480,7 @@ net_proc_images <- function(input_list,inmat_W,inLayer_Bias,learningRate = 0.0)
     ## Convert to Col Vector
     X <- sparse_binarize(as.vector(mat_img),INPUT_SPARSENESS)
     
-  
+    
     dim(X) <- c(length(X),1) ## Make into Col Vector
     
     if (length(X) > n_top_px)
@@ -223,8 +525,8 @@ net_proc_images <- function(input_list,inmat_W,inLayer_Bias,learningRate = 0.0)
       }else{
         #L_delta[[l]] <- L_delta[[l+1]] %*% t(mat_W[[l]])*N_transfer_D(L_X[[l]])
         L_delta[[l]] <-   t(t(L_delta[[l+1]]) %*%(inmat_W[[l+1]])*t(N_transfer_D( L_X[[l+1]] )))    ## %*% t(N_transfer_D(L_X[[l-1]]) )
-
-          }
+        
+      }
       
       dE <- (L_delta[[l]])%*%t(L_A[[l]])  
       dW <- learningRate*dE 
@@ -257,6 +559,8 @@ net_proc_images <- function(input_list,inmat_W,inLayer_Bias,learningRate = 0.0)
     #stopifnot(ncol(KC_output) == nrow(W_L2))
     ## Calc Output Neuron - Perceptron 
     ## FWD PROP CAlc MSQE - Fwd Propagate Entire Input Matrix 
+    
+    
     ## Forward Propagation ## 
     L1 <- N_transfer(N_activation(mat_X, inmat_W[[1]], matrix(inLayer_Bias[[1]],ncol=ncol(mat_X),nrow=length(inLayer_Bias[[1]])) ) ) ## v_Layer_Bias[i] matrix(rep(,nrow(mat_X)),nrow=nrow(mat_X) )  
     ## L2 matrix of output Col vectors correspond 
@@ -296,111 +600,6 @@ net_proc_images <- function(input_list,inmat_W,inLayer_Bias,learningRate = 0.0)
   
   return(lout  )
 }
-
-
-img_dim <- c(38,28)
-N_Layers <- 2
-
-n_top_px <- img_dim[2]*img_dim[1]
-N_KC = n_top_px*5 ## Number of Kenyon Cells (Input layer High Dim Coding)
-N_SYN_per_KC <- n_top_px/5 ## Number of pic Features each KC neuron Codes for
-KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
-v_Layer_N <- c(n_top_px, N_KC, 2)
-Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
-INPUT_SPARSENESS = 0.20
-
-mat_W <<- list() # List Of Weight Matrices
-## Make Sparse Random Synaptic Weight matrix Selecting Inputs for each KC
-for (k in 1:N_Layers)
-{
-  mat_W[[k]] <- matrix(0,ncol=v_Layer_N[k],nrow=v_Layer_N[k+1])
-  ## Init Random
-  mat_W[[k]] <- t(apply(mat_W[[k]],1,init_random_W,N_SYN_per_KC/n_top_px)) ##
-  Layer_Bias[[k]] <- matrix(1,ncol=1,nrow=v_Layer_N[k+1] )  #rep(1,) ## Initialiaze Neural Biases
-}
-
-hist(mat_W[[1]])
-hist(colSums(mat_W[[1]]),main="Number of inputs per KC")
-
-
-
-##Layer 2 (Output Perceptron)
-#L2_Neurons <<- 2
-
-## Apply Input Image ##
-## list training files 
-setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-sPathTrainingSamples="../img/trainset/fish"
-sPathTrainingNonSamples="../img/trainset/nonfish/"
-sPathTestingSamplesFish="../img/fish/"
-sPathTestingSamplesNonFish="../img/nonfish/"
-
-img_list_train_fish =  cbind(files=list.files(path=sPathTrainingSamples,pattern="*pgm",full.names = T),F=1,NF=0) 
-img_list_test_fish = cbind(files=list.files(path=sPathTestingSamplesFish,pattern="*pgm",full.names = T),F=1,NF=0)
-img_list_train_nonfish =   cbind(files=list.files(path=sPathTrainingNonSamples,pattern="*pgm",full.names = T),F=0,NF=1)
-img_list_test_nonfish =  cbind(files=list.files(path=sPathTestingSamplesNonFish,pattern="*pgm",full.names = T),F=0,NF=1)
-
-img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_test_nonfish,stringsAsFactors = FALSE)
-
-#img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T) Samples ##
-
-
-img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_test_nonfish[1:NROW(img_list_test_fish),],stringsAsFactors = FALSE)
-
-
-lFitError <- list()
-dfitRecord <- data.frame()
-
-hist(mat_W[[1]],main="Before")
-for (i in 1:10)
-{  
-  
-  dLearningRate =0.001
-  img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
-  
-  # TRAIN On Fish 
-  dnetout <- net_proc_images(img_list_suffled,mat_W,Layer_Bias,0.0 )
-  mat_W <<-dnetout$W
-  Layer_Bias <<- dnetout$B
-  
-  plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
-
-}
-
-
-hist(dnetout$W[[1]],main="After")
-
-fishNet <- list(LW1=dnetout$W[[1]],
-                LW2=dnetout$W[[2]],
-                LB1=dnetout$B[[1]],
-                LB2=dnetout$B[[2]] 
-)
-
-
-#attr(fishNet$LW1, "tag") <- "!!opencv-matrix" ##Adding tags Also Change The Header to Verbatim, which does not work in OPENCV
-attr(fishNet$LW2, "tag") <- "!!opencv-matrix"
-attr(fishNet$LB1, "tag") <- "!!opencv-matrix"
-attr(fishNet$LB2, "tag") <- "!!opencv-matrix"
-
-
-
-#fishNet <- list(LW1=Layer_Bias[[2]]
-#)
-## EXPORT TO YAML FOR OPENCV - Custom/hacked exporter routine specific to OPENCV
-filename <- "fishNet.yml"
-con <- file(filename, "w")
-message("Exporting to YAML-Wait for it , this may take a while...")
-write("%YAML:1.0",con) ##Header Is necessary For OPENCV 
-## Indentation Needs to be 3
-str_yaml<- noquote(as.yaml(fishNet, handlers=list(matrix=matrixToYamlForOpenCV), line.sep="\n",indent=3,unicode=F))
-#  CLEAN UP String FRom Escape Chars
-## the Var Type tag !!opencv-matrix needs to be on same line as vairable Name - For OpenCV file store - FIX
-str_yaml <- gsub("\n  !!opencv-matrix","!!opencv-matrix",str_yaml,fixed = T)
-str_yaml <- gsub("\\n","\n",str_yaml,fixed = T)## Remove Escaped NewLines
-str_yaml <- gsub("\"","",str_yaml,fixed = T)#Remove Quates
-
-write(noquote(str_yaml),con,append=TRUE) ##Header Is necessary For OPENCV 
-close(con)
 
 
 
