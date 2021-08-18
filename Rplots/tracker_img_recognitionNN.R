@@ -343,8 +343,8 @@ img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list
 img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_test_nonfish[1:NROW(img_list_test_fish),],stringsAsFactors = FALSE)
 
 batchSize = 5 # Number of Training IMages for Each Leanring Episode (which will define error graident )
-Nbatches = 10
-trainingN = 10 ##Training Cycles For Each Batch
+Nbatches = 20
+trainingN = 5 ##Training Cycles For Each Batch
 
 ## TODO : Move this in Funct - Use One MAtrix For Net -Matrix Of Biases
 mat_B <- list()
@@ -375,7 +375,7 @@ for (b in 1:Nbatches)
   for (i in 1:trainingN)
   {  
     
-    dLearningRate    <- 0.0001
+    dLearningRate    <- 0.00001
     
     # TRAIN On Fish 
     dnetout <- net_proc_images_batch(mat_X,mat_W,mat_B,mat_Y,dLearningRate )
