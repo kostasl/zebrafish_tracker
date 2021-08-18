@@ -304,7 +304,7 @@ N_SYN_per_KC <- n_top_px/20 ## Number of pic Features each KC neuron Codes for
 #KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 v_Layer_N <- c(n_top_px, N_KC, 2)
 Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
-INPUT_SPARSENESS = 0.20
+INPUT_SPARSENESS = 0.50
 
 mat_W <<- list() # List Of Weight Matrices
 ## Make Sparse Random Synaptic Weight matrix Selecting Inputs for each KC
@@ -343,7 +343,7 @@ img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list
 img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_test_nonfish[1:NROW(img_list_test_fish),],stringsAsFactors = FALSE)
 
 batchSize = 5 # Number of Training IMages for Each Leanring Episode (which will define error graident )
-Nbatches = 20
+Nbatches = 50
 trainingN = 5 ##Training Cycles For Each Batch
 
 ## TODO : Move this in Funct - Use One MAtrix For Net -Matrix Of Biases
@@ -391,6 +391,8 @@ for (b in 1:Nbatches)
   }## Repeated Training On Batch 
 
 } ## Different Batch Suffles  
+
+plot(vTrainingError) #ylim=c(0,1)
 
 
 ### Calcl Final Performance 
