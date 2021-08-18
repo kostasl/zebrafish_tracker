@@ -16,7 +16,7 @@ init_random_W <- function(m,p){
   n <- rbinom(1,length(m),p)
   ## Set N random synapses as inputs to KC
   idx <- sample(1:length(m),n)
-  #m <- runif(NROW(m))/(100*NROW(m)) ##Weak Synapses
+  m <- runif(NROW(m))/(100*NROW(m)) ##Weak Synapses
   ## Likely Stronger Subset
   m[idx] <- runif(n)/(length(m)) #1/NROW(m)
   #print(length(m))
@@ -342,8 +342,9 @@ img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list
 
 img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_test_nonfish[1:NROW(img_list_test_fish),],stringsAsFactors = FALSE)
 
-batchSize = 10
-
+batchSize = 5 # Number of Training IMages for Each Leanring Episode (which will define error graident )
+Nbatches = 10
+trainingN = 10 ##Training Cycles For Each Batch
 ## Matrix Of Biases
 mat_B <- list()
 mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=(batchSize),nrow=length(Layer_Bias[[1]]))
@@ -356,7 +357,7 @@ dfitRecord <- data.frame()
 vTrainingError <- vector()
 ## Subset INput LIst Into Batches
 rIdx = 1
-for (b in 1:10)
+for (b in 1:Nbatches)
 {
   ##Make Matrix -For All net inputs
   img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
@@ -369,23 +370,25 @@ for (b in 1:10)
   mat_Y <- t(apply(as.matrix(label_list),2,strtoi))  
   
  
-  trainingN = 10
+  
   for (i in 1:trainingN)
   {  
     
-    dLearningRate    <- 0.00001
+    dLearningRate    <- 0.0001
     
     # TRAIN On Fish 
     dnetout <- net_proc_images_batch(mat_X,mat_W,mat_B,mat_Y,dLearningRate )
     mat_W   <<-dnetout$W
     mat_B <<- dnetout$B
-    
+
+        
     vTrainingError[rIdx] = dnetout$MSQError  #plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
+    rIdx = rIdx +1
     
-    plot(vTrainingError,xlim=c(0,trainingN)) #ylim=c(0,1)
+    plot(vTrainingError,xlim=c(0,trainingN*Nbatches)) #ylim=c(0,1)
     
   }## Repeated Training On Batch 
-  rIdx = rIdx +1
+
 } ## Different Batch Suffles  
 
   
