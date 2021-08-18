@@ -16,7 +16,7 @@ init_random_W <- function(m,p){
   n <- rbinom(1,length(m),p)
   ## Set N random synapses as inputs to KC
   idx <- sample(1:length(m),n)
-  ##m <- runif(NROW(m))/(1000*NROW(m)) ##Weak Synapses
+  #m <- runif(NROW(m))/(100*NROW(m)) ##Weak Synapses
   ## Likely Stronger Subset
   m[idx] <- runif(n)/(length(m)) #1/NROW(m)
   #print(length(m))
@@ -235,7 +235,6 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
       }else{
         #L_delta[[l]] <- L_delta[[l+1]] %*% t(mat_W[[l]])*N_transfer_D(L_X[[l]])
         L_delta[[l]] <-   t(t(L_delta[[l+1]]) %*%(inmat_W[[l+1]])*t(N_transfer_D( L_X[[l+1]] )))    ## %*% t(N_transfer_D(L_X[[l-1]]) )
-        
       }
       
       dE <- (L_delta[[l]])%*%t(L_A[[l]])  
@@ -247,8 +246,8 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
     }
     
     #hist(Layer_Bias[[1]])
-    if (fileidx %% 10 == 0)
-      hist(inmat_W[[1]], main="After")
+    #if (fileidx %% 10 == 0)
+    #  hist(inmat_W[[1]], main="After")
     
     
     ## Forward Propagation ## 
@@ -300,9 +299,9 @@ img_dim <- c(38,28)
 N_Layers <- 2
 
 n_top_px <- img_dim[2]*img_dim[1]
-N_KC = n_top_px*5 ## Number of Kenyon Cells (Input layer High Dim Coding)
-N_SYN_per_KC <- n_top_px/5 ## Number of pic Features each KC neuron Codes for
-KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
+N_KC = n_top_px*10 ## Number of Kenyon Cells (Input layer High Dim Coding)
+N_SYN_per_KC <- n_top_px/20 ## Number of pic Features each KC neuron Codes for
+#KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 v_Layer_N <- c(n_top_px, N_KC, 2)
 Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
 INPUT_SPARSENESS = 0.20
@@ -343,46 +342,54 @@ img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list
 
 img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_test_nonfish[1:NROW(img_list_test_fish),],stringsAsFactors = FALSE)
 
+batchSize = 10
+
+## Matrix Of Biases
+mat_B <- list()
+mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=(batchSize),nrow=length(Layer_Bias[[1]]))
+mat_B[[2]] <- matrix(Layer_Bias[[2]],ncol=(batchSize),nrow=length(Layer_Bias[[2]]) )
 
 
 lFitError <- list()
 dfitRecord <- data.frame()
 
-
-##Make Matrix -For All net inputs
-mat_B <- list()
-mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[1]]))
-mat_B[[2]] <- matrix(Layer_Bias[[2]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[2]]) )
-
 vTrainingError <- vector()
-
-
-hist(mat_W[[1]],main="Before")
-
-for (i in 1:15)
-{  
-  
-  dLearningRate    <- 0.00001
+## Subset INput LIst Into Batches
+rIdx = 1
+for (b in 1:10)
+{
+  ##Make Matrix -For All net inputs
   img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
-
+  ##Select Subset Batch
+  img_list_suffled <- head(img_list_suffled,batchSize)
   
   mat_X <- makeInputMatrix(img_list_suffled,mat_W)
   
   label_list <-cbind.data.frame(F=(img_list_suffled[,2]),NF=(img_list_suffled[,3]) )##Target output/labels
   mat_Y <- t(apply(as.matrix(label_list),2,strtoi))  
   
+ 
+  trainingN = 10
+  for (i in 1:trainingN)
+  {  
+    
+    dLearningRate    <- 0.00001
+    
+    # TRAIN On Fish 
+    dnetout <- net_proc_images_batch(mat_X,mat_W,mat_B,mat_Y,dLearningRate )
+    mat_W   <<-dnetout$W
+    mat_B <<- dnetout$B
+    
+    vTrainingError[rIdx] = dnetout$MSQError  #plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
+    
+    plot(vTrainingError,xlim=c(0,trainingN)) #ylim=c(0,1)
+    
+  }## Repeated Training On Batch 
+  rIdx = rIdx +1
+} ## Different Batch Suffles  
+
   
-  # TRAIN On Fish 
-  dnetout <- net_proc_images_batch(mat_X,mat_W,mat_B,mat_Y,dLearningRate )
-  mat_W   <<-dnetout$W
-  Layer_Bias <<- dnetout$B
-  
-  vTrainingError[i] = dnetout$MSQError  #plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
-
-}
-
-
-plot(vTrainingError)
+hist(dnetout$Target - dnetout$output)
 
 hist(dnetout$W[[1]],main="After")
 
