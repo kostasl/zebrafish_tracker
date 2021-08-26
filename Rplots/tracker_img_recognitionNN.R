@@ -14,6 +14,20 @@ library("yaml")
 ## Initialiaze the random Weight vector of an L1 (KC) neuron  
 init_random_W <- function(m,p){
   # Draw random Number N of Sampled Inputs From Binomial
+  #n <- rbinom(1,length(m),p)
+  ## Set N random synapses as inputs to KC
+  #idx <- sample(1:length(m),n)
+  m <- runif(NROW(m))/(100*NROW(m)) ##Weak Synapses
+  ## Likely Stronger Subset
+  #m[idx] <- 1#/length(m) #runif(n)/(10*length(m)) #1/NROW(m)
+  #print(length(m))
+  return (m)
+}
+
+
+## Initialiaze the random Weight vector of an L1 (KC) neuron  
+init_sparse_W <- function(m,p){
+  # Draw random Number N of Sampled Inputs From Binomial
   n <- rbinom(1,length(m),p)
   ## Set N random synapses as inputs to KC
   idx <- sample(1:length(m),n)
@@ -23,6 +37,7 @@ init_random_W <- function(m,p){
   #print(length(m))
   return (m)
 }
+
 
 ## Sigmoid//logistic Transfer Function
 N_transfer <- function(activation)
@@ -317,19 +332,24 @@ N_SYN_per_KC <- n_top_px/20 ## Number of pic Features each KC neuron Codes for
 #KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 v_Layer_N <- c(n_top_px, N_KC,500, 2)
 Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
-INPUT_SPARSENESS = 0.50
+INPUT_SPARSENESS = 0.25
 
 mat_W <<- list() # List Of Weight Matrices
+
 ## Make Sparse Random Synaptic Weight matrix Selecting Inputs for each KC
 for (k in 1:N_Layers)
 {
   mat_W[[k]] <- matrix(0,ncol=v_Layer_N[k],nrow=v_Layer_N[k+1])
   ## Init Random
-  mat_W[[k]] <- t(apply(mat_W[[k]],1,init_random_W,N_SYN_per_KC/n_top_px)) ##
+  if (k==1)
+    mat_W[[k]] <- t(apply(mat_W[[k]],1,init_sparse_W,N_SYN_per_KC/n_top_px)) ##
+  else
+    mat_W[[k]] <- t(apply(mat_W[[k]],1,init_random_W,N_SYN_per_KC/n_top_px)) ##
+  
   Layer_Bias[[k]] <- matrix(1,ncol=1,nrow=v_Layer_N[k+1] )  #rep(1,) ## Initialiaze Neural Biases
 }
 
-hist(mat_W[[3]])
+#hist(mat_W[[3]])
 hist(colSums(mat_W[[1]]),main="Number of inputs per KC")
 
 ##Layer 2 (Output Perceptron)
@@ -348,20 +368,23 @@ img_list_test_fish = cbind(files=list.files(path=sPathTestingSamplesFish,pattern
 img_list_train_nonfish =   cbind(files=list.files(path=sPathTrainingNonSamples,pattern="*pgm",full.names = T),F=0,NF=1)
 img_list_test_nonfish =  cbind(files=list.files(path=sPathTestingSamplesNonFish,pattern="*pgm",full.names = T),F=0,NF=1)
 
-img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_test_nonfish,stringsAsFactors = FALSE)
-
+img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_test_nonfish,stringsAsFactors = FALSE) #
+#img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_train_nonfish,stringsAsFactors = FALSE)
 #img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T) Samples ##
 
 
-img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_test_nonfish[1:NROW(img_list_test_fish),],stringsAsFactors = FALSE)
+img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_test_nonfish[1:NROW(img_list_test_fish),],stringsAsFactors = FALSE)
+#img_list_all <- rbind.data.frame(img_list_train_fish,stringsAsFactors = FALSE)
 
-batchSize = 5 # Number of Training IMages for Each Leanring Episode (which will define error graident )
-Nbatches = 1
-trainingN = 5 ##Training Cycles For Each Batch
+#img_list_all <- 
+
+batchSize = 15 # Number of Training IMages for Each Leanring Episode (which will define error graident )
+Nbatches = 550
+trainingN = 10 ##Training Cycles For Each Batch
 
 ## TODO : Move this in Funct - Use One MAtrix For Net -Matrix Of Biases
 mat_B <- list()
-mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=(batchSize),nrow=length(Layer_Bias[[1]]))
+mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=(batchSize),nrow=length(Layer_Bias[[1]]) )
 mat_B[[2]] <- matrix(Layer_Bias[[2]],ncol=(batchSize),nrow=length(Layer_Bias[[2]]) )
 mat_B[[3]] <- matrix(Layer_Bias[[3]],ncol=(batchSize),nrow=length(Layer_Bias[[3]]) )
 
@@ -375,7 +398,7 @@ rIdx = 1
 for (b in 1:Nbatches)
 {
   ##Make Matrix -For All net inputs
-  img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
+  img_list_suffled <- img_list_train[sample(1:nrow(img_list_train)),]
   ##Select Subset Batch
   img_list_suffled <- head(img_list_suffled,batchSize)
   
@@ -389,12 +412,12 @@ for (b in 1:Nbatches)
   for (i in 1:trainingN)
   {  
     
-    dLearningRate    <- 0.0001
+    dLearningRate    <- 0.000001
     
     # TRAIN On Fish 
-    dnetout <- net_proc_images_batch(mat_X,mat_W,mat_B,mat_Y,dLearningRate )
+    dnetout <- net_proc_images_batch(mat_X, mat_W, mat_B, mat_Y, dLearningRate )
     mat_W   <<-dnetout$W
-    mat_B <<- dnetout$B
+    mat_B   <<- dnetout$B
 
         
     vTrainingError[rIdx] = dnetout$MSQError  #plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
@@ -406,26 +429,34 @@ for (b in 1:Nbatches)
 
 } ## Different Batch Suffles  
 
+
+
+
 plot(vTrainingError) #ylim=c(0,1)
+
+
+
 
 
 ### Calcl Final Performance 
 
 ##Select Subset Batch
-img_list_suffled <- img_list_all[sample(1:nrow(img_list_all)),]
+img_list_suffled <- img_list_test_nonfish # img_list_all[sample(1:nrow(img_list_all)),]
 mat_X <- makeInputMatrix(img_list_suffled,mat_W)
 label_list <-cbind.data.frame(F=(img_list_suffled[,2]),NF=(img_list_suffled[,3]) )##Target output/labels
 mat_Y <- t(apply(as.matrix(label_list),2,strtoi))
 
 ## TODO : Move this in Funct - Use One MAtrix For Net -Matrix Of Biases
 mat_B <- list()
-mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[1]]))
+mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[1]]) )
 mat_B[[2]] <- matrix(Layer_Bias[[2]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[2]]) )
+mat_B[[3]] <- matrix(Layer_Bias[[3]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[3]]) )
 
 
 dLearningRate    <- 0.0
 # TRAIN On Fish 
 dnetout <- net_proc_images_batch(mat_X,mat_W,mat_B,mat_Y,dLearningRate )
+            
 message("Final MSQERR:",dnetout$MSQError)
 
   
