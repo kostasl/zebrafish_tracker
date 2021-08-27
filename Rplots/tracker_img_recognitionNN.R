@@ -12,12 +12,12 @@ library("yaml")
 ## TODO GIGURE OUT INIT That Works
 
 ## Initialiaze the random Weight vector of an L1 (KC) neuron  
-init_random_W <- function(m,p){
+init_random_W <- function(m, p){
   # Draw random Number N of Sampled Inputs From Binomial
   #n <- rbinom(1,length(m),p)
   ## Set N random synapses as inputs to KC
   #idx <- sample(1:length(m),n)
-  m <- runif(NROW(m))/(100*NROW(m)) ##Weak Synapses
+  m <- rnorm(NROW(m),0,sd=0.5) #runif(NROW(m))/(10*NROW(m)) ##Weak Synapses
   ## Likely Stronger Subset
   #m[idx] <- 1#/length(m) #runif(n)/(10*length(m)) #1/NROW(m)
   #print(length(m))
@@ -33,7 +33,7 @@ init_sparse_W <- function(m,p){
   idx <- sample(1:length(m),n)
   #m <- runif(NROW(m))/(1000000*NROW(m)) ##Weak Synapses
   ## Likely Stronger Subset
-  m[idx] <- 1/length(m) #runif(n)/(10*length(m)) #1/NROW(m)
+  m[idx] <- 1#/length(m) #runif(n)/(10*length(m)) #1/NROW(m)
   #print(length(m))
   return (m)
 }
@@ -215,7 +215,7 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
   L_delta <- list()  ## Delta is the "cost attributable to (the value of) that node". 
   L2_out <- list()
   
-  fileidx <- 0
+  
   outError = 0 #'Mean Sq Error Of File Batch'
 
   
@@ -226,6 +226,7 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
     ##Target_output <- mat_Y[fileidx,] 
      
     ## Forward Propagation ##
+    ##mat_X[1,] = 1 ## Add COnst Input so W_i operates as a Bias IxW 
    ##  matrix of output Col vectors correspond to output
     for (l in 1:(N_Layers+1) )
     {
@@ -237,6 +238,7 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
         
       }else
       {
+        L_X[[l-1]][1,] = 1 ## Add COnst Input so W_i operates as a Bias IxW
         L_A[[l]] <- N_activation(L_X[[l-1]], inmat_W[[l-1]], inmat_B[[l-1]] )
         L_X[[l]] <- N_transfer( L_A[[l]])
       }
@@ -263,6 +265,8 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
       inmat_W[[l]] <- inmat_W[[l]] -  dW ##length(img_list)
       ## Error Non-Conform
       #inmat_B[[l]] <- inmat_B[[l]] - learningRate*(L_delta[[l]])  
+      ##if (l==1)
+      ##  hist(dW)
     }
     
     #hist(Layer_Bias[[1]])
@@ -296,8 +300,6 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
     MSQError =  sum(((mat_Y) - L_X[[N_Layers+1]] )^2)/ ncol(mat_X)
     
     
-    #message(fileidx,". MSQERR:",MSQError,"  ", L2_out[[fileidx]]$L2_F, "-", L2_out[[fileidx]]$L2_NF, " ERR: ", L2_out[[fileidx]]$Err ," ",in_img)
-    message(fileidx,". MSQERR:",MSQError,"  ")
     
     
     ##message("Recognition Output for Img ",in_img," is F:",L_X[[3]][1]," non-F:",L_X[[3]][2]," Active KC:",L2_out[[fileidx]]$KC_active/N_KC )
@@ -324,13 +326,16 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
 
 
 img_dim <- c(38,28)
-N_Layers <- 3
+N_Layers <- 2
 
 n_top_px <- img_dim[2]*img_dim[1]
 N_KC = n_top_px*10 ## Number of Kenyon Cells (Input layer High Dim Coding)
-N_SYN_per_KC <- n_top_px/20 ## Number of pic Features each KC neuron Codes for
+N_SYN_per_KC <- 10# n_top_px/500 ## Number of pic Features each KC neuron Codes for
 #KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
-v_Layer_N <- c(n_top_px, N_KC,500, 2)
+v_Layer_N <- c(n_top_px, N_KC, 2)
+v_Layer_N3 <- c(n_top_px, N_KC,100, 2)
+
+#v_Layer_CON <- c(N_SYN_per_KC/n_top_px,)
 Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
 INPUT_SPARSENESS = 0.25
 
@@ -344,7 +349,7 @@ for (k in 1:N_Layers)
   if (k==1)
     mat_W[[k]] <- t(apply(mat_W[[k]],1,init_sparse_W,N_SYN_per_KC/n_top_px)) ##
   else
-    mat_W[[k]] <- t(apply(mat_W[[k]],1,init_random_W,N_SYN_per_KC/n_top_px)) ##
+    mat_W[[k]] <- t(apply(mat_W[[k]],1,init_random_W,0)) ##
   
   Layer_Bias[[k]] <- matrix(1,ncol=1,nrow=v_Layer_N[k+1] )  #rep(1,) ## Initialiaze Neural Biases
 }
@@ -368,25 +373,30 @@ img_list_test_fish = cbind(files=list.files(path=sPathTestingSamplesFish,pattern
 img_list_train_nonfish =   cbind(files=list.files(path=sPathTrainingNonSamples,pattern="*pgm",full.names = T),F=0,NF=1)
 img_list_test_nonfish =  cbind(files=list.files(path=sPathTestingSamplesNonFish,pattern="*pgm",full.names = T),F=0,NF=1)
 
+## A Small Sample set for Testing the Algorithm Discrimiation between X and 1 
+img_list_train_ones <-  cbind(files=list.files(path="../img/trainset/ones/",pattern="*pgm",full.names = T),F=1,NF=0)
+img_list_train_X <-  cbind(files=list.files(path="../img/trainset/X/",pattern="*pgm",full.names = T),F=0,NF=1)
+
+
 img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_test_nonfish,stringsAsFactors = FALSE) #
 #img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_train_nonfish,stringsAsFactors = FALSE)
 #img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T) Samples ##
 
 
 img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_test_nonfish[1:NROW(img_list_test_fish),],stringsAsFactors = FALSE)
+#img_list_train <- rbind.data.frame(img_list_train_ones,img_list_train_X)
 #img_list_all <- rbind.data.frame(img_list_train_fish,stringsAsFactors = FALSE)
 
 #img_list_all <- 
 
-batchSize = 15 # Number of Training IMages for Each Leanring Episode (which will define error graident )
-Nbatches = 550
-trainingN = 10 ##Training Cycles For Each Batch
+batchSize = 8 # Number of Training IMages for Each Leanring Episode (which will define error graident )
+Nbatches = 250
+trainingN = 5 ##Training Cycles For Each Batch
 
 ## TODO : Move this in Funct - Use One MAtrix For Net -Matrix Of Biases
 mat_B <- list()
-mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=(batchSize),nrow=length(Layer_Bias[[1]]) )
-mat_B[[2]] <- matrix(Layer_Bias[[2]],ncol=(batchSize),nrow=length(Layer_Bias[[2]]) )
-mat_B[[3]] <- matrix(Layer_Bias[[3]],ncol=(batchSize),nrow=length(Layer_Bias[[3]]) )
+for (k in 1:N_Layers)
+  mat_B[[k]] <- matrix(Layer_Bias[[k]],ncol=(batchSize),nrow=length(Layer_Bias[[k]]) )
 
 
 lFitError <- list()
@@ -395,6 +405,7 @@ dfitRecord <- data.frame()
 vTrainingError <- vector()
 ## Subset INput LIst Into Batches
 rIdx = 1
+
 for (b in 1:Nbatches)
 {
   ##Make Matrix -For All net inputs
@@ -406,19 +417,21 @@ for (b in 1:Nbatches)
   
   label_list <-cbind.data.frame(F=(img_list_suffled[,2]),NF=(img_list_suffled[,3]) )##Target output/labels
   mat_Y <- t(apply(as.matrix(label_list),2,strtoi))  
-  
- 
+
   
   for (i in 1:trainingN)
   {  
     
-    dLearningRate    <- 0.000001
+    dLearningRate    <- 0.0001
     
     # TRAIN On Fish 
     dnetout <- net_proc_images_batch(mat_X, mat_W, mat_B, mat_Y, dLearningRate )
-    mat_W   <<-dnetout$W
+    mat_W   <<- dnetout$W
     mat_B   <<- dnetout$B
 
+    #message(fileidx,". MSQERR:",MSQError,"  ", L2_out[[fileidx]]$L2_F, "-", L2_out[[fileidx]]$L2_NF, " ERR: ", L2_out[[fileidx]]$Err ," ",in_img)
+    message(rIdx,". MSQERR:",dnetout$MSQError,"  ")
+    
         
     vTrainingError[rIdx] = dnetout$MSQError  #plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
     rIdx = rIdx +1
@@ -432,7 +445,7 @@ for (b in 1:Nbatches)
 
 
 
-plot(vTrainingError) #ylim=c(0,1)
+plot(c) #ylim=c(0,1)
 
 
 
@@ -441,16 +454,16 @@ plot(vTrainingError) #ylim=c(0,1)
 ### Calcl Final Performance 
 
 ##Select Subset Batch
-img_list_suffled <- img_list_test_nonfish # img_list_all[sample(1:nrow(img_list_all)),]
+img_list_suffled <- img_list_train #img_list_test_nonfish # img_list_all[sample(1:nrow(img_list_all)),]
 mat_X <- makeInputMatrix(img_list_suffled,mat_W)
 label_list <-cbind.data.frame(F=(img_list_suffled[,2]),NF=(img_list_suffled[,3]) )##Target output/labels
 mat_Y <- t(apply(as.matrix(label_list),2,strtoi))
 
 ## TODO : Move this in Funct - Use One MAtrix For Net -Matrix Of Biases
 mat_B <- list()
-mat_B[[1]] <- matrix(Layer_Bias[[1]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[1]]) )
-mat_B[[2]] <- matrix(Layer_Bias[[2]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[2]]) )
-mat_B[[3]] <- matrix(Layer_Bias[[3]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[3]]) )
+for (k in 1:N_Layers)
+  mat_B[[k]] <- matrix(Layer_Bias[[k]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[k]]) )
+
 
 
 dLearningRate    <- 0.0
@@ -460,7 +473,7 @@ dnetout <- net_proc_images_batch(mat_X,mat_W,mat_B,mat_Y,dLearningRate )
 message("Final MSQERR:",dnetout$MSQError)
 
   
-hist(dnetout$Target - dnetout$output)
+hist(dnetout$Target - N_transfer( dnetout$output) )
 
 hist(dnetout$W[[1]],main="After")
 
