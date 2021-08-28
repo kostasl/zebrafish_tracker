@@ -327,8 +327,8 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     fL1_activity_thres = gTrackerState.fishnet_L1_threshold;
 
     // Input Is converted to Row Vector So we can do Matrix Multiplation
-    assert(imgRegion_bin.cols*imgRegion_bin.rows == mW_L1.rows);
-    cv::Mat vIn = imgRegion_bin.reshape(1,mW_L1.rows).t();  //Col Vector
+    assert(imgRegion_bin.cols*imgRegion_bin.rows == mW_L1.cols);
+    cv::Mat vIn = imgRegion_bin.reshape(1,mW_L1.cols);  //Col Vector
     vIn.convertTo(vIn, CV_32FC1);
 
 
@@ -346,10 +346,10 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     /// \TODO Matrices are not read correctly beyond 1st column mW_L1
     // operation multiplies matrix A of size [a x b] with matrix B of size [b x c]
     //to the Layer 1 output produce matrix C of size [a x c]
-    mL1_out = vIn*mW_L1 + mB_L1;
+    mL1_out = mW_L1*vIn; //+ mB_L1;
 
 
-    cv::imshow("L1 out ",mL1_out.reshape(1,38*5));
+    //cv::imshow("L1 out ",mL1_out.reshape(1,38*5));
 
 
     //Apply Neural Transfer Function
@@ -366,10 +366,10 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     // Display KC Thresholded Output
     cv::Mat KC_show = mL1_out.reshape(1,38*5);
     //KC_show.convertTo(KC_show,imgRegion_bin.type());
-    cv::imshow("L1 out TF",KC_show);
+    //cv::imshow("L1 out TF",KC_show);
 
     //Calc Layer Activation
-    mL2_out =  mL1_out*mW_L2 + mB_L2;
+    mL2_out =  mW_L2*mL1_out + mB_L2;
 
     //Apply Neural Transfer Function
     for (int i=0; i<mL2_out.cols;i++)

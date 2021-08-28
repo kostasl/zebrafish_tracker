@@ -52,6 +52,8 @@ N_transfer_D <- function(activation)
   return (N_transfer(activation)*(1-N_transfer(activation)) )
 }
 
+## Neural Actvation for a layer with Weitgh Matrix W and Input matrix of col vectors -
+#  vector of Biases B - This is to a matrix to operate overall all input activations over Inputs in order 
 N_activation <- function(X,W,B)
 {
   ## If more Than Half input units (based on Avg inputs) is active - then activate KC
@@ -59,8 +61,9 @@ N_activation <- function(X,W,B)
   #  if ( sum(X) > KC_THRES )
   #    return (1)
   # else
+  mat_B <- matrix(B,ncol=ncol(X),nrow=length(B) )
   ## Bias is just another W attached to a fixed Input 1
-  return (W%*%X + B)
+  return (W%*%X + mat_B)
 }
 
 ## Copies A Smaller Matrix To the Middle of a larger one - (Pasting Image on larger canvas)
@@ -207,7 +210,7 @@ matrixToYamlForOpenCV <- function(mat)
 ## Process 2 Layer Network - Return Last Node Output produced for each input image
 ## Note : Input Layer Is Simplified - No activation function needed or Bias - Input image intentities are taken as activations
 ## Target_output is vector of desired output for each output Neuron these I chose to be L2_1=1 (Fish) L2_2=1 (Non Fish)
-net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0)  
+net_proc_images_batch <- function(mat_X,inmat_W,inLayer_Bias,mat_Y,learningRate = 0.0)  
 {
   
   L_X     <- list() ## Output Of Layer k
@@ -215,11 +218,8 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
   L_delta <- list()  ## Delta is the "cost attributable to (the value of) that node". 
   L2_out <- list()
   
-  
   outError = 0 #'Mean Sq Error Of File Batch'
 
-  
-  
     ##Input Layer Is Simplified - No activation function needed or Bias - Input image intentities are taken as activations
     ## Due to R hell with numbers ecoming Factors I need to do this tricl
     
@@ -238,8 +238,8 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
         
       }else
       {
-        L_X[[l-1]][1,] = 1 ## Add COnst Input so W_i operates as a Bias IxW
-        L_A[[l]] <- N_activation(L_X[[l-1]], inmat_W[[l-1]], inmat_B[[l-1]] )
+        #L_X[[l-1]][1,] = 1 ##No Need - Removed for TEST/ Add COnst Input so W_i operates as a Bias IxW
+        L_A[[l]] <- N_activation(L_X[[l-1]], inmat_W[[l-1]], inLayer_Bias[[l-1]] )
         L_X[[l]] <- N_transfer( L_A[[l]])
       }
     }
@@ -263,8 +263,9 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
       dW <- learningRate*dE 
       ##Add average change over batch samples
       inmat_W[[l]] <- inmat_W[[l]] -  dW ##length(img_list)
+
       ## Error Non-Conform
-      #inmat_B[[l]] <- inmat_B[[l]] - learningRate*(L_delta[[l]])  
+      inLayer_Bias[[l]] <- inLayer_Bias[[l]] - rowSums( learningRate*(L_delta[[l]]) )  
       ##if (l==1)
       ##  hist(dW)
     }
@@ -293,7 +294,7 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
         
       }else
       {
-        L_A[[l]] <- N_activation(L_X[[l-1]], inmat_W[[l-1]], inmat_B[[l-1]] )
+        L_A[[l]] <- N_activation(L_X[[l-1]], inmat_W[[l-1]], inLayer_Bias[[l-1]] )
         L_X[[l]] <- N_transfer( L_A[[l]])
       }
     }
@@ -312,7 +313,7 @@ net_proc_images_batch <- function(mat_X,inmat_W,inmat_B,mat_Y,learningRate = 0.0
   
   lout <- list(X=mat_X,
                W=inmat_W,
-               B=inmat_B,
+               B=inLayer_Bias,
                output= L_A[[N_Layers+1]],
                Target=mat_Y,
                #out=data.frame( do.call(rbind,L2_out ) ),
@@ -383,7 +384,9 @@ img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list
 #img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T) Samples ##
 
 
-img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_test_nonfish[1:NROW(img_list_test_fish),],stringsAsFactors = FALSE)
+img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,
+                                   img_list_test_nonfish,img_list_train_nonfish,
+                                   stringsAsFactors = FALSE)
 #img_list_train <- rbind.data.frame(img_list_train_ones,img_list_train_X)
 #img_list_all <- rbind.data.frame(img_list_train_fish,stringsAsFactors = FALSE)
 
@@ -393,10 +396,6 @@ batchSize = 8 # Number of Training IMages for Each Leanring Episode (which will 
 Nbatches = 250
 trainingN = 5 ##Training Cycles For Each Batch
 
-## TODO : Move this in Funct - Use One MAtrix For Net -Matrix Of Biases
-mat_B <- list()
-for (k in 1:N_Layers)
-  mat_B[[k]] <- matrix(Layer_Bias[[k]],ncol=(batchSize),nrow=length(Layer_Bias[[k]]) )
 
 
 lFitError <- list()
@@ -425,7 +424,7 @@ for (b in 1:Nbatches)
     dLearningRate    <- 0.0001
     
     # TRAIN On Fish 
-    dnetout <- net_proc_images_batch(mat_X, mat_W, mat_B, mat_Y, dLearningRate )
+    dnetout <- net_proc_images_batch(mat_X, mat_W, Layer_Bias, mat_Y, dLearningRate )
     mat_W   <<- dnetout$W
     mat_B   <<- dnetout$B
 
@@ -458,17 +457,16 @@ img_list_suffled <- img_list_train #img_list_test_nonfish # img_list_all[sample(
 mat_X <- makeInputMatrix(img_list_suffled,mat_W)
 label_list <-cbind.data.frame(F=(img_list_suffled[,2]),NF=(img_list_suffled[,3]) )##Target output/labels
 mat_Y <- t(apply(as.matrix(label_list),2,strtoi))
-
-## TODO : Move this in Funct - Use One MAtrix For Net -Matrix Of Biases
-mat_B <- list()
-for (k in 1:N_Layers)
-  mat_B[[k]] <- matrix(Layer_Bias[[k]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[k]]) )
-
+# 
+# ## TODO : Move this in Funct - Use One MAtrix For Net -Matrix Of Biases
+# mat_B <- list()
+# for (k in 1:N_Layers)
+#   mat_B[[k]] <- matrix(Layer_Bias[[k]],ncol=ncol(mat_X),nrow=length(Layer_Bias[[k]]) )
 
 
 dLearningRate    <- 0.0
 # TRAIN On Fish 
-dnetout <- net_proc_images_batch(mat_X,mat_W,mat_B,mat_Y,dLearningRate )
+dnetout <- net_proc_images_batch(mat_X, mat_W, Layer_Bias, mat_Y, dLearningRate )
             
 message("Final MSQERR:",dnetout$MSQError)
 
@@ -498,20 +496,20 @@ attr(fishNet$LB2, "tag") <- "!!opencv-matrix"
 #fishNet <- list(LW1=Layer_Bias[[2]]
 #)
 ## EXPORT TO YAML FOR OPENCV - Custom/hacked exporter routine specific to OPENCV
-#  filename <- "fishNet.yml"
-#  con <- file(filename, "w")
-#  message("Exporting to YAML-Wait for it , this may take a while...")
-#  write("%YAML:1.0",con) ##Header Is necessary For OPENCV 
+  filename <- "fishNet.yml"
+  con <- file(filename, "w")
+  message("Exporting to YAML-Wait for it , this may take a while...")
+  write("%YAML:1.0",con) ##Header Is necessary For OPENCV 
   ## Indentation Needs to be 3
-#  str_yaml<- noquote(as.yaml(fishNet, handlers=list(matrix=matrixToYamlForOpenCV), line.sep="\n",indent=3,unicode=F))
+  str_yaml<- noquote(as.yaml(fishNet, handlers=list(matrix=matrixToYamlForOpenCV), line.sep="\n",indent=3,unicode=F))
   #  CLEAN UP String FRom Escape Chars
   ## the Var Type tag !!opencv-matrix needs to be on same line as vairable Name - For OpenCV file store - FIX
-#  str_yaml <- gsub("\n  !!opencv-matrix","!!opencv-matrix",str_yaml,fixed = T)
-#  str_yaml <- gsub("\\n","\n",str_yaml,fixed = T)## Remove Escaped NewLines
-#  str_yaml <- gsub("\"","",str_yaml,fixed = T)#Remove Quates
+  str_yaml <- gsub("\n  !!opencv-matrix","!!opencv-matrix",str_yaml,fixed = T)
+  str_yaml <- gsub("\\n","\n",str_yaml,fixed = T)## Remove Escaped NewLines
+  str_yaml <- gsub("\"","",str_yaml,fixed = T)#Remove Quates
 
-#  write(noquote(str_yaml),con,append=TRUE) ##Header Is necessary For OPENCV 
-#  close(con)
+  write(noquote(str_yaml),con,append=TRUE) ##Header Is necessary For OPENCV 
+  close(con)
 
 
 
