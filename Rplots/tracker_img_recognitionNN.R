@@ -392,7 +392,7 @@ img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,
 
 #img_list_all <- 
 
-batchSize = 8 # Number of Training IMages for Each Leanring Episode (which will define error graident )
+batchSize = 10 # Number of Training IMages for Each Leanring Episode (which will define error graident )
 Nbatches = 250
 trainingN = 5 ##Training Cycles For Each Batch
 

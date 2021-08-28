@@ -172,11 +172,11 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
   /// SliDing Window Scanning
   int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2-5;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
   int iSlidePx_H_lim = iSlidePx_H_begin+10;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
-    int iSlidePx_H_step = 3;
+    int iSlidePx_H_step = 6;
 
   int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-5); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
   int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin +10); //(int)(sztemplate.height/2)
-  int iSlidePx_V_step = 3;
+  int iSlidePx_V_step = 6;
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
   // Do netDetect using a Sliding window
@@ -372,14 +372,14 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     mL2_out =  mW_L2*mL1_out + mB_L2;
 
     //Apply Neural Transfer Function
-    for (int i=0; i<mL2_out.cols;i++)
-        mL2_out.at<float>(0,i) = netNeuralTF(mL2_out.at<float>(0,i));
+    for (int i=0; i<mL2_out.rows;i++)
+        mL2_out.at<float>(i,0) = netNeuralTF(mL2_out.at<float>(i,0));
 
 
     //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)
     fFishClass = mL2_out.at<float>(0,0);
     // Check 2 row (neuron) output
-    fNonFishClass = mL2_out.at<float>(0,1);
+    fNonFishClass = mL2_out.at<float>(1,0);
 
     //double minL1,maxL1;
     //cv::minMaxLoc(mL1_out,&minL1,&maxL1);
