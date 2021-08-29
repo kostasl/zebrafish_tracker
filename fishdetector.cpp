@@ -93,15 +93,13 @@ cv::Mat fishdetector::getNormTemplateImg(cv::Mat& frame, cv::RotatedRect fishRot
     ///Make Rotation Transformation
     //Need to fix size of Upright/Normed Image
     cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
-    //Cut Down To Template Size
-    imgFishAnterior       = imgFishAnterior_Norm(fishRotAnteriorBox.boundingRect());
 
 
     // Break If FishAnterior Image is too small (Near boundary case)
-    if ((fishBoundingRect.width + fishBoundingRect.x) > imgFishAnterior_Norm.cols)
-        return imgFishAnterior_Norm;
-    if ((fishBoundingRect.height + fishBoundingRect.y) > imgFishAnterior_Norm.rows)
-        return imgFishAnterior_Norm;
+    //if ((fishBoundingRect.width + fishBoundingRect.x) > imgFishAnterior_Norm.cols)
+    //    return imgFishAnterior_Norm;
+    //if ((fishBoundingRect.height + fishBoundingRect.y) > imgFishAnterior_Norm.rows)
+    //    return imgFishAnterior_Norm;
 
 
     //Define Regions and Sizes for extracting Orthonormal Fish
@@ -114,8 +112,8 @@ cv::Mat fishdetector::getNormTemplateImg(cv::Mat& frame, cv::RotatedRect fishRot
     cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate,szTemplateImg);
 
 
-    ////Cut Down To Template Size - Take The sized Template Region at the centre of the rotated image
-    imgFishAnterior_Norm           = imgFishAnterior_Norm(rectFishTemplateBound);
+    ///Cut Down To Template Size - Take The sized Template Region at the centre of the rotated image
+    //imgFishAnterior_Norm           = imgFishAnterior_Norm(rectFishTemplateBound);
 
     return imgFishAnterior_Norm;
 }
@@ -161,12 +159,14 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
            imgBounds.contains(fishRotAnteriorBox.boundingRect().tl())))
             return (-1); //This Fish Is out Of Bounds /
 
+
+   imgFishAnterior_Norm =  getNormTemplateImg(frame,fishRotAnteriorBox);
+   //cv::imshow("Test Tmpl Norm",imgTemplate_Norm);
+
   /// Extract Region and rotate to orient larva body vertically
   // Use the FG Image to extract Head Frame
-  frame(fishRotAnteriorBox.boundingRect()).copyTo(imgFishAnterior);
+  //frame(fishRotAnteriorBox.boundingRect()).copyTo(imgFishAnterior);
 
-
-  /// Make Rotation MAtrix About Centre Of Cropped Image
   cv::Point2f ptRotCenter = fishRotAnteriorBox.center - fishRotAnteriorBox.boundingRect2f().tl();
 
  // cv::Point2f ptRotCenter_rev;
@@ -174,13 +174,13 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 //  getFishBlobCentreAndOrientation(imgFishAnterior,ptRotCenter,fishblob.angle,ptRotCenter_rev,Angle_rev);
 
 
-  cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter, fishblob.angle,1.0); //Rotate Upwards
+  //cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter, fishblob.angle,1.0); //Rotate Upwards
 
   ///Make Rotation Transformation
   //Need to fix size of Upright/Normed Image
-  cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
+  //cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
 
-  // Binarize Through Adaptive Threshold to enhance fish-like pattern // Substract - const val from mean
+  /// Sparse Binarize Through Adaptive Threshold to enhance fish-like pattern // Substract - const val from mean
   // Ideally We want to maintain input sparseness
   double activePixRatio = 1.0;
   int meanAdapt = 0;
@@ -246,7 +246,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           //Check Both Vertical Orientations
           //cv::flip(imgFishAnterior_Norm_tmplcrop, imgFishAnterior_Norm_tmplcrop_vflip, 0);
           /// Score Number of Bin Pix In cropped region so as to push for regions that fully contain the eyes
-          float activePixRatio = (1+cv::sum(imgFishAnterior_Norm_tmplcrop)[0])/(imgFishAnterior_Norm_tmplcrop.cols*imgFishAnterior_Norm_tmplcrop.rows);
+          //float activePixRatio = (1+cv::sum(imgFishAnterior_Norm_tmplcrop)[0])/(imgFishAnterior_Norm_tmplcrop.cols*imgFishAnterior_Norm_tmplcrop.rows);
           ///  Store recognition score in Mask at(row,col) -//
           maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2, i+gTrackerState.gszTemplateImg.width/2) = dscore;//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
           //qDebug() << "(" << i+sztemplate.width/2 << "," <<j+sztemplate.height/2<<") = " << round(sc1*100)/100.0;
@@ -274,7 +274,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     fishblob.pt = ptmax_orig+fishRotAnteriorBox.boundingRect().tl(); //Shift Blob Position To Max Recognition Point
 
     // DEBUG IMG //
-    cv::circle(imgFishAnterior,ptmax_orig,4,CV_RGB(250,200,210),2);
+    //cv::circle(imgFishAnterior,ptmax_orig,4,CV_RGB(250,200,210),2);
     //cv::imshow(string("Fish Region Body ") + regTag,imgFishAnterior);
     // DEBUG IMG //
     cv::circle(imgFishAnterior_Norm,ptmax,4,CV_RGB(250,200,210),2);
@@ -315,50 +315,6 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     maskRegionScore_Norm(rectFishTemplateBound).copyTo(outmaskRegionScore);
 
 
-//    // Add Template detection correction to Fish Like Blobs  //
-//    if (fishblob.response > gTrackerState.fishnet_L2_classifier)
-//    {
-
-//        double maxMatchScore =0; //
-//        cv::Point gptmaxLoc; //point Of Bestr Match
-//        int iLastKnownGoodTemplateRow = 0;
-//        int iLastKnownGoodTemplateCol = 1;//(int)fishblob.angle; //Angle Should Correspond to Col in degrees
-//        // outframeAnterior_Norm
-//        int AngleIdx = templatefindFishInImage(imgFishAnterior_Norm_tmplcrop,gFishTemplateCache, gTrackerState.sztemplateArray_Icon,
-//                                               maxMatchScore, gptmaxLoc,
-//                                               iLastKnownGoodTemplateRow, iLastKnownGoodTemplateCol,
-//                                               true);
-
-//        // Fail This Blob If Template Match Failed
-
-//        if (maxMatchScore < gTrackerState.gTemplateMatchThreshold )
-//            fishblob.response = 0;
-
-//        else{ //Fish FOund Fix Location And Angle
-//            int dAngle = 0;
-
-//            // Angle Too Large Something is wrong - INvalidate the blob
-//            if (AngleIdx >= 60 && AngleIdx <= 300) {
-//                fishblob.response = 0;
-//                qDebug() << QString::fromStdString(regTag) << " *Reject* Angle Correction=" << dAngle  << " TmplScore:"<<maxMatchScore;
-//            }
-//            else //Apply Correction
-//            {
-//                if (AngleIdx < 60)
-//                    fishblob.angle += dAngle = AngleIdx; //Correct ClockWise
-//                if (AngleIdx > 300)
-//                    fishblob.angle += dAngle = AngleIdx-360; //Correct AntiClockWise
-
-//                qDebug() << QString::fromStdString(regTag) << " Angle Correction=" << dAngle  << " TmplScore:"<<maxMatchScore;
-//            }
-
-//            cv::circle(imgFishAnterior_Norm_tmplcrop,gptmaxLoc,2,CV_RGB(250,250,250),3);
-
-//            //cv::threshold(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,gTrackerState.g_Segthresh,1,cv::THRESH_BINARY);
-//            if (!imgFishAnterior_Norm.empty())
-//                cv::imshow("FIshBody Norm Bin",imgFishAnterior_Norm_tmplcrop);
-//        }
-//      }
 
   return (maxL1);
 

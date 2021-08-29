@@ -23,7 +23,7 @@ class fishdetector
 public:
     fishdetector();
     float netNeuralTF(float a);
-    cv::Mat getNormTemplateImg(cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox);
+    cv::Mat getNormedBoundedImg(cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox);
     float netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
     float scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,std::string regTag);
     float fL1_activity_thres = 10; //# Number of INput that need to be active for KC to fire/Activate
