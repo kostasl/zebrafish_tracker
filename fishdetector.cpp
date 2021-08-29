@@ -249,7 +249,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
   int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-5); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
   int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin +10); //(int)(sztemplate.height/2)
-  int iSlidePx_V_step = 6;
+  int iSlidePx_V_step = 3;
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
   // Do netDetect using a Sliding window
@@ -272,9 +272,11 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           /// Score Number of Bin Pix In cropped region so as to push for regions that fully contain the eyes
           //float activePixRatio = (1+cv::sum(imgFishAnterior_Norm_tmplcrop)[0])/(imgFishAnterior_Norm_tmplcrop.cols*imgFishAnterior_Norm_tmplcrop.rows);
           ///  Store recognition score in Mask at(row,col) -//
-          maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2, i+gTrackerState.gszTemplateImg.width/2) = dscore;//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
+          maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2,
+                                         i+gTrackerState.gszTemplateImg.width/2) = dscore;//max(0.0f,dscore);//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
           //qDebug() << "(" << i+sztemplate.width/2 << "," <<j+sztemplate.height/2<<") = " << round(sc1*100)/100.0;
-
+            //qDebug() << maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2,
+            //                                           i+gTrackerState.gszTemplateImg.width/2);
         }//For Each Vertical
     }//For Each Horizontal
 
@@ -283,7 +285,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     /// Find Max Match Position In Non-Norm pic (original orientation)
     double minL1,maxL1;
     cv::Point ptmin,ptmax;
-    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(9,9),15,15);
+    //cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(9,9),15,15);
     cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
     // Rotate Max Point Back to Original Orientation
     //cv::Mat MrotInv = cv::getRotationMatrix2D( ptRotCenter, -fishblob.angle,1.0); //Rotate Upwards
