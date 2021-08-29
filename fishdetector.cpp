@@ -72,6 +72,55 @@ fishdetector::fishdetector()
     mB_L2.convertTo(mB_L2, CV_32FC1);
 }
 
+/// \brief Utility function takes img contained in rotated rect and returns the contained image region
+/// rotated up-right (orthonormal ) - Used to obtain templates to train classifier
+cv::Mat fishdetector::getNormTemplateImg(cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox)
+{
+    cv::Mat imgFishAnterior,imgFishAnterior_Norm;
+    /// Size Of Norm Head Image
+    cv::Size szFishAnteriorNorm = fishRotAnteriorBox.boundingRect().size();//
+    cv::Rect fishBoundingRect = fishRotAnteriorBox.boundingRect();
+    /// Extract Region and rotate to orient template region vertically
+    // Use the FG Image to extract Head Frame
+    frame(fishRotAnteriorBox.boundingRect()).copyTo(imgFishAnterior);
+
+
+    /// Make Rotation MAtrix About Centre Of Cropped Image
+    cv::Point2f ptRotCenter = fishRotAnteriorBox.center - fishRotAnteriorBox.boundingRect2f().tl();
+
+    cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter, fishRotAnteriorBox.angle,1.0); //Rotate Upwards
+
+    ///Make Rotation Transformation
+    //Need to fix size of Upright/Normed Image
+    cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
+    //Cut Down To Template Size
+    imgFishAnterior       = imgFishAnterior_Norm(fishRotAnteriorBox.boundingRect());
+
+
+    // Break If FishAnterior Image is too small (Near boundary case)
+    if ((fishBoundingRect.width + fishBoundingRect.x) > imgFishAnterior_Norm.cols)
+        return imgFishAnterior_Norm;
+    if ((fishBoundingRect.height + fishBoundingRect.y) > imgFishAnterior_Norm.rows)
+        return imgFishAnterior_Norm;
+
+
+    //Define Regions and Sizes for extracting Orthonormal Fish
+    //Top Left Corner of templateSized Rect relative to Rectangle Centered in Normed Img
+    cv::Size szTemplateImg = gTrackerState.gszTemplateImg;
+
+    cv::Point ptTopLeftTemplate(min(szFishAnteriorNorm.width, max(0,szFishAnteriorNorm.width/2-szTemplateImg.width/2)),
+                                min(szFishAnteriorNorm.height, max(0,szFishAnteriorNorm.height/2-szTemplateImg.height/2)) );
+
+    cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate,szTemplateImg);
+
+
+    ////Cut Down To Template Size - Take The sized Template Region at the centre of the rotated image
+    imgFishAnterior_Norm           = imgFishAnterior_Norm(rectFishTemplateBound);
+
+    return imgFishAnterior_Norm;
+}
+
+
 /// \brief Two step classificiation of region : First, it uses Neural
 /// Net to scan region around provided blog and provide a detection score as a mask (returns max score value)
 /// If blob passes the FishNet classification threshold , template matching is the applied to the same region

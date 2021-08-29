@@ -386,6 +386,9 @@
          </property>
         </widget>
         <widget class="QSpinBox" name="spinBoxTemplateThres">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="geometry">
           <rect>
            <x>100</x>
@@ -417,6 +420,9 @@
          </property>
         </widget>
         <widget class="QLabel" name="label_TemplateMatch">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="geometry">
           <rect>
            <x>10</x>
@@ -736,6 +742,9 @@
          </property>
         </widget>
         <widget class="QSpinBox" name="spinBoxFishnetL1thres">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="geometry">
           <rect>
            <x>170</x>
@@ -770,6 +779,9 @@
          </property>
         </widget>
         <widget class="QLabel" name="label_TemplateMatch_2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="geometry">
           <rect>
            <x>10</x>
@@ -826,7 +838,7 @@
           </rect>
          </property>
          <property name="text">
-          <string>L2 Θ</string>
+          <string>Classifier Θ </string>
          </property>
         </widget>
         <widget class="QLabel" name="label_9">
