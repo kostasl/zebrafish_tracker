@@ -2789,9 +2789,6 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
     //For Head Img//
     cv::Mat  imgFishAnterior,imgFishAnterior_Norm,imgFishHead,imgFishHeadProcessed; //imgTmp imgFishHeadEdge
 
-    //Threshold The Match Check Bounds Within Image
-    cv::Rect imgBounds(0,0,fullImgIn.cols,fullImgIn.rows);
-
     //cv::Mat fullImg_colour;
     //fullImgIn.convertTo(fullImg_colour,CV_8UC3);
     //fullImg_colour.copyTo(frameDebugC);
@@ -2909,26 +2906,28 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            tEllipsoids vellLeft;
            tEllipsoids vellRight;
 
-           if (!( //Looks Like a fish is found, now Check Bounds // gmaxVal > gTemplateMatchThreshold &&
-               imgBounds.contains(rectfishAnteriorBound.br()) &&
-                   imgBounds.contains(rectfishAnteriorBound.tl())))
-               continue; //This Fish Is out Of Bounds /
 
-           // Use the FG Image to extract Head Frame
-              maskedfishImg_gray(rectfishAnteriorBound).copyTo(imgFishAnterior);
-//              if (bUseEllipseEdgeFittingMethod)
-//                frameCanny(rectfishAnteriorBound).copyTo(imgFishHeadEdge);
-              //get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
-              ///\note The centre of the Bounding Box could also do
+           imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(maskedfishImg_gray,fishRotAnteriorBox);
+           // Check empty in case of an Error In extraction - due to boundary conditions
+           if (imgFishAnterior_Norm.empty())
+               return;
+
+//           // Use the FG Image to extract Head Frame
+//              maskedfishImg_gray(rectfishAnteriorBound).copyTo(imgFishAnterior);
+////              if (bUseEllipseEdgeFittingMethod)
+////                frameCanny(rectfishAnteriorBound).copyTo(imgFishHeadEdge);
+//              //get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
+//              ///\note The centre of the Bounding Box could also do
 
 
-              ///Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
-              cv::Point2f ptRotCenter = fishRotAnteriorBox.center - (cv::Point2f)rectfishAnteriorBound.tl();
+//              ///Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
+                cv::Point2f ptRotCenter = fishRotAnteriorBox.center - (cv::Point2f)rectfishAnteriorBound.tl();
 
-              Mrot = cv::getRotationMatrix2D( ptRotCenter,bestAngleinDeg,1.0); //Rotate Upwards
-              ///Make Rotation Transformation
-              //Need to fix size of Upright/Normed Image
-              cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
+//              Mrot = cv::getRotationMatrix2D( ptRotCenter,bestAngleinDeg,1.0); //Rotate Upwards
+//              ///Make Rotation Transformation
+//              //Need to fix size of Upright/Normed Image
+//              cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
+
 
 //             /// \todo Replace all this with Norm Image Provided By Fish Model - Cropped during detection
 //              cv::Point2f ptRotCenter_rev;
@@ -2940,15 +2939,14 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 //              //Need to fix size of Upright/Normed Image
 //              cv::warpAffine(imgFishAnterior_Norm,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
 
-
-              // Break If FishAnterior Image is too small (Near boundary case)
-              if ((rectFishTemplateBound.width + rectFishTemplateBound.x) > imgFishAnterior_Norm.cols)
-                  return;
-              if ((rectFishTemplateBound.height + rectFishTemplateBound.y) > imgFishAnterior_Norm.rows)
-                  return;
+                // Break If FishAnterior Image is too small (Near boundary case)
+//                if ((rectFishTemplateBound.width + rectFishTemplateBound.x) > imgFishAnterior_Norm.cols)
+//                    return;
+//                if ((rectFishTemplateBound.height + rectFishTemplateBound.y) > imgFishAnterior_Norm.rows)
+//                    return;
 
               //Cut Down To Template Size
-              imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
+              //imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
               //cv::imshow("ToDetector",imgFishAnterior);
               //float fR = gTrackerState.fishnet.netDetect(imgFishAnterior);
               float fR = fish->zfishBlob.response; //The FishNet Recognition Score
