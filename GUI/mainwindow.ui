@@ -822,7 +822,7 @@
           <enum>QAbstractSpinBox::DefaultStepType</enum>
          </property>
          <property name="value">
-          <number>100</number>
+          <number>200</number>
          </property>
          <property name="displayIntegerBase">
           <number>10</number>

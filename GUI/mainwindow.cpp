@@ -14,6 +14,7 @@
 extern QFile outfishdatafile;
 extern QFile outfooddatafile;
 
+extern zftblobs vfishblobs_pt; //Vector containing fish blobs
 extern fishModels vfishmodels; //Vector containing live fish models
 extern foodModels vfoodmodels; //Vector containing live fish models
 extern pointPairs vMeasureLines; //vector of point pairs/ user defined lines
@@ -936,6 +937,9 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
 
     cv::Point ptMouse((int)ptImg.x(),(int)ptImg.y());
     bool bFoodItemClicked = false;
+    bool bFishModelClicked = false;
+    bool bBlobClicked = false;
+
     preyModel* food = getFoodItemAtLocation(ptMouse);
 
     if (food && mouseEvent->buttons() == Qt::LeftButton)
@@ -960,7 +964,7 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
     // Start Dragging Of Fish Template
     if (!bFoodItemClicked)
     {
-
+        /// Check if Fish Model Clicked - Add Template Dragging
         for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
         {
 
@@ -968,6 +972,7 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
             if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
             {
                 gTrackerState.bDraggingTemplateCentre = true;
+                bFishModelClicked = true;
                 LogEvent("[info] Adjust Template from position ON- Start Dragging");
                 this->statusBar()->showMessage(tr("Adjust fish detection template position"));
                 qDebug() << "Start Dragging Fish Bound from position x: " << ptMouse.x << " y:" << ptMouse.y;
@@ -976,6 +981,17 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
         }
     }
 
+    /// Check If BLOB clicked and mark for making new fish model ///
+    if (!bFishModelClicked && !bFoodItemClicked)
+    {
+        for (zftblobs::iterator it = vfishblobs_pt.begin(); it!=vfishblobs_pt.end(); ++it)
+        { //For Each Blob //
+            zftblob* fishblob = &(*it);
+            fishblob->response = 101.0f;
+            bBlobClicked = true;
+        }
+        qDebug() << "Make Fish Model for Blob at x: " << ptMouse.x << " y:" << ptMouse.y;
+    }
 
 
 

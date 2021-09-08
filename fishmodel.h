@@ -118,7 +118,7 @@ public:
   // Detection Scores //
   bool bNewModel = true;
   double lastTailFitError; ///Holds Error Value Per Spine Point as Measured by Spine Fitting to Contour
-  double templateScore; ///Fishdetection Score - How well the detected model fish looks/matches the convolution of a fish template
+  double matchScore; ///Fishdetection Score - How well the detected model fish looks/matches the convolution of a fish template
 ///
 
   unsigned int nLastUpdateFrame = 0; ///<-Holds the frame Number of the last State Update
@@ -203,7 +203,7 @@ class CompareFishScore {
     public:
     bool operator()(fishModel*& t1, fishModel*& t2) // Returns true if t1 is greater than t2 /Ordering Highest 1st
     {
-       return (t1->templateScore-t1->inactiveFrames/gTrackerState.gfVidfps) < (t2->templateScore - t2->inactiveFrames/gTrackerState.gfVidfps);
+       return (t1->matchScore-t1->inactiveFrames/gTrackerState.gfVidfps) < (t2->matchScore - t2->inactiveFrames/gTrackerState.gfVidfps);
     }
 };
 

@@ -549,7 +549,7 @@ double ptangle_deg(const Point& v1, const Point& v2)
 
 
 /// \brief handles the processing of Fish Item Mask such that larval detection can be improved.
-std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,zftblobs& ptFishblobs)
+std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Mat& fgMask, cv::Mat& outFishMask, zftblobs& ptFishblobs)
 {
     cv::Mat mask_fnetScore,imgFishAnterior_NetNorm; //For FishNet Detect
     cv::Mat fgEdgeMask;
@@ -664,9 +664,12 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         //Move fishNet Detection towards Anterior of Blob
         cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
         kp.pt = ptSearch;
-        /// Classify Keypoint for fish
 
-        float fR =  gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm, mask_fnetScore, QString::number(iHitCount).toStdString());
+        /// Classify Keypoint for fish //
+        float fR =  gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
+                                                          mask_fnetScore, QString::number(iHitCount).toStdString());
+
+
         QString strfRecScore = QString::number(kp.response,'g',3);
         iHitCount++;
         //qDebug() << "(" << kp.pt.x << "," << kp.pt.y << ")" << "R:" << strfRecScore;
@@ -674,6 +677,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         if (kp.response > gTrackerState.fishnet_L2_classifier)
         {
             ptFishblobs.push_back(kp);
+
+
             /// \todo Conditionally add this Contour to output if it matches template.
             vFilteredFishbodycontours.push_back(curve);
 
@@ -717,7 +722,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 /// \todo Cross Check Fish Contour With Model Position
 /// - Tracker Picks Up Wrong contour Although Template Matching Finds the fish!
 /// Note: Should Use MOG Mask for Blob Detect, But . But thresholded IMg For Countour FInding
-void enhanceMasks(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,std::vector<std::vector<cv::Point> >& outfishbodycontours,zftblobs& ptFishblobs)
+void enhanceMasks(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,
+                  std::vector<std::vector<cv::Point> >& outfishbodycontours, zftblobs& ptFishblobs)
 {
 
     cv::Mat frameImg_gray_masked;

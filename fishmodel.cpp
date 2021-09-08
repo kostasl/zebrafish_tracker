@@ -22,11 +22,11 @@ fishModel::fishModel()
         stepUpdate = 1.0; // with fast rate and slow down with updates
         bearingAngle                = 0.0;
         lastTailFitError            = 0.0;
-        templateScore               = 0.0;
+        matchScore               = 0.0;
         nFailedEyeDetectionCount    = 0;
 
         inactiveFrames              = 0;
-        templateScore               = 0;
+        matchScore               = 0;
         coreTriangle.push_back(cv::Point());
         coreTriangle.push_back(cv::Point());
         coreTriangle.push_back(cv::Point());
@@ -81,7 +81,7 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     this->ptRotCentre  = ptTemplateCenter;
     zTrack.centroid    = ptTemplateCenter;
 
-    templateScore           = 0;
+    matchScore           = 0;
     this->resetSpine();
 
 
@@ -658,7 +658,7 @@ bool fishModel::stepPredict(unsigned int nFrame)
 /// \brief fishModel::Update - Called On Every Frame Where Measurements from Blob are available - To Update Model State
 /// The track point is set to the Kalman filtered blob state
 /// \param fblob
-/// \param templatematchScore
+/// \param matchScore - The fish blob's classifier score
 /// \param Angle
 /// \param bcentre
 ///
@@ -710,7 +710,7 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 
 
     this->zTrack.id     = ID;
-    this->templateScore  = templatematchScore;
+    this->matchScore  = templatematchScore;
     this->bearingAngle   = mCorrected.at<float>(4); // Angle;
     this->bearingRads   =  this->bearingAngle*CV_PI/180.0;
     assert(!std::isnan(this->bearingRads));
@@ -976,7 +976,8 @@ bool fishModel::isValid()
 {
     //templateScore >= gTrackerState.gTemplateMatchThreshold // inactiveFrames < 2
 
-    return(this->zfishBlob.response >= gTrackerState.fishnet_L2_classifier && inactiveFrames == 0);
+    return(this->zfishBlob.response >= gTrackerState.fishnet_L2_classifier &&
+           inactiveFrames == 0);
 
 
 }
@@ -1162,7 +1163,7 @@ std::ostream& operator<<(std::ostream& out, const fishModel& h)
         << "\t" << h.zTrack
         << "\t" << h.leftEyeTheta
         << "\t" << h.rightEyeTheta
-        << "\t" << h.templateScore
+        << "\t" << h.matchScore
         << "\t" << h.lastTailFitError
         << "\t" << h.leftEye.fitscore
         << "\t" << h.rightEye.fitscore
@@ -1201,7 +1202,7 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
 
     }
      out << "\t" << h.c_spineSegL;
-     out << "\t" << h.templateScore;
+     out << "\t" << h.matchScore;
      out << "\t" << h.lastTailFitError;
      //if (h.leftEye)
      out << "\t" << h.leftEye.fitscore;

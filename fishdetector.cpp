@@ -221,7 +221,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
         maxIter--;
       }
 
-      cv::imshow(std::string("BIN") + regTag,imgFishAnterior_Norm_bin*255);
+      //cv::imshow(std::string("BIN") + regTag,imgFishAnterior_Norm_bin*255);
 // /// \todo : add Sigmoid activation function
 // // imgFishAnterior_Norm.copyTo(imgFishAnterior_Norm_bin);
 //  // Set to 1 to operate as input to Bias-Weight
@@ -403,8 +403,8 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     mL2_out =  mW_L2*mL1_out + mB_L2;
 
     //Apply Neural Transfer Function
-    for (int i=0; i<mL2_out.rows;i++)
-        mL2_out.at<float>(i,0) = netNeuralTF(mL2_out.at<float>(i,0));
+    //for (int i=0; i<mL2_out.rows;i++)
+    //    mL2_out.at<float>(i,0) = netNeuralTF(mL2_out.at<float>(i,0));
 
 
     //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)

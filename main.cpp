@@ -127,6 +127,7 @@ EyesDetector* pRLEye  = new EyesDetector(-5,15,-10,80);    // RL For eye segment
 
 //The fish ones are then revaluated using simple thresholding to obtain more accurate contours
 fishModels vfishmodels; //Vector containing live fish models
+zftblobs vfishblobs_pt; // Vector of Blob KeyPoints
 foodModels vfoodmodels;
 pointPairs vMeasureLines; //Point pairs defining line distances
 
@@ -429,16 +430,18 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 
 /// \brief
 ///
-void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStaticMask, unsigned int nFrame,cv::Mat& outframe,cv::Mat& outframeHeadEyeDetected,cv::Mat& frameHead)
+void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStaticMask, unsigned int nFrame,
+                  cv::Mat& outframe, cv::Mat& outframeHeadEyeDetected, cv::Mat& frameHead)
 {
     cv::Mat frame_gray,fgMask,fgFishMask,fgFishImgMasked,fgImgFrame;
     cv::Mat fgFoodMask,bgROIMask;
 
 
     //std::vector<cv::KeyPoint>  ptFoodblobs;
-    //std::vector<cv::KeyPoint> ptFishblobs;
     zftblobs ptFoodblobs;
-    zftblobs ptFishblobs;
+
+    vfishblobs_pt.clear();
+    //zftblobs ptFishblobs; //Now global
 
     std::vector<std::vector<cv::Point> > fishbodycontours;
     std::vector<cv::Vec4i> fishbodyhierarchy;
@@ -506,7 +509,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
 
         //Generates separate masks for Fish/Prey and Draws Fish Contourmask
         // Returns Fish Locations/Keypoints
-        enhanceMasks(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours,ptFishblobs);
+        enhanceMasks(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours,vfishblobs_pt);
 
         //Combine Roi Mask Only For The foodMask
         if (!fgFoodMask.empty())
@@ -529,7 +532,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             //processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
 
             // Check Blobs With Template And Update Fish Model
-            UpdateFishModels(fgFishImgMasked, vfishmodels,ptFishblobs, nFrame, outframe);
+            UpdateFishModels(fgFishImgMasked, vfishmodels, vfishblobs_pt, nFrame, outframe);
             if (vfishmodels.size() > 0)
                 /// Isolate Head, Get Eye models, and Get and draw Spine model
                 detectZfishFeatures(window_main, fgFishImgMasked, outframe,
@@ -543,7 +546,7 @@ void processFrame(MainWindow& window_main,const cv::Mat& frame,cv::Mat& bgStatic
             {
                 fishModel* pfish = ft->second;
                 assert(pfish);
-                zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN,gTrackerState.trackFntScale+0.2 );
+                zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN, gTrackerState.trackFntScale+0.2 );
                 ++ft;
             }
         }
@@ -1005,8 +1008,13 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 //Operator for Priority Ordering
 bool operator<(const fishModel& a, const fishModel& b)
 {
-  return a.templateScore > b.templateScore; //Max Heap
+  return a.matchScore > b.matchScore; //Max Heap
 }
+
+
+
+
+
 
 
 ///
@@ -1023,9 +1031,255 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     qfishModels qfishrank;
     cv::Mat imgFishAnterior_NetNorm,mask_fnetScore;
     fishModel* pfish = NULL;
+    zftblob* fishblob = NULL;
+    uint bidx = 0;
+    uint fidx = 0;
 
     fishModels::iterator ft;
-    bool bModelFound =false;
+    bool bModelForBlobFound = false;
+    // Make Matrix TO Hold Blob To Model Distance
+    cv::Mat matBlobModelDistance((int)fishblobs.size(), (int)vfishmodels.size(), CV_32FC1, cv::Scalar(0, 0, 0));
+
+    std::vector<fishModel*> vpfishmodel;
+    zftblobs fishblobs_all = fishblobs;
+
+    /// Call step-Update All fish models to Predict next step
+    for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+    {
+         pfish = ft->second;
+         pfish->stepPredict(nFrame);
+         ///    Write Angle / Show Box   ///
+         //Blobs may Overlap With Previously Found Fish But Match Score Is low - Then The Box Is still Drawn
+         pfish->drawBodyTemplateBounds(frameOut);
+    }
+
+    /// MAKE BLOB-FISHMODEL DISTANCE MAtrix - //
+    fidx = 0;
+    for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+    {
+         pfish = ft->second;
+         assert(pfish);
+         bidx = 0; //Reset Blob idx
+         // Look through Blobs find Respective fish model attached or Create New Fish Model if missing
+        for (zftblobs::iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
+        { //For Each Blob //
+            fishblob = &(*it);
+
+            cv::Point ptbcentre = fishblob->pt; //Start As First Guess - This is updated When TemplMatching
+
+            double dBlobToModelDist = cv::norm(pfish->ptRotCentre - fishblob->pt);
+            //Save Blob-Model Distance - row,col
+            matBlobModelDistance.at<float>(bidx,fidx) = dBlobToModelDist;
+             //minDist = (minDist > dBlobToModelDist)?dBlobToModelDist:minDist; //Update Min Value and Idx
+             //minDist_idx = (minDist > dBlobToModelDist)?bidx:minDist_idx;
+
+             bidx++;
+
+          } // For Each Fish Blob //
+
+        vpfishmodel.push_back(pfish); //Add to pointer list - for retrieval by idx
+        fidx++;
+    } // For Each Fish Model// //////
+
+    bModelForBlobFound = false;
+
+    /// Find the Best Blob-Fish Pairs ///
+    double minL1 = 0.0;
+    double  maxL1 = 100.0;
+    cv::Point ptmin,ptmax;
+    cv::minMaxLoc(matBlobModelDistance,&minL1,&maxL1,&ptmin,&ptmax);
+    //Check if Any Values Exist - And Get Fish-Blob Pair
+
+    // Find Global Min Fish-Blob distances - update Fish Model and remove consumed Blob from list -
+    // loop until distances too large
+    while (maxL1 > 0 &&
+        minL1 < gTrackerState.gDisplacementLimitPerFrame)
+    {
+         //Check if Any Values Exist - And Get Fish-Blob Pair
+        assert(matBlobModelDistance.rows > ptmin.y && matBlobModelDistance.cols > ptmin.x);
+         matBlobModelDistance.at<float>(ptmin.y,ptmin.x) = 1000; //Remove Min Point from Matrix
+
+        pfish   = vpfishmodel[ptmin.x];
+        if (!pfish)
+            continue;
+
+        fishblob = &fishblobs.at(ptmin.y);
+
+        if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 ||
+                minL1 < gTrackerState.gDisplacementLimitPerFrame)
+        {
+            pfish->updateState(fishblob,fishblob->response,
+                               fishblob->angle+gTrackerState.iFishAngleOffset,
+                               fishblob->pt,nFrame,
+                               gTrackerState.gFishTailSpineSegmentLength,0,0);
+
+           pfish->tailTopPoint = gptTail;
+           //bModelForBlobFound = true;
+
+           qfishrank.push(pfish);
+
+           //Remove Consumed/Paired Blob
+           fishblobs.at(ptmin.y).octave = 10;
+
+        }
+
+        // Fetch next Min Distance Pair
+        cv::minMaxLoc(matBlobModelDistance,&minL1,&maxL1,&ptmin,&ptmax);
+    } //While
+    ///
+
+//    // Make New Model On a Remaining / Unpaired blob
+//if (fishblobs.size() > 0)
+//{
+//    fishblob = &fishblobs.at(0);
+//    cv::circle(frameOut,fishblob->pt,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
+
+//    //Make new fish Model
+//   fishModel* fish= new fishModel(*fishblob,fishblob->angle,fishblob->pt);
+//   fish->ID = ++gTrackerState.gi_MaxFishID;
+//   fish->idxTemplateRow = 0;
+//   fish->idxTemplateCol = 0;
+
+//   fish->updateState(fishblob,fishblob->response,fishblob->angle,fishblob->pt,nFrame,
+//                     gTrackerState.gFishTailSpineSegmentLength,0,0);
+
+//   vfishmodels.insert(IDFishModel(fish->ID,fish));
+//   fish->drawBodyTemplateBounds(frameOut);
+//   qfishrank.push(fish); //Add To Priority Queue
+//}
+
+    fishblobs.shrink_to_fit();
+   /// MAKE Models for Unpaired Blobs -
+   /// \brief If no Model fish for blob then still create new model as this could be a fish we have not seen before -
+   //if (!bModelForBlobFound &&
+   //        !gTrackerState.bDraggingTemplateCentre &&
+   //        !gTrackerState.bStoreThisTemplate) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
+    for (zftblobs::iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
+    { //For Each Blob //
+        fishblob = &(*it);
+        //Check Template Match Score
+        cv::Point2f ptSearch = fishblob->pt;
+
+        if (fishblob->octave == 10)
+            continue;
+
+        pwindow_main->LogEvent("No Fish model found for blob");
+        cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
+
+        float maxMatchScore = fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
+        int bestAngle = fishblob->angle;
+        //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
+        if (maxMatchScore >= gTrackerState.fishnet_L2_classifier //|| maxMatchScore > 100.0f
+            )  //User Click Sets Response to > 10
+        {
+            //Make new fish Model
+           fishModel* fish= new fishModel(*fishblob,bestAngle,ptSearch);
+           fish->ID = ++gTrackerState.gi_MaxFishID;
+           fish->idxTemplateRow = 0;
+           fish->idxTemplateCol = 0;
+
+           fish->updateState(fishblob,maxMatchScore,bestAngle,ptSearch,nFrame,
+                             gTrackerState.gFishTailSpineSegmentLength,0,0);
+
+           vfishmodels.insert(IDFishModel(fish->ID,fish));
+           fish->drawBodyTemplateBounds(frameOut);
+           qfishrank.push(fish); //Add To Priority Queue
+
+           std::stringstream strmsg;
+           //strmsg << " New fishmodel: " << fish->ID << " with Template Score :" << fish->matchScore << " fNet:" << fish->zfishBlob.response;
+           //std::clog << nFrame << strmsg.str() << std::endl;
+           pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
+           gTrackerState.dactiveMOGLearningRate = gTrackerState.dLearningRateNominal;
+
+        }else //Need to get rid of that blob as it will cause delays
+        { //quick fix - Draw it on static mask - Or Let MOG learn It
+            gTrackerState.dactiveMOGLearningRate = gTrackerState.dLearningRate/5.0;
+            //gTrackerState.dactiveMOGLearningRate = 2.0*gTrackerState.dactiveMOGLearningRate;
+            pwindow_main->LogEvent("2x BG learn rate ");
+        }
+
+    } // Make Models For Remaining Blobs //
+
+   ///\brief Check priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
+   fishModel* pfishBest = 0;
+   double maxTemplateScore = 0.0;
+   while (pfishBest==0 && qfishrank.size() > 0) //If Not In ROI Then Skip
+   {
+           pfishBest = qfishrank.top(); //Get Pointer To Best Scoring Fish
+           if (!pointIsInROI(pfishBest->ptRotCentre, pfishBest->bodyRotBound.size.width)                     )
+           {
+               qfishrank.pop();
+               pfishBest = 0;
+           }
+  }//Search For Best Model
+  // A fish model has been found / Evaluate
+  if (pfishBest)
+  {
+       //qfishrank.pop();//Remove From Priority Queue Rank
+       maxTemplateScore = pfishBest->matchScore;
+  }
+
+
+//        //Report No Fish
+    if (!bModelForBlobFound && maxTemplateScore < gTrackerState.fishnet_L2_classifier )
+    {
+        std::clog << nFrame << "# Tscore:" << maxTemplateScore << " No good match for Fish Found " << std::endl;
+    }
+
+
+//   /// Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model //
+//    ft = vfishmodels.begin();
+//    while(ft != vfishmodels.end() ) //&& vfishmodels.size() > 1
+//    {
+//        pfish = ft->second;
+//        // If this is not the Best One
+//        if (pfishBest != pfish ) //&& pfishBest != 0
+//        {
+//            //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
+//            //OtherWise Delete The model?
+//            //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
+//            if ( (bModelForBlobFound & gTrackerState.bAllowOnlyOneTrackedItem)
+//                 || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
+//            {
+//                std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->matchScore << " when Best is :"<< maxTemplateScore << std::endl;
+//                ft = vfishmodels.erase(ft);
+//                delete(pfish);
+//                continue;
+//            }else
+//            // Fish Model Has not Been Matched / Increment Time This Model Has Not Been Active
+//                pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+//        }
+//        ++ft; //Increment Iterator
+//    } //Loop To Delete Other FishModels
+
+
+
+} //UpdateFishModels //
+
+
+
+
+///
+/// \brief UpdateFishModels starting from Blob Info do the processing steps to update FishModels for this frame,
+/// \param maskedImg_gray
+/// \param vfishmodels
+/// \param fishblobs
+/// \param nFrame
+/// \param frameOut
+///\todo
+///
+void UpdateFishModels_old(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame,cv::Mat& frameOut){
+
+    qfishModels qfishrank;
+    cv::Mat imgFishAnterior_NetNorm,mask_fnetScore;
+    fishModel* pfish = NULL;
+    uint bidx = 0;
+    uint fidx = 0;
+
+    fishModels::iterator ft;
+    bool bModelForBlobFound =false;
+    //Make Matrix TO Hold Blob To Model Distance
+
 
     /// Call step Update All fish models to Predict next step
     for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
@@ -1049,7 +1303,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         cv::Point ptSearch; //Where To Centre The Template Matching Searcrh
         int bestAngle =  fishblob->angle;
         double  maxMatchScore = fishblob->response;
-        bModelFound = false;
+        bModelForBlobFound = false;
         int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
         int iTemplCol = 0;
 
@@ -1068,13 +1322,17 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
              pfish = ft->second;
              assert(pfish);
             //Model Already Taken
-             if (pfish->isFrameUpdated(nFrame))
-                 continue;
+             //if (pfish->isFrameUpdated(nFrame))
+             //    continue;
 
              ///Does this Blob Belong To A Known Fish Model?
              double dBlobToModelDist = cv::norm(pfish->ptRotCentre - fishblob->pt);
+
+             //matBlobModelDistance<float>()
+
              //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
-             if (dBlobToModelDist < gTrackerState.gDisplacementLimitPerFrame) ////pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 ||
+             if (dBlobToModelDist < gTrackerState.gDisplacementLimitPerFrame ||
+                  pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0)
              {
                 //Search first Using Fish Model Position/ last position may not have difted far-
                 ptbcentre = ptSearch = fishblob->pt; //pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
@@ -1090,9 +1348,6 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 //Failed? Try the blob Head (From Enhance Mask) Detected position
                 //
 
-                pfish->templateScore = maxMatchScore;
-                pfish->tailTopPoint = gptTail;
-
                 //Check If Fish Detected
                  if (pfish->isValid() ||
                      pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0)//( maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
@@ -1106,8 +1361,18 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                     if (!gTrackerState.bStoreThisTemplate &&
                         !gTrackerState.bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
                     {
-                        pfish->updateState(fishblob,maxMatchScore,bestAngle+gTrackerState.iFishAngleOffset,ptbcentre,nFrame,gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
-                        bModelFound = pfish->isValid();
+                        pfish->updateState(fishblob,maxMatchScore,
+                                           bestAngle+gTrackerState.iFishAngleOffset,
+                                           ptbcentre,nFrame,
+                                           gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
+
+
+                        pfish->tailTopPoint = gptTail;
+
+                        bModelForBlobFound = true;//pfish->isValid();
+
+                        //Add To Priority Q So we can Rank Fish models-
+                        qfishrank.push(pfish);
 
                     }
                     else
@@ -1117,20 +1382,18 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                     }
 
                  }
-                 else //Could not detect the fish for this fish model - Below Thres Match Score
+                 else //blob does not belong to this fish model - Below Thres Match Score
                  {
-                        pfish->inactiveFrames++; //Could not detect it so Increase time this model has failed to get detected
+                        //pfish->inactiveFrames++; //Could not detect it so Increase time this model has failed to get detected
                        //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
-                       if (pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames)
-                           gTrackerState.iFishAngleOffset = 0;
-                           gTrackerState.iLastKnownGoodTemplateRow = 0;
-                         //qDebug() << nFrame << " Guessing next TemplCol:" << gTrackerState.iFishAngleOffset;
+                       //if (pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames)
+                       //    gTrackerState.iFishAngleOffset = 0;
+                       //    gTrackerState.iLastKnownGoodTemplateRow = 0;
+                       //qDebug() << nFrame << " Guessing next TemplCol:" << gTrackerState.iFishAngleOffset;
                  }
 
-                  pfish->drawBodyTemplateBounds(frameOut);
+                  //pfish->drawBodyTemplateBounds(frameOut);
 
-                 //Add To Priority Q So we can Rank - Only If Blob Ovelaps ?
-                qfishrank.push(pfish);
              }//if Model is within Blob range Overlaps with this Blob
 
         } //For Each Fish Model
@@ -1138,8 +1401,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
        //If the Blob Has no Model fish, and the template Match is low
        //then still create new model as this could be a fish we have not seen before -
        // And we avoid getting stuck searching for best model
-       //
-       if (!bModelFound &&
+
+       if (!bModelForBlobFound &&
                !gTrackerState.bDraggingTemplateCentre &&
                !gTrackerState.bStoreThisTemplate) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
         {
@@ -1149,14 +1412,16 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //Set To Zero So as to increase search Area around blob center
              iTemplRow = 0;//gTrackerState.iLastKnownGoodTemplateRow ;
              iTemplCol = 0;
+
             pwindow_main->LogEvent("No Fish model found for blob");
             cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
             ptbcentre = ptSearch;
 
             maxMatchScore = fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
             bestAngle = fishblob->angle;
-            //If New Blob Looks Like A Fish, and no existing model in vicinity Then Make  A New Model for blob
-            if (maxMatchScore >= gTrackerState.fishnet_L2_classifier)
+            //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
+            if (maxMatchScore >= gTrackerState.fishnet_L2_classifier //|| maxMatchScore > 100.0f
+                )  //User Click Sets Response to > 10
             {
                 //Make new fish Model
                fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
@@ -1171,7 +1436,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                fish->drawBodyTemplateBounds(frameOut);
                qfishrank.push(fish); //Add To Priority Queue
                std::stringstream strmsg;
-               strmsg << " New fishmodel: " << fish->ID << " with Template Score :" << fish->templateScore << " fNet:" << fish->zfishBlob.response;
+               strmsg << " New fishmodel: " << fish->ID << " with Template Score :" << fish->matchScore << " fNet:" << fish->zfishBlob.response;
                //std::clog << nFrame << strmsg.str() << std::endl;
                pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
                gTrackerState.dactiveMOGLearningRate = gTrackerState.dLearningRateNominal;
@@ -1186,13 +1451,15 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
         }
 //        //Report No Fish
-        if (!bModelFound && maxMatchScore < gTrackerState.gTemplateMatchThreshold )
+        if (!bModelForBlobFound && maxMatchScore < gTrackerState.gTemplateMatchThreshold )
         {
             std::clog << nFrame << "# Tscore:" << maxMatchScore << " No good match for Fish Found " << std::endl;
 
         }
 
-    } // For Each Fish Blob //
+    } // For Each Fish Blob // //////
+
+
 
     ///\brief Check priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
     fishModel* pfishBest = 0;
@@ -1210,7 +1477,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
    if (pfishBest)
    {
         //qfishrank.pop();//Remove From Priority Queue Rank
-        maxTemplateScore = pfishBest->templateScore;
+        maxTemplateScore = pfishBest->matchScore;
         //Here I used to , then reset inactive frames to 0 / But this is not In UpdateState
     }
    /// \NOTE: Tracking Continuous if fish moves Outside ROI
@@ -1227,10 +1494,10 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //Assertion Fails When Old Model Goes Out Of scene and video Is retracked
             //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
             //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
-            if ( (bModelFound & gTrackerState.bAllowOnlyOneTrackedItem)
+            if ( (bModelForBlobFound & gTrackerState.bAllowOnlyOneTrackedItem)
                  || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
             {
-                std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->templateScore << " when Best is :"<< maxTemplateScore << std::endl;
+                std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->matchScore << " when Best is :"<< maxTemplateScore << std::endl;
                 ft = vfishmodels.erase(ft);
                 delete(pfish);
                 continue;
@@ -1863,93 +2130,6 @@ bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,c
 }
 
 
-/// \NOTE: Blob Detect No Longer Needed - Keypoints detect from Mask Processing - faster processing//
-/// \brief processFishBlobs Finds blobs that belong to fish
-/// \param frame
-/// \param maskFishimg
-/// \param frameOut //Output Image With FishBlob Rendered
-/// \param ptFishblobs opencv keypoints vector of the Fish
-/// \return
-/// NOT USED ANYMORE
-int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,zftblobs& ptFishblobs)
-{
-
-    std::vector<cv::KeyPoint> keypoints;
-
-    //std::vector<cv::KeyPoint> keypoints_in_ROI;
-    cv::SimpleBlobDetector::Params params;
-
-    params.filterByCircularity  = false;
-    params.filterByColor        = false;
-    params.filterByConvexity    = false;
-
-    //params.maxThreshold = 16;
-    //params.minThreshold = 8;
-    //params.thresholdStep = 2;
-
-    // Filter by Area.
-    params.filterByArea = true;
-    params.minArea = gTrackerState.thresh_fishblobarea/2.0;
-    params.maxArea = gTrackerState.thresh_maxfishblobarea;
-
-    /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
-    ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
-    /// WARNING Enabling filterByInertia Causes A Crash - (in Close.s-> thread)
-    params.filterByInertia      = true;
-    params.maxInertiaRatio      = 0.1;
-    params.minInertiaRatio      = 0.01;
-
-
-    //params.filterByInertia = true;
-
-    // Set up the detector with default parameters.
-    cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
-
-    // Critical To Provide the Mask Image and not the full frame //
-    detector->detect( maskFishimg, keypoints); //frameMask
-    //Mask Is Ignored so Custom Solution Required
-    //for (cv::KeyPoint &kp : keypoints)
-    ptFishblobs.clear();
-    for(int i=0;i<keypoints.size();i++)
-    {
-        cv::KeyPoint kp = keypoints[i];
-
-        if(!pointIsInROI(kp.pt,gTrackerState.gszTemplateImg.width))
-            continue;
-
-
-        // Pass Blob region Through FishDetector And Reject if it does not look like fish
-        //Classifier Modifies KeyPoint Adding score Modifying Orientation
-
-
-        //Go Through Each ROI and Render Blobs -
-        //unsigned int RoiID = 0;
-        //for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
-        //{
-        //    ltROI iroi = (ltROI)(*it);
-        //    RoiID++;
-            //Keypoint is in ROI so Add To Masked
-
-         //   if (iroi.contains(kp.pt,gTrackerState.gszTemplateImg.width ))
-         //       ptFishblobs.push_back(kp);
-            //int maskVal=(int)gframeMask.at<uchar>(kp.pt);
-            //if (maskVal > 0)
-             //keypoints_in_mask.push_back(kp);
-        //}
-    }
-
-
-    // Draw detected blobs as red circles.
-    // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
-    //frame.copyTo(frameOut,maskimg); //mask Source Image
-    //cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(250,20,20), cv::DrawMatchesFlags::DEFAULT ); //cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS
-
-
-    detector->clear();
-
-}
-
-
 /// Updated Blob Processing
 /// \brief processFoodBlobs Finds blobs that belong to rotifers
 /// \param frame
@@ -2048,118 +2228,6 @@ int processPreyBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& f
     return (int)ptFoodblobs.size();
 
 }
-
-//int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi)
-//{
-//    int cnt = 0;
-//    int Vcnt = 1;
-//    bool bNewFileFlag = true;
-
-//    //Loop Over ROI
-//    Vcnt++; //Vial Count
-//    cnt = 0;
-
-//    QFile data(filename);
-//    if (data.exists())
-//        bNewFileFlag = false;
-
-//    if(data.open(QFile::WriteOnly |QFile::Append))
-//    {
-//        QTextStream output(&data);
-//        if (bNewFileFlag)
-//             output << "frameN,SerialN,BlobLabel,Centroid_X,Centroid_Y,Area\n" ;
-
-//        //Loop Over Blobs
-//        for (cvb::CvBlobs::const_iterator it=blobs.begin(); it!=blobs.end(); ++it)
-//        {
-
-//            cvb::CvBlob* cvB = it->second;
-//            cv::Point pnt;
-//            pnt.x = cvB->centroid.x;
-//            pnt.y = cvB->centroid.y;
-
-//            cnt++;
-
-//            if (roi.contains(pnt))
-//                //Printing the position information
-//                output << frameNumber.c_str() << "," << cnt <<","<< cvB->label << "," << cvB->centroid.x <<","<< cvB->centroid.y  <<","<< cvB->area  <<"\n";
-//          }
-
-
-//       data.close();
-
-//      }
-
-
-//    return cnt;
-//}
-
-////Saves the total Number of Counted Blobs and Tracks only
-//int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi)
-//{
-
-//    bool bNewFileFlag = true;
-//    int cnt = 0;
-//    int Larvacnt = 0;
-//    cnt++;
-//    //cv::Rect iroi = (cv::Rect)(*it);
-
-//    QFile data(filename);
-//    if (data.exists())
-//        bNewFileFlag = false;
-
-//    if(data.open(QFile::WriteOnly |QFile::Append))
-//    {
-
-//        int blobCount = 0;
-//        int trackCount = 0;
-
-//        //Count Blobs in ROI
-//        for (cvb::CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it)
-//        {
-//            cvb::CvBlob* blob = it->second;
-//            cv::Point pnt;
-//            pnt.x = blob->centroid.x;
-//            pnt.y = blob->centroid.y;
-
-//            if (roi.contains(pnt))
-//                blobCount++;
-//        }
-
-//        //Count Tracks in ROI
-//        for (cvb::CvTracks::const_iterator it = tracks.begin(); it!=tracks.end(); ++it)
-//        {
-//            cvb::CvTrack* track = it->second;
-//            cv::Point pnt;
-//            pnt.x = track->centroid.x;
-//            pnt.y = track->centroid.y;
-
-//            if (roi.contains(pnt))
-//                trackCount++;
-//        }
-
-
-//        QTextStream output(&data);
-//        if (bNewFileFlag)
-//             output << "frameN,blobN,TracksN \n";
-
-//        output << frameNumber.c_str() << "," << blobCount << "," << trackCount <<"\n";
-//        Larvacnt +=blobCount;
-//        data.close();
-//    }
-
-
-//    return Larvacnt;
-//}
-
-
-//std::vector<cvb::CvBlob*> getBlobsinROI(cvb::CvBlobs& blobs)
-//{
-    //std::vector<cvb::CvBlob*> *vfiltBlobs = new std::vector<cvb::CvBlob*>((blobs.size()));
-
-   // return 0;
-
-//}
 
 bool pointIsInROI(cv::Point pt,float objectRadius = 1.0)
 {
@@ -2598,152 +2666,6 @@ void drawUserDefinedPoints(cv::Mat& frame)
 }
 
 
-/////
-///// \brief findMatchingContour Looks for the inner contour in a 2 level hierarchy that matches the point coords
-///// \param contours source array in which to search
-///// \param hierarchy
-///// \param pt - Position around which we are searching
-///// \param level - The required hierarchy level description of the contour being searched for
-///// \param matchhull approx shape we are looking for
-///// \param fittedEllipse Not Used - pointer to array of Rotated rect fitted ellipsoids
-///// \return Index of *child*/Leaf contour closest to point
-/////
-//int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
-//                              std::vector<cv::Vec4i>& hierarchy,
-//                              cv::Point pt,
-//                              int level,
-//                              std::vector<cv::Point>* matchhull = nullptr,
-//                              std::vector<cv::RotatedRect>* outfittedEllipse = nullptr)
-//{
-//    int idxContour           = -1;
-//    bool bContourfound       = false;
-//    int mindistToCentroid    = +10000; //Start Far
-//    int distToCentroid       = +10000;
-//    int matchContourDistance = 10000;
-
-//    int tArea = 0;
-//    int sArea = 0;
-
-//    int tLength = 0;
-//    int sLength = 0;
-
-//    double dHudist = 0.0; //Shape Distance Hu moments distance measure from OpenCV
-
-//    /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
-//   ///Search Through Contours - Draw contours + hull results
-
-//   ///Find Contour with Min Distance in shape and space -attach to closest contour
-//   //In Not found Search Again By distance tp Full Contour
-//       //Find Closest Contour
-//       for( int i = 0; i< (int)contours.size(); i++ )
-//       {
-
-//          //Filter According to desired Level
-//          if (level == 0) /////Only Process Parent Contours
-//          {
-//            if (hierarchy[i][3] != -1) // Need to have no parent
-//               continue;
-//            if (hierarchy[i][2] == -1)  // Need to have child
-//                continue;
-//            assert(hierarchy[hierarchy[i][2]][3] == i ); // check that the parent of the child is this contour i
-//          }
-
-//          if (level == 1) /////Only Process Child Contours
-//          {
-//              if (hierarchy[i][3] == -1) // Need to have a parent
-//                  continue;
-////                   //Parent should be root
-////                   if (hierarchy[hierarchy[i][3]][3] != -1)
-////                       continue;
-//          }
-
-//          if (level == 2) ////Needs to be top Level Contour
-//          {
-//              if (hierarchy[i][3] != -1) // No Parent Contour
-//                  continue;
-////                   //Parent should be root
-////                   if (hierarchy[hierarchy[i][3]][3] != -1)
-////                       continue;
-//          }
-
-
-
-//          //It returns positive (inside), negative (outside), or zero (on an edge)
-//          //Invert Sign and then Rank From Smallest to largest distance
-//          if (contours[i].size() > 0)
-//            matchContourDistance = distToCentroid = -cv::pointPolygonTest(contours[i],pt,true);
-
-//          //Measure Space Mod -Penalize Outside contour Hits - Convert Outside Contour Distances to X times further +ve (penalize)
-//          //Make Distance alway positive
-//          //matchContourDistance = (distToCentroid<0)?abs(distToCentroid)*20:distToCentroid;
-//          // qDebug() << "-c" << i << " D:" <<  distToCentroid;
-
-
-//          ///Match Shape -
-//          /// \warning  If initial Shape Is not eye like this may be stuck into rejecting shapes
-//          // If A shape is provided
-//          //Find Contour Shape Similar to the one previously used for eye(ellipsoid)
-//          if (matchhull != nullptr)
-//          {
-//              if (matchhull->size() > 5 && gOptimizeShapeMatching) //Only If Shape has been initialized/Given
-//              {
-//                   dHudist = cv::matchShapes(*matchhull,contours[i],CV_CONTOURS_MATCH_I2,0.0);
-//                   matchContourDistance += dHudist*10.0; //Add Shape Distance onto / X Scale so it obtains relative importance
-//                   // Now Check That distance is not too far otherwise reject shape
-//                   //if (matchContourDistance > 1.0)
-//                   //    continue; //Next Shape/Contour
-//                   //qDebug() << "HuDist:" << dHudist*10.0;
-//                 //Check Area
-
-//                   tArea = cv::contourArea(*matchhull);
-//                   sArea = cv::contourArea(contours[i]);
-
-//                   tLength = cv::arcLength(*matchhull,true);
-//                   sLength = cv::arcLength(contours[i],true);
-
-//                   //Add Difference in Area to Score
-//                   matchContourDistance += (abs(tArea - sArea));
-//                  // qDebug() << "AreaDist:" << abs(tArea - sArea);
-
-//                   matchContourDistance += abs(tLength - sLength);
-//                   //qDebug() << "LengthDist:" << abs(tLength - sLength);
-
-//              }
-//          } // If Hull To Search For is provided
-
-
-//          //Only Update if Spatial Distance is smaller but also moving from outside to inside of the shape
-//          //-ve is outside - 0 on border -
-//          //if(mindistToCentroid <= 0 && distToCentroid >= 0))
-//          {
-//               if (matchContourDistance < mindistToCentroid)
-//               {
-//                   //Otherwise Keep As blob Contour
-//                   idxContour = i;
-//                   mindistToCentroid = matchContourDistance;//New Min
-
-//                   //qDebug() << "-----MinTD:"<< matchContourDistance << "<- HDist:" << dHudist << " Sp:" << distToCentroid << "AreaDist:" << abs(tArea - sArea) << "LengthDist:" << abs(tLength - sLength);
-
-//                   //Reject match 0 in case contour is not actually there
-//                   //if (matchContourDistance < gi_ThresholdMatching)
-//                        bContourfound = true;
-//               }
-//           }
-//       }
-
-
-//   if (!bContourfound)
-//   {
-//       std::cerr << "Failed,Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
-//       idxContour = -1;
-//   }
-//      //qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
-
-//   assert(idxContour < (int)contours.size());
-
-//   return idxContour;
-//}
-
 ///
 /// \brief findIndexClosesttoPoint Returns Contour Index Closest To point pt
 /// \param vPointChain
@@ -2948,10 +2870,9 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               //Cut Down To Template Size
               //imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
               //cv::imshow("ToDetector",imgFishAnterior);
-              //float fR = gTrackerState.fishnet.netDetect(imgFishAnterior);
               float fR = fish->zfishBlob.response; //The FishNet Recognition Score
 
-
+              /// \TODO MOVE THIS
               /// Store Norm Image as Template - If Flag Is set
               if (gTrackerState.bStoreThisTemplate)
               {   std::stringstream ssMsg;
@@ -3305,5 +3226,353 @@ void process_mem_usage(double& vm_usage, double& resident_set)
 }
 
 
+
+
+
+/// \NOTE: Blob Detect No Longer Needed - Keypoints detect from Mask Processing - faster processing//
+/// \brief processFishBlobs Finds blobs that belong to fish
+/// \param frame
+/// \param maskFishimg
+/// \param frameOut //Output Image With FishBlob Rendered
+/// \param ptFishblobs opencv keypoints vector of the Fish
+/// \return
+/// NOT USED ANYMORE
+//int processFishBlobs(cv::Mat& frame,cv::Mat& maskFishimg,cv::Mat& frameOut,zftblobs& ptFishblobs)
+//{
+
+//    std::vector<cv::KeyPoint> keypoints;
+
+//    //std::vector<cv::KeyPoint> keypoints_in_ROI;
+//    cv::SimpleBlobDetector::Params params;
+
+//    params.filterByCircularity  = false;
+//    params.filterByColor        = false;
+//    params.filterByConvexity    = false;
+
+//    //params.maxThreshold = 16;
+//    //params.minThreshold = 8;
+//    //params.thresholdStep = 2;
+
+//    // Filter by Area.
+//    params.filterByArea = true;
+//    params.minArea = gTrackerState.thresh_fishblobarea/2.0;
+//    params.maxArea = gTrackerState.thresh_maxfishblobarea;
+
+//    /////An inertia ratio of 0 will yield elongated blobs (closer to lines)
+//    ///  and an inertia ratio of 1 will yield blobs where the area is more concentrated toward the center (closer to circles).
+//    /// WARNING Enabling filterByInertia Causes A Crash - (in Close.s-> thread)
+//    params.filterByInertia      = true;
+//    params.maxInertiaRatio      = 0.1;
+//    params.minInertiaRatio      = 0.01;
+
+
+//    //params.filterByInertia = true;
+
+//    // Set up the detector with default parameters.
+//    cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
+
+//    // Critical To Provide the Mask Image and not the full frame //
+//    detector->detect( maskFishimg, keypoints); //frameMask
+//    //Mask Is Ignored so Custom Solution Required
+//    //for (cv::KeyPoint &kp : keypoints)
+//    ptFishblobs.clear();
+//    for(int i=0;i<keypoints.size();i++)
+//    {
+//        cv::KeyPoint kp = keypoints[i];
+
+//        if(!pointIsInROI(kp.pt,gTrackerState.gszTemplateImg.width))
+//            continue;
+
+//        // Pass Blob region Through FishDetector And Reject if it does not look like fish
+//        //Classifier Modifies KeyPoint Adding score Modifying Orientation
+
+
+//        //Go Through Each ROI and Render Blobs -
+//        //unsigned int RoiID = 0;
+//        //for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
+//        //{
+//        //    ltROI iroi = (ltROI)(*it);
+//        //    RoiID++;
+//            //Keypoint is in ROI so Add To Masked
+
+//         //   if (iroi.contains(kp.pt,gTrackerState.gszTemplateImg.width ))
+//         //       ptFishblobs.push_back(kp);
+//            //int maskVal=(int)gframeMask.at<uchar>(kp.pt);
+//            //if (maskVal > 0)
+//             //keypoints_in_mask.push_back(kp);
+//        //}
+//    }
+
+
+//    // Draw detected blobs as red circles.
+//    // DrawMatchesFlags::DRAW_RICH_KEYPOINTS flag ensures the size of the circle corresponds to the size of blob
+//    //frame.copyTo(frameOut,maskimg); //mask Source Image
+//    //cv::drawKeypoints( frameOut, ptFishblobs, frameOut, cv::Scalar(250,20,20), cv::DrawMatchesFlags::DEFAULT ); //cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS
+
+
+//    detector->clear();
+
+//}
+
+
+//int saveTrackedBlobs(cvb::CvBlobs& blobs,QString filename,std::string frameNumber,ltROI& roi)
+//{
+//    int cnt = 0;
+//    int Vcnt = 1;
+//    bool bNewFileFlag = true;
+
+//    //Loop Over ROI
+//    Vcnt++; //Vial Count
+//    cnt = 0;
+
+//    QFile data(filename);
+//    if (data.exists())
+//        bNewFileFlag = false;
+
+//    if(data.open(QFile::WriteOnly |QFile::Append))
+//    {
+//        QTextStream output(&data);
+//        if (bNewFileFlag)
+//             output << "frameN,SerialN,BlobLabel,Centroid_X,Centroid_Y,Area\n" ;
+
+//        //Loop Over Blobs
+//        for (cvb::CvBlobs::const_iterator it=blobs.begin(); it!=blobs.end(); ++it)
+//        {
+
+//            cvb::CvBlob* cvB = it->second;
+//            cv::Point pnt;
+//            pnt.x = cvB->centroid.x;
+//            pnt.y = cvB->centroid.y;
+
+//            cnt++;
+
+//            if (roi.contains(pnt))
+//                //Printing the position information
+//                output << frameNumber.c_str() << "," << cnt <<","<< cvB->label << "," << cvB->centroid.x <<","<< cvB->centroid.y  <<","<< cvB->area  <<"\n";
+//          }
+
+
+//       data.close();
+
+//      }
+
+
+//    return cnt;
+//}
+
+////Saves the total Number of Counted Blobs and Tracks only
+//int saveTrackedBlobsTotals(cvb::CvBlobs& blobs,cvb::CvTracks& tracks,QString filename,std::string frameNumber,ltROI& roi)
+//{
+
+//    bool bNewFileFlag = true;
+//    int cnt = 0;
+//    int Larvacnt = 0;
+//    cnt++;
+//    //cv::Rect iroi = (cv::Rect)(*it);
+
+//    QFile data(filename);
+//    if (data.exists())
+//        bNewFileFlag = false;
+
+//    if(data.open(QFile::WriteOnly |QFile::Append))
+//    {
+
+//        int blobCount = 0;
+//        int trackCount = 0;
+
+//        //Count Blobs in ROI
+//        for (cvb::CvBlobs::const_iterator it = blobs.begin(); it!=blobs.end(); ++it)
+//        {
+//            cvb::CvBlob* blob = it->second;
+//            cv::Point pnt;
+//            pnt.x = blob->centroid.x;
+//            pnt.y = blob->centroid.y;
+
+//            if (roi.contains(pnt))
+//                blobCount++;
+//        }
+
+//        //Count Tracks in ROI
+//        for (cvb::CvTracks::const_iterator it = tracks.begin(); it!=tracks.end(); ++it)
+//        {
+//            cvb::CvTrack* track = it->second;
+//            cv::Point pnt;
+//            pnt.x = track->centroid.x;
+//            pnt.y = track->centroid.y;
+
+//            if (roi.contains(pnt))
+//                trackCount++;
+//        }
+
+
+//        QTextStream output(&data);
+//        if (bNewFileFlag)
+//             output << "frameN,blobN,TracksN \n";
+
+//        output << frameNumber.c_str() << "," << blobCount << "," << trackCount <<"\n";
+//        Larvacnt +=blobCount;
+//        data.close();
+//    }
+
+
+//    return Larvacnt;
+//}
+
+
+//std::vector<cvb::CvBlob*> getBlobsinROI(cvb::CvBlobs& blobs)
+//{
+    //std::vector<cvb::CvBlob*> *vfiltBlobs = new std::vector<cvb::CvBlob*>((blobs.size()));
+
+   // return 0;
+
+//}
+
+
+
+/////
+///// \brief findMatchingContour Looks for the inner contour in a 2 level hierarchy that matches the point coords
+///// \param contours source array in which to search
+///// \param hierarchy
+///// \param pt - Position around which we are searching
+///// \param level - The required hierarchy level description of the contour being searched for
+///// \param matchhull approx shape we are looking for
+///// \param fittedEllipse Not Used - pointer to array of Rotated rect fitted ellipsoids
+///// \return Index of *child*/Leaf contour closest to point
+/////
+//int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
+//                              std::vector<cv::Vec4i>& hierarchy,
+//                              cv::Point pt,
+//                              int level,
+//                              std::vector<cv::Point>* matchhull = nullptr,
+//                              std::vector<cv::RotatedRect>* outfittedEllipse = nullptr)
+//{
+//    int idxContour           = -1;
+//    bool bContourfound       = false;
+//    int mindistToCentroid    = +10000; //Start Far
+//    int distToCentroid       = +10000;
+//    int matchContourDistance = 10000;
+
+//    int tArea = 0;
+//    int sArea = 0;
+
+//    int tLength = 0;
+//    int sLength = 0;
+
+//    double dHudist = 0.0; //Shape Distance Hu moments distance measure from OpenCV
+
+//    /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
+//   ///Search Through Contours - Draw contours + hull results
+
+//   ///Find Contour with Min Distance in shape and space -attach to closest contour
+//   //In Not found Search Again By distance tp Full Contour
+//       //Find Closest Contour
+//       for( int i = 0; i< (int)contours.size(); i++ )
+//       {
+
+//          //Filter According to desired Level
+//          if (level == 0) /////Only Process Parent Contours
+//          {
+//            if (hierarchy[i][3] != -1) // Need to have no parent
+//               continue;
+//            if (hierarchy[i][2] == -1)  // Need to have child
+//                continue;
+//            assert(hierarchy[hierarchy[i][2]][3] == i ); // check that the parent of the child is this contour i
+//          }
+
+//          if (level == 1) /////Only Process Child Contours
+//          {
+//              if (hierarchy[i][3] == -1) // Need to have a parent
+//                  continue;
+////                   //Parent should be root
+////                   if (hierarchy[hierarchy[i][3]][3] != -1)
+////                       continue;
+//          }
+
+//          if (level == 2) ////Needs to be top Level Contour
+//          {
+//              if (hierarchy[i][3] != -1) // No Parent Contour
+//                  continue;
+////                   //Parent should be root
+////                   if (hierarchy[hierarchy[i][3]][3] != -1)
+////                       continue;
+//          }
+
+
+
+//          //It returns positive (inside), negative (outside), or zero (on an edge)
+//          //Invert Sign and then Rank From Smallest to largest distance
+//          if (contours[i].size() > 0)
+//            matchContourDistance = distToCentroid = -cv::pointPolygonTest(contours[i],pt,true);
+
+//          //Measure Space Mod -Penalize Outside contour Hits - Convert Outside Contour Distances to X times further +ve (penalize)
+//          //Make Distance alway positive
+//          //matchContourDistance = (distToCentroid<0)?abs(distToCentroid)*20:distToCentroid;
+//          // qDebug() << "-c" << i << " D:" <<  distToCentroid;
+
+
+//          ///Match Shape -
+//          /// \warning  If initial Shape Is not eye like this may be stuck into rejecting shapes
+//          // If A shape is provided
+//          //Find Contour Shape Similar to the one previously used for eye(ellipsoid)
+//          if (matchhull != nullptr)
+//          {
+//              if (matchhull->size() > 5 && gOptimizeShapeMatching) //Only If Shape has been initialized/Given
+//              {
+//                   dHudist = cv::matchShapes(*matchhull,contours[i],CV_CONTOURS_MATCH_I2,0.0);
+//                   matchContourDistance += dHudist*10.0; //Add Shape Distance onto / X Scale so it obtains relative importance
+//                   // Now Check That distance is not too far otherwise reject shape
+//                   //if (matchContourDistance > 1.0)
+//                   //    continue; //Next Shape/Contour
+//                   //qDebug() << "HuDist:" << dHudist*10.0;
+//                 //Check Area
+
+//                   tArea = cv::contourArea(*matchhull);
+//                   sArea = cv::contourArea(contours[i]);
+
+//                   tLength = cv::arcLength(*matchhull,true);
+//                   sLength = cv::arcLength(contours[i],true);
+
+//                   //Add Difference in Area to Score
+//                   matchContourDistance += (abs(tArea - sArea));
+//                  // qDebug() << "AreaDist:" << abs(tArea - sArea);
+
+//                   matchContourDistance += abs(tLength - sLength);
+//                   //qDebug() << "LengthDist:" << abs(tLength - sLength);
+
+//              }
+//          } // If Hull To Search For is provided
+
+
+//          //Only Update if Spatial Distance is smaller but also moving from outside to inside of the shape
+//          //-ve is outside - 0 on border -
+//          //if(mindistToCentroid <= 0 && distToCentroid >= 0))
+//          {
+//               if (matchContourDistance < mindistToCentroid)
+//               {
+//                   //Otherwise Keep As blob Contour
+//                   idxContour = i;
+//                   mindistToCentroid = matchContourDistance;//New Min
+
+//                   //qDebug() << "-----MinTD:"<< matchContourDistance << "<- HDist:" << dHudist << " Sp:" << distToCentroid << "AreaDist:" << abs(tArea - sArea) << "LengthDist:" << abs(tLength - sLength);
+
+//                   //Reject match 0 in case contour is not actually there
+//                   //if (matchContourDistance < gi_ThresholdMatching)
+//                        bContourfound = true;
+//               }
+//           }
+//       }
+
+
+//   if (!bContourfound)
+//   {
+//       std::cerr << "Failed,Closest Contour :" << idxContour << " d:" << mindistToCentroid << std::endl;
+//       idxContour = -1;
+//   }
+//      //qDebug() << "-------Got best " <<  idxContour << " D:"<< mindistToCentroid;
+
+//   assert(idxContour < (int)contours.size());
+
+//   return idxContour;
+//}
 
 
