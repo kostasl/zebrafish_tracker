@@ -666,7 +666,7 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 {
 
     double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
-    double angleDisplacement = abs(angleClosestDistance(this->bearingAngle,Angle));
+    double angleDisplacement = abs(geAngleDiff(this->bearingAngle,Angle));
     double dT = (double)(nFrame-nLastUpdateFrame);///((double)gTrackerState.gfVidfps+1.0)
     //Set to 1 frame minimum time step
 
@@ -700,13 +700,13 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     /// Kalman FILTER //
     ///  Re-Order - First adjust to measurement - then Predict
     //Reject Updates That Are Beyond Bounds
-    if (stepDisplacement > gTrackerState.gDisplacementLimitPerFrame ||
-        angleDisplacement > gTrackerState.gAngleChangeLimitPerFrame){
-        inactiveFrames++;
-    }else{ //Measurement valid - C0nsume
+//    if (stepDisplacement > gTrackerState.gDisplacementLimitPerFrame ||
+//        angleDisplacement > gTrackerState.gAngleChangeLimitPerFrame){
+//        inactiveFrames++;
+//    }else{ //Measurement valid - C0nsume
         mCorrected = KF.correct(mMeasurement); // Kalman Correction
         inactiveFrames  = 0;
-    }
+ //   }
 
 
     this->zTrack.id     = ID;

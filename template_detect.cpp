@@ -479,6 +479,7 @@ int addTemplateToCache(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl
     cv::Rect pasteRegion((gTrackerState.gszTemplateImg.width-imgTempl.cols)/2,
                          (gTrackerState.gszTemplateImg.height-imgTempl.rows)/2
                          ,imgTempl.cols,imgTempl.rows);
+
     imgTempl.copyTo(imgTempl_std(pasteRegion));
 
     //Make Variations And store in template Cache

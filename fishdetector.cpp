@@ -131,9 +131,9 @@ cv::Mat fishdetector::getNormedTemplateImg(cv::Mat& frame, cv::RotatedRect& fish
     cv::Mat imgBoundedNorm = getNormedBoundedImg(frame, fishRotAnteriorBox);
 
     // RETURN EMPTY If FishAnterior Image is too small (Near boundary case)
-    if ((rectFishTemplateBound.width + rectFishTemplateBound.x) > imgFishAnterior_Norm.cols)
+    if ((rectFishTemplateBound.width + rectFishTemplateBound.x) > imgBoundedNorm.cols)
         return imgFishAnterior_Norm;
-    if ((rectFishTemplateBound.height + rectFishTemplateBound.y) > imgFishAnterior_Norm.rows)
+    if ((rectFishTemplateBound.height + rectFishTemplateBound.y) > imgBoundedNorm.rows)
         return imgFishAnterior_Norm;
 
 
@@ -193,17 +193,6 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
   cv::Point2f ptRotCenter = fishRotAnteriorBox.center - fishRotAnteriorBox.boundingRect2f().tl();
 
- // cv::Point2f ptRotCenter_rev;
- // int Angle_rev;
-//  getFishBlobCentreAndOrientation(imgFishAnterior,ptRotCenter,fishblob.angle,ptRotCenter_rev,Angle_rev);
-
-
-  //cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter, fishblob.angle,1.0); //Rotate Upwards
-
-  ///Make Rotation Transformation
-  //Need to fix size of Upright/Normed Image
-  //cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
-
   /// Sparse Binarize Through Adaptive Threshold to enhance fish-like pattern // Substract - const val from mean
   // Ideally We want to maintain input sparseness
   double activePixRatio = 1.0;
@@ -222,34 +211,18 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
       }
 
       //cv::imshow(std::string("BIN") + regTag,imgFishAnterior_Norm_bin*255);
-// /// \todo : add Sigmoid activation function
-// // imgFishAnterior_Norm.copyTo(imgFishAnterior_Norm_bin);
-//  // Set to 1 to operate as input to Bias-Weight
-//  if (imgFishAnterior_Norm_bin.rows > 1 && imgFishAnterior_Norm_bin.cols > 1)
-//    imgFishAnterior_Norm_bin.at<float>(imgFishAnterior_Norm_bin.rows-1, imgFishAnterior_Norm_bin.cols-1) = 1.0f;
 
-  //imgFishAnterior_Norm_bin.at<float>(0,0) = 1.0f;
-  //fishblob.angle += iAngleOffset;
- // Mrot = cv::getRotationMatrix2D(ptCentreCorrection, fishblob.angle,1.0); //Rotate Upwards
-
-  ///Make Rotation Transformation
-  //Need to fix size of Upright/Normed Image
-  //cv::warpAffine(imgFishAnterior_Norm,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
-
-
-  //cv::Point ptTopLeftTemplate(szFishAnteriorNorm.width/2-gTrackerState.gLastfishimg_template.size().width/2,
-  //                         szFishAnteriorNorm.height/2-gTrackerState.gLastfishimg_template.size().height/2);
-
-   //Check Center Of Image / If Something is found Do Sliding Window
 
   /// SliDing Window Scanning
-  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2-5;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = iSlidePx_H_begin+10;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
-    int iSlidePx_H_step = 6;
+  int iSlidePx_H_step = 1;
+  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2-0;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = iSlidePx_H_begin+0;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
-  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-5); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin +10); //(int)(sztemplate.height/2)
-  int iSlidePx_V_step = 3;
+   // V step - scanning for fishhead like image in steps
+  int iSlidePx_V_step = 2;
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-2); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin +8); //(int)(sztemplate.height/2)
+
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
   // Do netDetect using a Sliding window

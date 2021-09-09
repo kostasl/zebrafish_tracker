@@ -473,13 +473,26 @@ void trackerState::loadFromQrc(QString qrc,cv::Mat& imRes,int flag )
 }
 
 
-int angleClosestDistance(int anglefrom,int angleTo)
+int geAngleDiff(int anglefrom,int angleTo)
 {
     //Convert to -180 - +180
-    anglefrom = (anglefrom%360);
-    angleTo = (angleTo%360);
-    anglefrom = (anglefrom > 180)?(anglefrom-360):anglefrom;
-    angleTo = (angleTo > 180)?(angleTo-360):angleTo;
+    //int sign = 1;
 
-    return(angleTo-anglefrom);
+    //if (angleTo)
+//    anglefrom = (anglefrom > 180)?(anglefrom-360):anglefrom;
+//    angleTo = (angleTo >= 180)?(angleTo-360):angleTo;
+
+//    int angle_D = angleTo-anglefrom;
+    //Check Angle distance in both directions
+//    int angle_D  = min((angleTo-anglefrom)%360,(angleTo+360-anglefrom)%360);
+
+//    if (abs(angle_D > 180))
+//    {
+//        angle_D = angle_D
+//    }
+
+    //Angle diff
+    int angle_D = min( (anglefrom-angleTo+360)%360, (angleTo-anglefrom+360)%360 );
+
+    return(angle_D);
 }

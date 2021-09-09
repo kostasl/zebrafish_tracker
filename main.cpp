@@ -1038,7 +1038,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     fishModels::iterator ft;
     bool bModelForBlobFound = false;
     // Make Matrix TO Hold Blob To Model Distance
-    cv::Mat matBlobModelDistance((int)fishblobs.size(), (int)vfishmodels.size(), CV_32FC1, cv::Scalar(0, 0, 0));
+    cv::Mat matBlobModelDistance((int)fishblobs.size(), (int)vfishmodels.size(), CV_32FC1, cv::Scalar(10000, 10000, 10000));
 
     std::vector<fishModel*> vpfishmodel;
     zftblobs fishblobs_all = fishblobs;
@@ -1050,7 +1050,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
          pfish->stepPredict(nFrame);
          ///    Write Angle / Show Box   ///
          //Blobs may Overlap With Previously Found Fish But Match Score Is low - Then The Box Is still Drawn
-         pfish->drawBodyTemplateBounds(frameOut);
+         pfish->drawBodyTemplateBounds(frameOut); //Predicted Position /
     }
 
     /// MAKE BLOB-FISHMODEL DISTANCE MAtrix - //
@@ -1070,11 +1070,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             double dBlobToModelDist = cv::norm(pfish->ptRotCentre - fishblob->pt);
             //Save Blob-Model Distance - row,col
             matBlobModelDistance.at<float>(bidx,fidx) = dBlobToModelDist;
-             //minDist = (minDist > dBlobToModelDist)?dBlobToModelDist:minDist; //Update Min Value and Idx
-             //minDist_idx = (minDist > dBlobToModelDist)?bidx:minDist_idx;
 
-             bidx++;
-
+            bidx++;
           } // For Each Fish Blob //
 
         vpfishmodel.push_back(pfish); //Add to pointer list - for retrieval by idx
@@ -1092,14 +1089,15 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
     // Find Global Min Fish-Blob distances - update Fish Model and remove consumed Blob from list -
     // loop until distances too large
-    while (maxL1 > 0 &&
-        minL1 < gTrackerState.gDisplacementLimitPerFrame)
+    while (minL1 < gTrackerState.gDisplacementLimitPerFrame &&
+           ptmin.x > -1)
     {
          //Check if Any Values Exist - And Get Fish-Blob Pair
         assert(matBlobModelDistance.rows > ptmin.y && matBlobModelDistance.cols > ptmin.x);
-         matBlobModelDistance.at<float>(ptmin.y,ptmin.x) = 1000; //Remove Min Point from Matrix
+
 
         pfish   = vpfishmodel[ptmin.x];
+
         if (!pfish)
             continue;
 
@@ -1114,39 +1112,25 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                                gTrackerState.gFishTailSpineSegmentLength,0,0);
 
            pfish->tailTopPoint = gptTail;
-           //bModelForBlobFound = true;
+           pfish->drawBodyTemplateBounds(frameOut); //Predicted Position /
 
            qfishrank.push(pfish);
 
            //Remove Consumed/Paired Blob
            fishblobs.at(ptmin.y).octave = 10;
 
+           // Prevent Future FishModel - Blob pairing using distance Matrix
+           for (int c=0; c<matBlobModelDistance.cols;c++)
+               matBlobModelDistance.at<float>(ptmin.y,c) = 10000;
+           // Prevent Future FishModel - Blob pairing using distance Matrix
+           for (int r=0; r<matBlobModelDistance.rows;r++)
+               matBlobModelDistance.at<float>(r,ptmin.x) = 10000;
         }
 
         // Fetch next Min Distance Pair
         cv::minMaxLoc(matBlobModelDistance,&minL1,&maxL1,&ptmin,&ptmax);
     } //While
     ///
-
-//    // Make New Model On a Remaining / Unpaired blob
-//if (fishblobs.size() > 0)
-//{
-//    fishblob = &fishblobs.at(0);
-//    cv::circle(frameOut,fishblob->pt,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
-
-//    //Make new fish Model
-//   fishModel* fish= new fishModel(*fishblob,fishblob->angle,fishblob->pt);
-//   fish->ID = ++gTrackerState.gi_MaxFishID;
-//   fish->idxTemplateRow = 0;
-//   fish->idxTemplateCol = 0;
-
-//   fish->updateState(fishblob,fishblob->response,fishblob->angle,fishblob->pt,nFrame,
-//                     gTrackerState.gFishTailSpineSegmentLength,0,0);
-
-//   vfishmodels.insert(IDFishModel(fish->ID,fish));
-//   fish->drawBodyTemplateBounds(frameOut);
-//   qfishrank.push(fish); //Add To Priority Queue
-//}
 
     fishblobs.shrink_to_fit();
    /// MAKE Models for Unpaired Blobs -
@@ -1159,7 +1143,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         fishblob = &(*it);
         //Check Template Match Score
         cv::Point2f ptSearch = fishblob->pt;
-
+        // Ignore Already Paired Blobs
         if (fishblob->octave == 10)
             continue;
 
@@ -1227,30 +1211,30 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     }
 
 
-//   /// Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model //
-//    ft = vfishmodels.begin();
-//    while(ft != vfishmodels.end() ) //&& vfishmodels.size() > 1
-//    {
-//        pfish = ft->second;
-//        // If this is not the Best One
-//        if (pfishBest != pfish ) //&& pfishBest != 0
-//        {
-//            //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
-//            //OtherWise Delete The model?
-//            //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
-//            if ( (bModelForBlobFound & gTrackerState.bAllowOnlyOneTrackedItem)
-//                 || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
-//            {
-//                std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->matchScore << " when Best is :"<< maxTemplateScore << std::endl;
-//                ft = vfishmodels.erase(ft);
-//                delete(pfish);
-//                continue;
-//            }else
-//            // Fish Model Has not Been Matched / Increment Time This Model Has Not Been Active
-//                pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
-//        }
-//        ++ft; //Increment Iterator
-//    } //Loop To Delete Other FishModels
+   /// Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model //
+    ft = vfishmodels.begin();
+    while(ft != vfishmodels.end() ) //&& vfishmodels.size() > 1
+    {
+        pfish = ft->second;
+        // If this is not the Best One
+        if (pfishBest != pfish ) //&& pfishBest != 0
+        {
+            //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
+
+            //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
+            if ( ( gTrackerState.bAllowOnlyOneTrackedItem
+                 || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames)) //Check If it Timed Out / Then Delete
+            {
+                std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->matchScore << " when Best is :"<< maxTemplateScore << std::endl;
+                ft = vfishmodels.erase(ft);
+                delete(pfish);
+                continue;
+            }else
+            // Fish Model Has not Been Matched / Increment Time This Model Has Not Been Active
+                pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+        }
+        ++ft; //Increment Iterator
+    } //Loop To Delete Other FishModels
 
 
 
@@ -2820,7 +2804,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
           cv::Size szHeadImg(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),
                              max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)*0.75);
 //          cv::Point ptTopLeftHead(ptTopLeftTemplate.x,0);//(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
-          cv::Rect rectFishHeadBound = cv::Rect(ptTopLeftTemplate,szHeadImg);
+          cv::Rect rectFishHeadBound = cv::Rect(cv::Point(0,0),szHeadImg);
 
 
           ///Make Normalized Fish View
@@ -2876,12 +2860,12 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               /// Store Norm Image as Template - If Flag Is set
               if (gTrackerState.bStoreThisTemplate)
               {   std::stringstream ssMsg;
-                  addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+                  //addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
                   //Try This New Template On the Next Search
                   gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
                   fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
                   window_main.saveTemplateImage(imgFishAnterior);
-                  ssMsg << "New Template Added, count is now #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
+                  ssMsg << "Fish Template saved to disk - (No Cache update) #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
                   window_main.LogEvent(QString::fromStdString(ssMsg.str() ));
                   gTrackerState.bStoreThisTemplate = false;
               }

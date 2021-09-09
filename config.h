@@ -165,7 +165,7 @@ class trackerState
       const int gMaxFitIterations               = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
       const int giHeadIsolationMaskVOffset      = 24; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
-      int gcMaxFishModelInactiveFrames          = 150; //Number of frames inactive until track is deleted
+      int gcMaxFishModelInactiveFrames          = 10; //Number of frames inactive until track is deleted
       int gcMaxFoodModelInactiveFrames          = gfVidfps/5; //Number of frames inactive (Not Matched to a Blob) until track is deleted
       int gcMinFoodModelActiveFrames            = gfVidfps/20; //Min Number of consecutive frames it needs to be active  otherwise its deleted
       float gMaxClusterRadiusFoodToBlob           = 3; //Per Sec / This changes depending on FPS (setFPS)
@@ -312,7 +312,7 @@ class trackerState
       int gFishBoundBoxSize               = 60; /// 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
-      int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*3; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
+      int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*4; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
       int  gAngleChangeLimitPerFrame    = 90; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
 
       int iLastKnownGoodTemplateRow   = 0;
@@ -398,7 +398,7 @@ void initBGSubstraction();
 int initDetectionTemplates();
 
 
-int angleClosestDistance(int anglefrom,int angleTo);
+int geAngleDiff(int anglefrom,int angleTo);
 
 
 #endif // CONFIG_H
