@@ -613,6 +613,15 @@ int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
 }
 
 
+void fishModel::drawAnteriorBox(cv::Mat& frameScene)
+{
+    ///Draw a Red Rotated Frame around Detected Body
+    cv::Point2f boundBoxPnts[4];
+    bodyRotBound.points(boundBoxPnts);
+     for (int j=0; j<4;j++) //Rectangle Body
+       cv::line(frameScene,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(00,00,255),1,cv::LINE_8);
+}
+
 ///
 /// \brief fishModel::Update - Called On Every Frame Processed To Update Model State
 /// The track point is set to the blob position and not the template centre
@@ -670,7 +679,6 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     double dT = (double)(nFrame-nLastUpdateFrame);///((double)gTrackerState.gfVidfps+1.0)
     //Set to 1 frame minimum time step
 
-
     KF.transitionMatrix.at<float>(0,2) = dT;
     KF.transitionMatrix.at<float>(1,3) = dT;
     KF.transitionMatrix.at<float>(4,5) = dT; //Angular Diff Feeds into Angle
@@ -715,6 +723,8 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     this->bearingRads   =  this->bearingAngle*CV_PI/180.0;
     assert(!std::isnan(this->bearingRads));
     this->ptRotCentre    = cv::Point2f(mCorrected.at<float>(0), mCorrected.at<float>(1)); //bcentre;
+
+
     this->leftEyeTheta   = mCorrected.at<float>(6); // Eye Angle Left;
     this->rightEyeTheta   = mCorrected.at<float>(7); // Eye Angle Right;
 
@@ -977,7 +987,7 @@ bool fishModel::isValid()
     //templateScore >= gTrackerState.gTemplateMatchThreshold // inactiveFrames < 2
 
     return(this->zfishBlob.response >= gTrackerState.fishnet_L2_classifier &&
-           inactiveFrames == 0);
+           inactiveFrames == 0 || binFocus);
 
 
 }
@@ -1017,10 +1027,7 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
     cv::circle(outframe,this->bodyRotBound.center,5,colour,1);
 
     ///Draw a Red Rotated Frame around Detected Body
-    cv::Point2f boundBoxPnts[4];
-    this->bodyRotBound.points(boundBoxPnts);
-    for (int j=0; j<4;j++) //Rectangle Body
-       cv::line(outframe,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,colour,1);
+    drawAnteriorBox(outframe);
 
     cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br()+cv::Point(-10,15),CV_FONT_NORMAL,0.4,colour,1);
 

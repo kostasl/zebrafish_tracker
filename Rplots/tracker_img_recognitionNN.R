@@ -271,7 +271,7 @@ net_proc_images_batch <- function(mat_X,inmat_W,inLayer_Bias,mat_Y,learningRate 
     }
     
     #hist(Layer_Bias[[1]])
-    #if (fileidx %% 10 == 0)
+    #if (fileidx %% 10 == 0)  
     #  hist(inmat_W[[1]], main="After")
     
     
@@ -330,7 +330,7 @@ img_dim <- c(38,28)
 N_Layers <- 2
 
 n_top_px <- img_dim[2]*img_dim[1]
-N_KC = n_top_px*10 ## Number of Kenyon Cells (Input layer High Dim Coding)
+N_KC = n_top_px*5 ## Number of Kenyon Cells (Input layer High Dim Coding)
 N_SYN_per_KC <- 10# n_top_px/500 ## Number of pic Features each KC neuron Codes for
 #KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 v_Layer_N <- c(n_top_px, N_KC, 2)
@@ -393,7 +393,7 @@ img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,
 #img_list_all <- 
 
 batchSize = 10 # Number of Training IMages for Each Leanring Episode (which will define error graident )
-Nbatches = 1250
+Nbatches = 250
 trainingN = 5 ##Training Cycles For Each Batch
 
 

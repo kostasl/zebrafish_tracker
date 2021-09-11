@@ -133,7 +133,7 @@ void MainWindow::createSpinBoxes()
 
 
     this->ui->spinBoxMaxEllipse->installEventFilter(this);
-    this->ui->spinBoxMaxEllipse->setRange(15,35);
+    //this->ui->spinBoxMaxEllipse->setRange(10,70);
     this->ui->spinBoxMaxEllipse->setValue(gTrackerState.gi_maxEllipseMajor);
 
 
@@ -493,11 +493,11 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
             key =  strkey.at(0);
 
          //Cancel Any Drag Event Going On
-         if (gTrackerState.bDraggingTemplateCentre)
-         {
-            gTrackerState.bDraggingTemplateCentre = false;
-            LogEvent("[info] Cancelled Template Adjustment");
-         }
+         ///if (gTrackerState.bDraggingTemplateCentre)
+         //{
+         //   gTrackerState.bDraggingTemplateCentre = false;
+         //   LogEvent("[info] Cancelled Template Adjustment");
+         //}
 
 
          //qDebug() << "Ate key press " << keyEvent->text().toStdString().c_str() << " k: " << key << " from " << obj->objectName();
@@ -711,11 +711,9 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
                 qDebug() << "Drag to  pos x: " << ptMouse.x << " y:" << ptMouse.y;
                 fish->bodyRotBound.center = ptMouse;
                 fish->ptRotCentre         = ptMouse;
-                ///Draw a Red Rotated Frame around Detected Body
-                cv::Point2f boundBoxPnts[4];
-                fish->bodyRotBound.points(boundBoxPnts);
-                 for (int j=0; j<4;j++) //Rectangle Body
-                   cv::line(frameScene,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(00,00,255),1,cv::LINE_8);
+                fish->bodyRotBound.angle = gTrackerState.iFishAngleOffset;
+
+                fish->drawAnteriorBox(frameScene);
 
                 //showCVimg(frameScene);
             }
@@ -967,11 +965,15 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
         /// Check if Fish Model Clicked - Add Template Dragging
         for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
         {
-
             fishModel* fish = (*it).second;
+
+            fish->binFocus = false; //Invalidate Focus to All models
             if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
             {
+                fish->binFocus = true; //Set focus on Clicked Item
                 gTrackerState.bDraggingTemplateCentre = true;
+                gTrackerState.iFishAngleOffset = fish->bodyRotBound.angle;
+
                 bFishModelClicked = true;
                 LogEvent("[info] Adjust Template from position ON- Start Dragging");
                 this->statusBar()->showMessage(tr("Adjust fish detection template position"));

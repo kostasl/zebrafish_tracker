@@ -1047,9 +1047,13 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
     {
          pfish = ft->second;
-         pfish->stepPredict(nFrame);
+         if (!gTrackerState.bPaused)
+            pfish->stepPredict(nFrame);
+
          ///    Write Angle / Show Box   ///
-         //Blobs may Overlap With Previously Found Fish But Match Score Is low - Then The Box Is still Drawn
+         if (gTrackerState.bDraggingTemplateCentre) //Overwrite with user defined angle
+             pfish->bodyRotBound.angle = gTrackerState.iFishAngleOffset;
+
          pfish->drawBodyTemplateBounds(frameOut); //Predicted Position /
     }
 
@@ -1106,10 +1110,11 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 ||
                 minL1 < gTrackerState.gDisplacementLimitPerFrame)
         {
-            pfish->updateState(fishblob,fishblob->response,
-                               fishblob->angle+gTrackerState.iFishAngleOffset,
-                               fishblob->pt,nFrame,
-                               gTrackerState.gFishTailSpineSegmentLength,0,0);
+           if (!gTrackerState.bPaused)
+                pfish->updateState(fishblob,fishblob->response,
+                                   fishblob->angle,
+                                   fishblob->pt,nFrame,
+                                   gTrackerState.gFishTailSpineSegmentLength,0,0);
 
            pfish->tailTopPoint = gptTail;
            pfish->drawBodyTemplateBounds(frameOut); //Predicted Position /
@@ -1849,14 +1854,14 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     if ((char)keyboard == '[') //Rotate Template AntiClock Wise
     {
         gTrackerState.iFishAngleOffset--;
-        gTrackerState.iFishAngleOffset = max(-180,gTrackerState.iFishAngleOffset);
+        gTrackerState.iFishAngleOffset = gTrackerState.iFishAngleOffset%360; //max(-180,gTrackerState.iFishAngleOffset);
         pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(gTrackerState.iFishAngleOffset)  );
     }
 
     if ((char)keyboard == ']') //Rotate Template ClockWise
     {
         gTrackerState.iFishAngleOffset++;
-        gTrackerState.iFishAngleOffset = min(180, gTrackerState.iFishAngleOffset);
+        gTrackerState.iFishAngleOffset = gTrackerState.iFishAngleOffset%360;//min(180, gTrackerState.iFishAngleOffset);
         pwindow_main->LogEvent(QString("User Rotated Template:")+QString::number(gTrackerState.iFishAngleOffset)  );
     }
 
@@ -1876,6 +1881,14 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         gTrackerState.bPaused = false;
         gTrackerState.bStartFrameChanged = false;
         gTimer.start();
+
+        //Cancel Any Drag Event Going On
+        if (gTrackerState.bDraggingTemplateCentre)
+            pwindow_main->LogEvent("[info] Cancelled Template Adjustment");
+
+        gTrackerState.bDraggingTemplateCentre = false;
+
+
     }
 
     if ((char)keyboard == 'R')
@@ -2000,6 +2013,14 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         pwindow_main->LogEvent(QString::fromStdString(ss.str()));
         gTrackerState.iLastKnownGoodTemplateRow = iNewTemplateRow;
         gTrackerState.iFishAngleOffset = 0;
+
+        //Cancel Any Drag Event Going On
+        if (gTrackerState.bDraggingTemplateCentre)
+            pwindow_main->LogEvent("[info] Cancelled Template Adjustment");
+
+        gTrackerState.bDraggingTemplateCentre = false;
+
+
     }
 
     if ((char)keyboard == 'x')
@@ -2762,7 +2783,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                                                       gTrackerState.gszTemplateImg.height),
                                                        bestAngleinDeg);
           /// Save Anterior Bound
-          fish->bodyRotBound = fishRotAnteriorBox;
+          //fish->bodyRotBound = fishRotAnteriorBox;
 
           //Locate Eyes In A box
           double lengthLine = 9;
@@ -2813,7 +2834,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            tEllipsoids vellRight;
 
 
-           imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(maskedfishImg_gray,fishRotAnteriorBox);
+           imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(maskedfishImg_gray,fish->bodyRotBound); //fishRotAnteriorBox
            // Check empty in case of an Error In extraction - due to boundary conditions
            if (imgFishAnterior_Norm.empty())
                return;
@@ -2829,31 +2850,6 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 //              ///Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
                 cv::Point2f ptRotCenter = fishRotAnteriorBox.center - (cv::Point2f)rectfishAnteriorBound.tl();
 
-//              Mrot = cv::getRotationMatrix2D( ptRotCenter,bestAngleinDeg,1.0); //Rotate Upwards
-//              ///Make Rotation Transformation
-//              //Need to fix size of Upright/Normed Image
-//              cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
-
-
-//             /// \todo Replace all this with Norm Image Provided By Fish Model - Cropped during detection
-//              cv::Point2f ptRotCenter_rev;
-//              int Angle_rev;
-//              getFishBlobCentreAndOrientation(imgFishAnterior_Norm,ptRotCenter,bestAngleinDeg,ptRotCenter_rev,Angle_rev);
-//              //Correct
-//              Mrot = cv::getRotationMatrix2D( ptRotCenter,Angle_rev,1.0); //Rotate Upwards
-//              ///Make Rotation Transformation
-//              //Need to fix size of Upright/Normed Image
-//              cv::warpAffine(imgFishAnterior_Norm,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
-
-                // Break If FishAnterior Image is too small (Near boundary case)
-//                if ((rectFishTemplateBound.width + rectFishTemplateBound.x) > imgFishAnterior_Norm.cols)
-//                    return;
-//                if ((rectFishTemplateBound.height + rectFishTemplateBound.y) > imgFishAnterior_Norm.rows)
-//                    return;
-
-              //Cut Down To Template Size
-              //imgFishAnterior       = imgFishAnterior_Norm(rectFishTemplateBound);
-              //cv::imshow("ToDetector",imgFishAnterior);
               float fR = fish->zfishBlob.response; //The FishNet Recognition Score
 
               /// \TODO MOVE THIS
@@ -2864,7 +2860,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                   //Try This New Template On the Next Search
                   gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
                   fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
-                  window_main.saveTemplateImage(imgFishAnterior);
+                  window_main.saveTemplateImage(imgFishAnterior_Norm);
                   ssMsg << "Fish Template saved to disk - (No Cache update) #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
                   window_main.LogEvent(QString::fromStdString(ssMsg.str() ));
                   gTrackerState.bStoreThisTemplate = false;

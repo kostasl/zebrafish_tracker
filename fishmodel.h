@@ -101,6 +101,7 @@ public:
 
 
   void drawSpine(cv::Mat& outFrame);
+  void drawAnteriorBox(cv::Mat& frameScene);
   void drawBodyTemplateBounds(cv::Mat& outframe);
   friend std::ostream& operator<<(std::ostream& out, const fishModel& h);
   friend QTextStream& operator<<(QTextStream& out, const fishModel& h);
@@ -117,6 +118,7 @@ public:
 
   // Detection Scores //
   bool bNewModel = true;
+  bool binFocus = false;
   double lastTailFitError; ///Holds Error Value Per Spine Point as Measured by Spine Fitting to Contour
   double matchScore; ///Fishdetection Score - How well the detected model fish looks/matches the convolution of a fish template
 ///
@@ -201,8 +203,11 @@ typedef std::map<zftID,fishModel* > fishModels;
 // Added Inactivity so as penalize fish Models that have been inactive for longer against competing ones found on the same location.
 class CompareFishScore {
     public:
-    bool operator()(fishModel*& t1, fishModel*& t2) // Returns true if t1 is greater than t2 /Ordering Highest 1st
+    bool operator()(fishModel*& t1, fishModel*& t2) // Returns true if t1 is less than t2 /Ordering Highest 1st
     {
+       if (t1->binFocus)//If t1 fish in Focus then Order 1st
+           return false;
+
        return (t1->matchScore-t1->inactiveFrames/gTrackerState.gfVidfps) < (t2->matchScore - t2->inactiveFrames/gTrackerState.gfVidfps);
     }
 };

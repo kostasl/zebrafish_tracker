@@ -268,8 +268,11 @@
          <property name="buttonSymbols">
           <enum>QAbstractSpinBox::PlusMinus</enum>
          </property>
+         <property name="minimum">
+          <number>5</number>
+         </property>
          <property name="maximum">
-          <number>200000</number>
+          <number>60</number>
          </property>
         </widget>
         <widget class="QDoubleSpinBox" name="doubleSpinBoxSpineSegSize">
