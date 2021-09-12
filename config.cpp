@@ -186,12 +186,13 @@ int initDetectionTemplates()
     gTrackerState.rect_pasteregion.height = gTrackerState.gszTemplateImg.height*2;
 
     gTrackerState.gstroutDirTemplates = gTrackerState.gstroutDirCSV + ("/templates/");
-    int ifileCount = loadTemplatesFromDirectory(QString::fromStdString(  gTrackerState.gstroutDirTemplates) );
+    gTrackerState.vTemplImg = loadTemplatesFromDirectory(QString::fromStdString(  gTrackerState.gstroutDirTemplates) );
+    int ifileCount =  gTrackerState.vTemplImg.size();
 
     //Make Mean Fish And Add to Cache
-     cv::Mat templFrame = makeMeanTemplateImage(gTrackerState.vTemplImg);
-     addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
-     gTrackerState.gLastfishimg_template = templFrame; //Set To Global
+     //cv::Mat templFrame = makeMeanTemplateImage(gTrackerState.vTemplImg);
+     //addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+     //gTrackerState.gLastfishimg_template = templFrame; //Set To Global
  #if defined(_DEBUG)
      cv::imshow("Template Cache",gFishTemplateCache);
 #endif

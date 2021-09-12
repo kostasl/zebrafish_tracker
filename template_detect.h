@@ -24,7 +24,7 @@
 /// \param strDir
 /// \return
 ///
-int loadTemplatesFromDirectory(QString strDir);
+std::vector<cv::Mat> loadTemplatesFromDirectory(QString strDir);
 
 //makeTemplateCache(angleStep)
 void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStepDeg);

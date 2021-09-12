@@ -143,6 +143,36 @@ cv::Mat fishdetector::getNormedTemplateImg(cv::Mat& frame, cv::RotatedRect& fish
     return(imgFishAnterior_Norm);
 }
 
+
+///brief
+///
+///
+
+cv::Mat sparseBinarize(cv::Mat& imgRegion,float targetdensity)
+{
+    cv::Mat imgRegion_bin,imgRegion_bin_dense;
+
+    /// Sparse Binarize Through Adaptive Threshold to enhance fish-like pattern // Substract - const val from mean
+    // Ideally We want to maintain input sparseness
+    double activePixRatio = 1.0;
+    int meanAdapt = 0;
+    int maxIter = 20;
+
+      /// Regulate Input Sparseness
+        while (activePixRatio >  targetdensity &&
+               maxIter > 0)
+        {
+          cv::adaptiveThreshold(imgRegion,imgRegion_bin,1,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,imgRegion.size().width,meanAdapt);
+          activePixRatio = (cv::sum(imgRegion_bin)[0])/(imgRegion_bin.cols*imgRegion_bin.rows);
+          meanAdapt += (int)255*(targetdensity-activePixRatio)-2;
+          if (maxIter == 20) //Save First Binarized most Dense
+              imgRegion_bin.copyTo(imgRegion_bin_dense);
+          maxIter--;
+        }
+
+    return(imgRegion_bin);
+}
+
 /// \brief Two step classificiation of region : First, it uses Neural
 /// Net to scan region around provided blog and provide a detection score as a mask (returns max score value)
 /// If blob passes the FishNet classification threshold , template matching is the applied to the same region
@@ -193,30 +223,16 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
   cv::Point2f ptRotCenter = fishRotAnteriorBox.center - fishRotAnteriorBox.boundingRect2f().tl();
 
-  /// Sparse Binarize Through Adaptive Threshold to enhance fish-like pattern // Substract - const val from mean
-  // Ideally We want to maintain input sparseness
-  double activePixRatio = 1.0;
-  int meanAdapt = 0;
-  int maxIter = 20;
-    /// Regulate Input Sparseness
-      while (activePixRatio > gTrackerState.fishnet_inputSparseness &&
-             maxIter > 0)
-      {
-        cv::adaptiveThreshold(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,1,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,szFishAnteriorNorm.width,meanAdapt);
-        activePixRatio = (cv::sum(imgFishAnterior_Norm_bin)[0])/(imgFishAnterior_Norm_bin.cols*imgFishAnterior_Norm_bin.rows);
-        meanAdapt += (int)255*(gTrackerState.fishnet_inputSparseness-activePixRatio)-2;
-        if (maxIter == 20) //Save First Binarized most Dense
-            imgFishAnterior_Norm_bin.copyTo(imgFishAnterior_Norm_bin_dense);
-        maxIter--;
-      }
-
-      //cv::imshow(std::string("BIN") + regTag,imgFishAnterior_Norm_bin*255);
+  //Binarize Input To set Specific Sparseness/Density
+  //imgFishAnterior_Norm_bin = sparseBinarize(imgFishAnterior_Norm,gTrackerState.fishnet_inputSparseness);
+  imgFishAnterior_Norm_bin = imgFishAnterior_Norm;
+  cv::imshow(std::string("BIN") + regTag,imgFishAnterior_Norm_bin);
 
 
   /// SliDing Window Scanning
-  int iSlidePx_H_step = 2;
-  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2-3;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = iSlidePx_H_begin+3;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidePx_H_step = 1;
+  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2-0;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = iSlidePx_H_begin+0;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
   int iSlidePx_V_step = 1;
@@ -331,7 +347,10 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     fL1_activity_thres = gTrackerState.fishnet_L1_threshold;
 
     // Input Is converted to Row Vector So we can do Matrix Multiplation
-    assert(imgRegion_bin.cols*imgRegion_bin.rows == mW_L1.cols);
+    //assert(imgRegion_bin.cols*imgRegion_bin.rows == mW_L1.cols);
+    if (imgRegion_bin.cols*imgRegion_bin.rows != mW_L1.cols)
+        return 0.0;
+
     cv::Mat vIn = imgRegion_bin.reshape(1,mW_L1.cols);  //Col Vector
     vIn.convertTo(vIn, CV_32FC1);
 
@@ -393,3 +412,35 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     return(fFishClass-fNonFishClass);
 }
 
+///\brief Unit test fishnet detector by loading and testing against the set of images used during training (R Script)
+///  and comparing output to the networks output to the script in R
+void fishdetector::test()
+{
+    qDebug() << "Testing fishNet Classifier Using stock template pics from disk.";
+    QString strDirFish("/home/kostasl/workspace/zebrafishtrack/img/trainset/fish/");
+    QString strDirNonFish("/home/kostasl/workspace/zebrafishtrack/img/trainset/nonfish/");
+
+    std::vector<cv::Mat> vfish_mat = loadTemplatesFromDirectory(strDirFish);
+
+    qDebug() << "~~~Test Fish templates~~~";
+    float fishClassScore,nonfishScore,dscore;
+    for (int i=0;i<vfish_mat.size();i++)
+    {
+        cv::Mat imgTempl = vfish_mat[i];
+
+        dscore = gTrackerState.fishnet.netDetect(imgTempl,fishClassScore,nonfishScore);
+        qDebug() << "Fish img gave F:" << fishClassScore << " NF:" << nonfishScore;
+    }
+
+    qDebug() << "~~~Test NON-Fish templates~~~";
+    std::vector<cv::Mat> vnonfish_mat = loadTemplatesFromDirectory(strDirNonFish);
+
+    for (int i=0;i<vnonfish_mat.size();i++)
+    {
+        cv::Mat imgTempl = vnonfish_mat[i];
+
+        dscore = gTrackerState.fishnet.netDetect(imgTempl,fishClassScore,nonfishScore);
+        qDebug() << "Non-Fish img gave F:" << fishClassScore << " NF:" << nonfishScore;
+    }
+
+}

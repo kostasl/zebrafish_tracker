@@ -600,39 +600,41 @@ cv::Mat makeMeanTemplateImage(std::vector<cv::Mat> vTemplImg)
 }
 
 /// \brief Loads all images from target dir and adds them to templateCache
-int loadTemplatesFromDirectory(QString strDir)
+std::vector<cv::Mat> loadTemplatesFromDirectory(QString strDir)
 {
     QDir dirTempl(strDir);
-
     cv::Mat templFrame;
+    std::vector<cv::Mat> vTempl_mat;
 
     int fileCount = 0;
     if (!dirTempl.exists())
     {
-        qWarning("Cannot find the a template directory");
-        return 0;
+        qWarning("Cannot find the a template directory.");
+        return vTempl_mat;
     }
 
-        QStringList fileFilters; fileFilters << "*.png" << "*.tiff" << "*.pgm" << "*.png";
-        QStringList imgFiles = QDir(strDir).entryList(fileFilters,QDir::Files,QDir::Name);
-        strDir.append('/');
-        QListIterator<QString> itfile (imgFiles);
-        while (itfile.hasNext())
-        {
-          QString filename = itfile.next();
-          std::string filepath = filename.prepend(strDir ).toStdString();
+    QStringList fileFilters; fileFilters << "*.png" << "*.tiff" << "*.pgm" << "*.png";
+    QStringList imgFiles = QDir(strDir).entryList(fileFilters,QDir::Files,QDir::Name);
+    strDir.append('/');
+    QListIterator<QString> itfile (imgFiles);
 
-          qDebug() << "*Load Template: " << filename;
-          templFrame  = loadImage(filepath);
-          //Save to Glogal List
-          gTrackerState.vTemplImg.push_back(templFrame);
-          addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
-          fileCount++;
-        }
+    while (itfile.hasNext())
+    {
+      QString filename = itfile.next();
+      std::string filepath = filename.prepend(strDir ).toStdString();
+
+      qDebug() << "* Load Template: " << filename;
+      templFrame  = loadImage(filepath);
+      //Save to Glogal List
+      vTempl_mat.push_back(templFrame);
+      //addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+      fileCount++;
+    }
 
 
          qDebug() << "Loaded # " << fileCount << "Templates";
-        return fileCount;
+
+        return vTempl_mat;
 }
 
 

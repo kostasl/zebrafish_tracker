@@ -140,8 +140,8 @@ makeInputMatrix <- function(img_list,inmat_W)
     
     ##mypic = new("pixmapGrey", size=dim(mat_img),grey = mat_img);plot(mypic)
     ## Convert to Col Vector
-    X <- sparse_binarize(as.vector(mat_img),INPUT_SPARSENESS)
-    
+    ##X <- sparse_binarize(as.vector(mat_img),INPUT_SPARSENESS)
+    X <- as.vector(mat_img)
     
     dim(X) <- c(length(X),1) ## Make into Col Vector
     
@@ -314,7 +314,8 @@ net_proc_images_batch <- function(mat_X,inmat_W,inLayer_Bias,mat_Y,learningRate 
   lout <- list(X=mat_X,
                W=inmat_W,
                B=inLayer_Bias,
-               output= L_A[[N_Layers+1]],
+               output= L_X[[N_Layers+1]],
+               outputActivation= L_A[[N_Layers+1]],
                Target=mat_Y,
                #out=data.frame( do.call(rbind,L2_out ) ),
                MSQError=MSQError )
@@ -453,7 +454,7 @@ plot(c) #ylim=c(0,1)
 ### Calcl Final Performance 
 
 ##Select Subset Batch
-img_list_suffled <- img_list_train #img_list_test_nonfish # img_list_all[sample(1:nrow(img_list_all)),]
+img_list_suffled <- img_list_train_nonfish#img_list_all[sample(1:nrow(img_list_all),50 ),] #img_list_test_nonfish #img_list_test_nonfish # 
 mat_X <- makeInputMatrix(img_list_suffled,mat_W)
 label_list <-cbind.data.frame(F=(img_list_suffled[,2]),NF=(img_list_suffled[,3]) )##Target output/labels
 mat_Y <- t(apply(as.matrix(label_list),2,strtoi))

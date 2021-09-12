@@ -230,7 +230,8 @@ int main(int argc, char *argv[])
     pwindow_main->nFrame = 1;
     pwindow_main->LogEvent(QString::number(iLoadedTemplates) + QString("# Templates Loaded "));
 
-
+    //Run Classifier Test //
+    fishdetector::test();
 
    /// Start Tracking of Video Files ///
    try{
@@ -1248,262 +1249,262 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
 
 
-///
-/// \brief UpdateFishModels starting from Blob Info do the processing steps to update FishModels for this frame,
-/// \param maskedImg_gray
-/// \param vfishmodels
-/// \param fishblobs
-/// \param nFrame
-/// \param frameOut
-///\todo
-///
-void UpdateFishModels_old(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame,cv::Mat& frameOut){
+/////
+///// \brief UpdateFishModels starting from Blob Info do the processing steps to update FishModels for this frame,
+///// \param maskedImg_gray
+///// \param vfishmodels
+///// \param fishblobs
+///// \param nFrame
+///// \param frameOut
+/////\todo
+/////
+//void UpdateFishModels_old(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame,cv::Mat& frameOut){
 
-    qfishModels qfishrank;
-    cv::Mat imgFishAnterior_NetNorm,mask_fnetScore;
-    fishModel* pfish = NULL;
-    uint bidx = 0;
-    uint fidx = 0;
+//    qfishModels qfishrank;
+//    cv::Mat imgFishAnterior_NetNorm,mask_fnetScore;
+//    fishModel* pfish = NULL;
+//    uint bidx = 0;
+//    uint fidx = 0;
 
-    fishModels::iterator ft;
-    bool bModelForBlobFound =false;
-    //Make Matrix TO Hold Blob To Model Distance
-
-
-    /// Call step Update All fish models to Predict next step
-    for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
-    {
-         pfish = ft->second;
-         pfish->stepPredict(nFrame);
-         ///    Write Angle / Show Box   ///
-         //Blobs may Overlap With Previously Found Fish But Match Score Is low - Then The Box Is still Drawn
-         pfish->drawBodyTemplateBounds(frameOut);
-    }
-
-    /// Pass position Measurements to fish Models from Blobs that likely belong to the fishmodel //
-    /// \todo - REWRITE :
-    /// Score All Blob - Model Pairs - Decide if new Model needed //
-     // Look through Blobs find Respective fish model attached or Create New Fish Model if missing
-    for (zftblobs::iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
-    { //For Each Blob //
-        zftblob* fishblob = &(*it);
-
-        cv::Point ptbcentre = fishblob->pt; //Start As First Guess - This is updated When TemplMatching
-        cv::Point ptSearch; //Where To Centre The Template Matching Searcrh
-        int bestAngle =  fishblob->angle;
-        double  maxMatchScore = fishblob->response;
-        bModelForBlobFound = false;
-        int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
-        int iTemplCol = 0;
-
-        if ( gTrackerState.bOnlyTrackFishinROI)
-            if (!pointIsInROI(ptbcentre,fishblob->size/2.0))
-                continue;
-
-        //Check Through Models And Find The Closest Fish To This FishBlob
-        /// Note We do Template Matching On Previous Fish Coordinates First , (Not On Wobbly Blobs Coordinates)
-        /// If No FishModel Is Matched with this Blob, then We Follow Up to Check the template score Of the Blob, before Creating A new Fish Model
-        for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
-        {
-            //if (bModelFound) //Speed Up - Single Fish Mode - So Skip Others If Model Found
-            //    break;
-
-             pfish = ft->second;
-             assert(pfish);
-            //Model Already Taken
-             //if (pfish->isFrameUpdated(nFrame))
-             //    continue;
-
-             ///Does this Blob Belong To A Known Fish Model?
-             double dBlobToModelDist = cv::norm(pfish->ptRotCentre - fishblob->pt);
-
-             //matBlobModelDistance<float>()
-
-             //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
-             if (dBlobToModelDist < gTrackerState.gDisplacementLimitPerFrame ||
-                  pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0)
-             {
-                //Search first Using Fish Model Position/ last position may not have difted far-
-                ptbcentre = ptSearch = fishblob->pt; //pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
-                bestAngle = fishblob->angle; //Use the Blobs Angle
-                iTemplRow = pfish->idxTemplateRow;
-                iTemplCol = pfish->idxTemplateCol;
-                //Debug blob-Model Matchg
-                cv::circle(frameOut,ptSearch,pfish->zfishBlob.size/100 ,CV_RGB(250,15,250),1); //Mark Where Search Is Done
-
-                //maxMatchScore = pfish->zfishBlob.response;// - dBlobToModelDist/gTrackerState.gFishBoundBoxSize*2;
-
-                //doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
-                //Failed? Try the blob Head (From Enhance Mask) Detected position
-                //
-
-                //Check If Fish Detected
-                 if (pfish->isValid() ||
-                     pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0)//( maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
-                 {
-                     //If Yes then assign the fish with the overlapping blob the template Match Score
+//    fishModels::iterator ft;
+//    bool bModelForBlobFound =false;
+//    //Make Matrix TO Hold Blob To Model Distance
 
 
-                     //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
-                    /// Update Model State
-                    // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
-                    if (!gTrackerState.bStoreThisTemplate &&
-                        !gTrackerState.bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
-                    {
-                        pfish->updateState(fishblob,maxMatchScore,
-                                           bestAngle+gTrackerState.iFishAngleOffset,
-                                           ptbcentre,nFrame,
-                                           gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
+//    /// Call step Update All fish models to Predict next step
+//    for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+//    {
+//         pfish = ft->second;
+//         pfish->stepPredict(nFrame);
+//         ///    Write Angle / Show Box   ///
+//         //Blobs may Overlap With Previously Found Fish But Match Score Is low - Then The Box Is still Drawn
+//         pfish->drawBodyTemplateBounds(frameOut);
+//    }
+
+//    /// Pass position Measurements to fish Models from Blobs that likely belong to the fishmodel //
+//    /// \todo - REWRITE :
+//    /// Score All Blob - Model Pairs - Decide if new Model needed //
+//     // Look through Blobs find Respective fish model attached or Create New Fish Model if missing
+//    for (zftblobs::iterator it = fishblobs.begin(); it!=fishblobs.end(); ++it)
+//    { //For Each Blob //
+//        zftblob* fishblob = &(*it);
+
+//        cv::Point ptbcentre = fishblob->pt; //Start As First Guess - This is updated When TemplMatching
+//        cv::Point ptSearch; //Where To Centre The Template Matching Searcrh
+//        int bestAngle =  fishblob->angle;
+//        double  maxMatchScore = fishblob->response;
+//        bModelForBlobFound = false;
+//        int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
+//        int iTemplCol = 0;
+
+//        if ( gTrackerState.bOnlyTrackFishinROI)
+//            if (!pointIsInROI(ptbcentre,fishblob->size/2.0))
+//                continue;
+
+//        //Check Through Models And Find The Closest Fish To This FishBlob
+//        /// Note We do Template Matching On Previous Fish Coordinates First , (Not On Wobbly Blobs Coordinates)
+//        /// If No FishModel Is Matched with this Blob, then We Follow Up to Check the template score Of the Blob, before Creating A new Fish Model
+//        for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+//        {
+//            //if (bModelFound) //Speed Up - Single Fish Mode - So Skip Others If Model Found
+//            //    break;
+
+//             pfish = ft->second;
+//             assert(pfish);
+//            //Model Already Taken
+//             //if (pfish->isFrameUpdated(nFrame))
+//             //    continue;
+
+//             ///Does this Blob Belong To A Known Fish Model?
+//             double dBlobToModelDist = cv::norm(pfish->ptRotCentre - fishblob->pt);
+
+//             //matBlobModelDistance<float>()
+
+//             //Check Overlap Of This Model With The Blob - And Whether The Image of this Blob contains something That looks like a fish
+//             if (dBlobToModelDist < gTrackerState.gDisplacementLimitPerFrame ||
+//                  pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0)
+//             {
+//                //Search first Using Fish Model Position/ last position may not have difted far-
+//                ptbcentre = ptSearch = fishblob->pt; //pfish->ptRotCentre; //gptHead//((cv::Point)fishblob->pt-gptHead)/3+gptHead;
+//                bestAngle = fishblob->angle; //Use the Blobs Angle
+//                iTemplRow = pfish->idxTemplateRow;
+//                iTemplCol = pfish->idxTemplateCol;
+//                //Debug blob-Model Matchg
+//                cv::circle(frameOut,ptSearch,pfish->zfishBlob.size/100 ,CV_RGB(250,15,250),1); //Mark Where Search Is Done
+
+//                //maxMatchScore = pfish->zfishBlob.response;// - dBlobToModelDist/gTrackerState.gFishBoundBoxSize*2;
+
+//                //doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
+//                //Failed? Try the blob Head (From Enhance Mask) Detected position
+//                //
+
+//                //Check If Fish Detected
+//                 if (pfish->isValid() ||
+//                     pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0)//( maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
+//                 {
+//                     //If Yes then assign the fish with the overlapping blob the template Match Score
 
 
-                        pfish->tailTopPoint = gptTail;
-
-                        bModelForBlobFound = true;//pfish->isValid();
-
-                        //Add To Priority Q So we can Rank Fish models-
-                        qfishrank.push(pfish);
-
-                    }
-                    else
-                    { //Rotate Template Box - Since this cannot be done Manually
-                        pfish->bearingAngle   = (bestAngle+gTrackerState.iFishAngleOffset);
-                        pfish->bearingRads   =  (bestAngle+gTrackerState.iFishAngleOffset)*CV_PI/180.0;
-                    }
-
-                 }
-                 else //blob does not belong to this fish model - Below Thres Match Score
-                 {
-                        //pfish->inactiveFrames++; //Could not detect it so Increase time this model has failed to get detected
-                       //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
-                       //if (pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames)
-                       //    gTrackerState.iFishAngleOffset = 0;
-                       //    gTrackerState.iLastKnownGoodTemplateRow = 0;
-                       //qDebug() << nFrame << " Guessing next TemplCol:" << gTrackerState.iFishAngleOffset;
-                 }
-
-                  //pfish->drawBodyTemplateBounds(frameOut);
-
-             }//if Model is within Blob range Overlaps with this Blob
-
-        } //For Each Fish Model
-
-       //If the Blob Has no Model fish, and the template Match is low
-       //then still create new model as this could be a fish we have not seen before -
-       // And we avoid getting stuck searching for best model
-
-       if (!bModelForBlobFound &&
-               !gTrackerState.bDraggingTemplateCentre &&
-               !gTrackerState.bStoreThisTemplate) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
-        {
-            //Check Template Match Score
-            ptSearch = fishblob->pt;
-            // Suitable template has not been found yet for this model, starting search Point For Template can be were we left off, as a suitable
-            //Set To Zero So as to increase search Area around blob center
-             iTemplRow = 0;//gTrackerState.iLastKnownGoodTemplateRow ;
-             iTemplCol = 0;
-
-            pwindow_main->LogEvent("No Fish model found for blob");
-            cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
-            ptbcentre = ptSearch;
-
-            maxMatchScore = fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
-            bestAngle = fishblob->angle;
-            //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
-            if (maxMatchScore >= gTrackerState.fishnet_L2_classifier //|| maxMatchScore > 100.0f
-                )  //User Click Sets Response to > 10
-            {
-                //Make new fish Model
-               fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
-               fish->ID = ++gTrackerState.gi_MaxFishID;
-               fish->idxTemplateRow = iTemplRow;
-               fish->idxTemplateCol = iTemplCol;
-
-               fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,
-                                 gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
-
-               vfishmodels.insert(IDFishModel(fish->ID,fish));
-               fish->drawBodyTemplateBounds(frameOut);
-               qfishrank.push(fish); //Add To Priority Queue
-               std::stringstream strmsg;
-               strmsg << " New fishmodel: " << fish->ID << " with Template Score :" << fish->matchScore << " fNet:" << fish->zfishBlob.response;
-               //std::clog << nFrame << strmsg.str() << std::endl;
-               pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
-               gTrackerState.dactiveMOGLearningRate = gTrackerState.dLearningRateNominal;
-
-            }else //Need to get rid of that blob as it will cause delays
-            { //quick fix - Draw it on static mask - Or Let MOG learn It
-                gTrackerState.dactiveMOGLearningRate = gTrackerState.dLearningRate/5.0;
-                //gTrackerState.dactiveMOGLearningRate = 2.0*gTrackerState.dactiveMOGLearningRate;
-                pwindow_main->LogEvent("2x BG learn rate ");
-            }
+//                     //Some existing Fish Can be associated with this Blob - As it Overlaps from previous frame
+//                    /// Update Model State
+//                    // But not While it Is manually updating/ Modifying Bounding Box (Flags Are set in Mainwindow)
+//                    if (!gTrackerState.bStoreThisTemplate &&
+//                        !gTrackerState.bDraggingTemplateCentre) //Skip Updating Bound If this round we are saving The Updated Boundary
+//                    {
+//                        pfish->updateState(fishblob,maxMatchScore,
+//                                           bestAngle+gTrackerState.iFishAngleOffset,
+//                                           ptbcentre,nFrame,
+//                                           gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
 
 
-        }
-//        //Report No Fish
-        if (!bModelForBlobFound && maxMatchScore < gTrackerState.gTemplateMatchThreshold )
-        {
-            std::clog << nFrame << "# Tscore:" << maxMatchScore << " No good match for Fish Found " << std::endl;
+//                        pfish->tailTopPoint = gptTail;
 
-        }
+//                        bModelForBlobFound = true;//pfish->isValid();
 
-    } // For Each Fish Blob // //////
+//                        //Add To Priority Q So we can Rank Fish models-
+//                        qfishrank.push(pfish);
+
+//                    }
+//                    else
+//                    { //Rotate Template Box - Since this cannot be done Manually
+//                        pfish->bearingAngle   = (bestAngle+gTrackerState.iFishAngleOffset);
+//                        pfish->bearingRads   =  (bestAngle+gTrackerState.iFishAngleOffset)*CV_PI/180.0;
+//                    }
+
+//                 }
+//                 else //blob does not belong to this fish model - Below Thres Match Score
+//                 {
+//                        //pfish->inactiveFrames++; //Could not detect it so Increase time this model has failed to get detected
+//                       //Overide If We cant find that fish anymore/ Search from the start of the row across all angles
+//                       //if (pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames)
+//                       //    gTrackerState.iFishAngleOffset = 0;
+//                       //    gTrackerState.iLastKnownGoodTemplateRow = 0;
+//                       //qDebug() << nFrame << " Guessing next TemplCol:" << gTrackerState.iFishAngleOffset;
+//                 }
+
+//                  //pfish->drawBodyTemplateBounds(frameOut);
+
+//             }//if Model is within Blob range Overlaps with this Blob
+
+//        } //For Each Fish Model
+
+//       //If the Blob Has no Model fish, and the template Match is low
+//       //then still create new model as this could be a fish we have not seen before -
+//       // And we avoid getting stuck searching for best model
+
+//       if (!bModelForBlobFound &&
+//               !gTrackerState.bDraggingTemplateCentre &&
+//               !gTrackerState.bStoreThisTemplate) // && maxMatchScore >= gTemplateMatchThreshold  Model Does not exist for track - its a new track
+//        {
+//            //Check Template Match Score
+//            ptSearch = fishblob->pt;
+//            // Suitable template has not been found yet for this model, starting search Point For Template can be were we left off, as a suitable
+//            //Set To Zero So as to increase search Area around blob center
+//             iTemplRow = 0;//gTrackerState.iLastKnownGoodTemplateRow ;
+//             iTemplCol = 0;
+
+//            pwindow_main->LogEvent("No Fish model found for blob");
+//            cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
+//            ptbcentre = ptSearch;
+
+//            maxMatchScore = fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
+//            bestAngle = fishblob->angle;
+//            //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
+//            if (maxMatchScore >= gTrackerState.fishnet_L2_classifier //|| maxMatchScore > 100.0f
+//                )  //User Click Sets Response to > 10
+//            {
+//                //Make new fish Model
+//               fishModel* fish= new fishModel(*fishblob,bestAngle,ptbcentre);
+//               fish->ID = ++gTrackerState.gi_MaxFishID;
+//               fish->idxTemplateRow = iTemplRow;
+//               fish->idxTemplateCol = iTemplCol;
+
+//               fish->updateState(fishblob,maxMatchScore,bestAngle,ptbcentre,nFrame,
+//                                 gTrackerState.gFishTailSpineSegmentLength,iTemplRow,iTemplCol);
+
+//               vfishmodels.insert(IDFishModel(fish->ID,fish));
+//               fish->drawBodyTemplateBounds(frameOut);
+//               qfishrank.push(fish); //Add To Priority Queue
+//               std::stringstream strmsg;
+//               strmsg << " New fishmodel: " << fish->ID << " with Template Score :" << fish->matchScore << " fNet:" << fish->zfishBlob.response;
+//               //std::clog << nFrame << strmsg.str() << std::endl;
+//               pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
+//               gTrackerState.dactiveMOGLearningRate = gTrackerState.dLearningRateNominal;
+
+//            }else //Need to get rid of that blob as it will cause delays
+//            { //quick fix - Draw it on static mask - Or Let MOG learn It
+//                gTrackerState.dactiveMOGLearningRate = gTrackerState.dLearningRate/5.0;
+//                //gTrackerState.dactiveMOGLearningRate = 2.0*gTrackerState.dactiveMOGLearningRate;
+//                pwindow_main->LogEvent("2x BG learn rate ");
+//            }
 
 
+//        }
+////        //Report No Fish
+//        if (!bModelForBlobFound && maxMatchScore < gTrackerState.gTemplateMatchThreshold )
+//        {
+//            std::clog << nFrame << "# Tscore:" << maxMatchScore << " No good match for Fish Found " << std::endl;
 
-    ///\brief Check priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
-    fishModel* pfishBest = 0;
-    double maxTemplateScore = 0.0;
-    while (pfishBest==0 && qfishrank.size() > 0) //If Not In ROI Then Skip
-    {
-            pfishBest = qfishrank.top(); //Get Pointer To Best Scoring Fish
-            if (!pointIsInROI(pfishBest->ptRotCentre,pfishBest->bodyRotBound.size.width)                     )
-            {
-                qfishrank.pop();
-                pfishBest = 0;
-            }
-   }//Search For Best Model
-   // A fish model has been found / Evaluate
-   if (pfishBest)
-   {
-        //qfishrank.pop();//Remove From Priority Queue Rank
-        maxTemplateScore = pfishBest->matchScore;
-        //Here I used to , then reset inactive frames to 0 / But this is not In UpdateState
-    }
-   /// \NOTE: Tracking Continuous if fish moves Outside ROI
-   /// Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
-    ft = vfishmodels.begin();
-    while(ft != vfishmodels.end() ) //&& vfishmodels.size() > 1
-    {
-        pfish = ft->second;
-        // If this is not the Best One
-        if (pfishBest != pfish ) //&& pfishBest != 0
-        {
-            //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
-            //OtherWise Delete The model?
-            //Assertion Fails When Old Model Goes Out Of scene and video Is retracked
-            //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
-            //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
-            if ( (bModelForBlobFound & gTrackerState.bAllowOnlyOneTrackedItem)
-                 || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
-            {
-                std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->matchScore << " when Best is :"<< maxTemplateScore << std::endl;
-                ft = vfishmodels.erase(ft);
-                delete(pfish);
-                continue;
-            }else
-            // Fish Model Has not Been Matched / Increment Time This Model Has Not Been Active
-                 pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+//        }
 
-        }
-        ++ft; //Increment Iterator
-    } //Loop To Delete Other FishModels
+//    } // For Each Fish Blob // //////
 
 
 
-} //UpdateFishModels //
+//    ///\brief Check priority Queue Ranking Candidate Fish with TemplateSCore - Keep Top One Only
+//    fishModel* pfishBest = 0;
+//    double maxTemplateScore = 0.0;
+//    while (pfishBest==0 && qfishrank.size() > 0) //If Not In ROI Then Skip
+//    {
+//            pfishBest = qfishrank.top(); //Get Pointer To Best Scoring Fish
+//            if (!pointIsInROI(pfishBest->ptRotCentre,pfishBest->bodyRotBound.size.width)                     )
+//            {
+//                qfishrank.pop();
+//                pfishBest = 0;
+//            }
+//   }//Search For Best Model
+//   // A fish model has been found / Evaluate
+//   if (pfishBest)
+//   {
+//        //qfishrank.pop();//Remove From Priority Queue Rank
+//        maxTemplateScore = pfishBest->matchScore;
+//        //Here I used to , then reset inactive frames to 0 / But this is not In UpdateState
+//    }
+//   /// \NOTE: Tracking Continuous if fish moves Outside ROI
+//   /// Delete All FishModels EXCEPT the best Match - Assume 1 Fish In scene / Always Retain 1 Model
+//    ft = vfishmodels.begin();
+//    while(ft != vfishmodels.end() ) //&& vfishmodels.size() > 1
+//    {
+//        pfish = ft->second;
+//        // If this is not the Best One
+//        if (pfishBest != pfish ) //&& pfishBest != 0
+//        {
+//            //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
+//            //OtherWise Delete The model?
+//            //Assertion Fails When Old Model Goes Out Of scene and video Is retracked
+//            //assert(pfish->templateScore < maxTemplateScore || maxTemplateScore == 0);
+//            //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
+//            if ( (bModelForBlobFound & gTrackerState.bAllowOnlyOneTrackedItem)
+//                 || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) //Check If it Timed Out / Then Delete
+//            {
+//                std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->matchScore << " when Best is :"<< maxTemplateScore << std::endl;
+//                ft = vfishmodels.erase(ft);
+//                delete(pfish);
+//                continue;
+//            }else
+//            // Fish Model Has not Been Matched / Increment Time This Model Has Not Been Active
+//                 pfish->inactiveFrames ++; //Increment Time This Model Has Not Been Active
+
+//        }
+//        ++ft; //Increment Iterator
+//    } //Loop To Delete Other FishModels
 
 
-//        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+gFishBoundBoxSize+2)), max(0,min(maskedImg_gray.rows,centroid.y+gFishBoundBoxSize+2)));
+
+//} //UpdateFishModels //
+
+
+////        cv::Point pBound2 = cv::Point(max(0,min(maskedImg_gray.cols,centroid.x+gFishBoundBoxSize+2)), max(0,min(maskedImg_gray.rows,centroid.y+gFishBoundBoxSize+2)));
 
 
 
@@ -2837,7 +2838,10 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(maskedfishImg_gray,fish->bodyRotBound); //fishRotAnteriorBox
            // Check empty in case of an Error In extraction - due to boundary conditions
            if (imgFishAnterior_Norm.empty())
+           {
+               qDebug() << "getNormedTemplateImg: No image returned.";
                return;
+           }
 
 //           // Use the FG Image to extract Head Frame
 //              maskedfishImg_gray(rectfishAnteriorBound).copyTo(imgFishAnterior);
