@@ -351,25 +351,30 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     if (imgRegion_bin.cols*imgRegion_bin.rows != mW_L1.cols)
         return 0.0;
 
-    cv::Mat vIn = imgRegion_bin.reshape(1,mW_L1.cols);  //Col Vector
-    vIn.convertTo(vIn, CV_32FC1);
+    cv::Mat vIn(mW_L1.cols,1,CV_32FC1); //imgRegion_bin.reshape(0,mW_L1.cols);  //Col Vector
 
+    //vIn.convertTo(vIn, CV_32FC1);
+    mW_L1.convertTo(mW_L1,CV_32FC1);
 
-    cv::imshow("Vin Out ", vIn.reshape(1,imgRegion_bin.rows)*255);
+    qDebug() << "Type:" << mW_L1.type();
+    cv::imshow("Vin Out ", vIn.reshape(1,imgRegion_bin.rows));
 
 
     //Apply Neural Transfer Function
-    //for (int i=0; i<vIn.cols;i++)
-    //    vIn.at<float>(0,i) = netNeuralTF(vIn.at<float>(0,i));
-
-
+    int i = 0;
+    for (int j=0; j<imgRegion_bin.rows;j++){
+        for (int k=0; k<imgRegion_bin.rows;k++){
+        vIn.at<float>(i,0) = imgRegion_bin.at<float>(j,k);//netNeuralTF(vIn.at<float>(0,i));
+        qDebug() << i << ". " << imgRegion_bin.at<float>(j,k);
+        i++;
+        }
+    }
     //cv::imshow("Vin Out TF", vIn.reshape(1,imgRegion_bin.rows));
-
 
     /// \TODO Matrices are not read correctly beyond 1st column mW_L1
     // operation multiplies matrix A of size [a x b] with matrix B of size [b x c]
     //to the Layer 1 output produce matrix C of size [a x c]
-    mL1_out = mW_L1*vIn; //+ mB_L1;
+    mL1_out = mW_L1*vIn + mB_L1;
 
 
     //cv::imshow("L1 out ",mL1_out.reshape(1,38*5));
