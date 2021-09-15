@@ -351,24 +351,32 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     if (imgRegion_bin.cols*imgRegion_bin.rows != mW_L1.cols)
         return 0.0;
 
-    cv::Mat vIn(mW_L1.cols,1,CV_32FC1); //imgRegion_bin.reshape(0,mW_L1.cols);  //Col Vector
+    qDebug() << "input img Type:" << type2str(imgRegion_bin.type());
+    cv::imshow("Input Img ", imgRegion_bin);
 
-    //vIn.convertTo(vIn, CV_32FC1);
-    mW_L1.convertTo(mW_L1,CV_32FC1);
-
-    qDebug() << "Type:" << mW_L1.type();
-    cv::imshow("Vin Out ", vIn.reshape(1,imgRegion_bin.rows));
+    cv::Mat vIn(mW_L1.cols,1,imgRegion_bin.type()); //imgRegion_bin.reshape(0,mW_L1.cols);  //Col Vector
 
 
     //Apply Neural Transfer Function
     int i = 0;
-    for (int j=0; j<imgRegion_bin.rows;j++){
-        for (int k=0; k<imgRegion_bin.rows;k++){
-        vIn.at<float>(i,0) = imgRegion_bin.at<float>(j,k);//netNeuralTF(vIn.at<float>(0,i));
-        qDebug() << i << ". " << imgRegion_bin.at<float>(j,k);
+    for (int c=0; c<imgRegion_bin.cols;c++){
+        for (int r=0; r<imgRegion_bin.rows;r++){
+        vIn.at<uchar>(i,0) = imgRegion_bin.at<uchar>(r,c);//netNeuralTF(vIn.at<float>(0,i));
+        //qDebug() << i << ". " << vIn.at<uchar>(i,0);
         i++;
         }
     }
+
+
+    vIn.convertTo(vIn, CV_32FC1);
+    mW_L1.convertTo(mW_L1,CV_32FC1);
+    mB_L1.convertTo(mB_L1,CV_32FC1);
+
+    //qDebug() << "W_l1 Type:" << type2str(mW_L1.type());
+
+
+    cv::imshow("Vin Out ", vIn.reshape(1,imgRegion_bin.cols));
+
     //cv::imshow("Vin Out TF", vIn.reshape(1,imgRegion_bin.rows));
 
     /// \TODO Matrices are not read correctly beyond 1st column mW_L1
@@ -400,8 +408,8 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     mL2_out =  mW_L2*mL1_out + mB_L2;
 
     //Apply Neural Transfer Function
-    //for (int i=0; i<mL2_out.rows;i++)
-    //    mL2_out.at<float>(i,0) = netNeuralTF(mL2_out.at<float>(i,0));
+    for (int i=0; i<mL2_out.rows;i++)
+        mL2_out.at<float>(i,0) = netNeuralTF(mL2_out.at<float>(i,0));
 
 
     //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)

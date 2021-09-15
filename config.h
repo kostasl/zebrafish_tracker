@@ -297,7 +297,7 @@ class trackerState
 
       /// Fishnet Classifier params //
       float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_L2_classifier  = 100.1; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_L2_classifier  = 1.0; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
       float fishnet_inputSparseness = 0.1; //Ratio of Active Pixels in Binarized input Image
 
       ///Fish Features Detection Params
@@ -400,5 +400,6 @@ int initDetectionTemplates();
 
 int geAngleDiff(int anglefrom,int angleTo);
 
+QString type2str(int type); //Opencv Mat type to string
 
 #endif // CONFIG_H

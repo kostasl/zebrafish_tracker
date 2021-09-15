@@ -116,7 +116,7 @@ makeInputMatrix <- function(img_list,inmat_W)
     fileidx= fileidx + 1
     
     imgT <- read.pnm(as.character(in_img) )
-    mat_img <- getChannels(imgT)
+    mat_img <- getChannels(imgT)*255  ##x255 Convert back to uint 8-bit
     X <- as.vector(mat_img)
     ### Add Fixed input 1 - To operate As Adjustable Bias for each input   
     ##X[length(X)] <- 1 # c(as.vector(mat_img),1)
@@ -370,6 +370,7 @@ sPathTrainingNonSamples="../img/trainset/nonfish/"
 sPathTestingSamplesFish="../img/fish/"
 sPathTestingSamplesNonFish="../img/nonfish/"
 
+
 img_list_train_fish =  cbind(files=list.files(path=sPathTrainingSamples,pattern="*pgm",full.names = T),F=1,NF=0) 
 img_list_test_fish = cbind(files=list.files(path=sPathTestingSamplesFish,pattern="*pgm",full.names = T),F=1,NF=0)
 img_list_train_nonfish =   cbind(files=list.files(path=sPathTrainingNonSamples,pattern="*pgm",full.names = T),F=0,NF=1)
@@ -378,6 +379,9 @@ img_list_test_nonfish =  cbind(files=list.files(path=sPathTestingSamplesNonFish,
 ## A Small Sample set for Testing the Algorithm Discrimiation between X and 1 
 img_list_train_ones <-  cbind(files=list.files(path="../img/trainset/ones/",pattern="*pgm",full.names = T),F=1,NF=0)
 img_list_train_X <-  cbind(files=list.files(path="../img/trainset/X/",pattern="*pgm",full.names = T),F=0,NF=1)
+
+img_list_debug_f <-  cbind(files=list.files(path="../img/debug/fish/",pattern="*pgm",full.names = T),F=1,NF=0)
+img_list_debug_nf <-  cbind(files=list.files(path="../img/debug/nonfish/",pattern="*pgm",full.names = T),F=0,NF=1)
 
 
 img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_test_nonfish,stringsAsFactors = FALSE) #
@@ -391,10 +395,10 @@ img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,
 #img_list_train <- rbind.data.frame(img_list_train_ones,img_list_train_X)
 #img_list_all <- rbind.data.frame(img_list_train_fish,stringsAsFactors = FALSE)
 
-#img_list_all <- 
+##img_list_train <-  rbind.data.frame(img_list_debug_f,img_list_debug_nf)
 
 batchSize = 10 # Number of Training IMages for Each Leanring Episode (which will define error graident )
-Nbatches = 750
+Nbatches = 1500
 trainingN = 5 ##Training Cycles For Each Batch
 
 
@@ -454,7 +458,7 @@ plot(c) #ylim=c(0,1)
 ### Calcl Final Performance 
 
 ##Select Subset Batch
-img_list_suffled <- img_list_train_nonfish#img_list_all[sample(1:nrow(img_list_all),50 ),] #img_list_test_nonfish #img_list_test_nonfish # 
+img_list_suffled <- img_list_all[sample(1:nrow(img_list_all),50 ),]#rbind.data.frame(img_list_debug_f,img_list_debug_nf) img_list_train_nonfish#img_list_all[sample(1:nrow(img_list_all),50 ),] #img_list_test_nonfish #img_list_test_nonfish # 
 mat_X <- makeInputMatrix(img_list_suffled,mat_W)
 label_list <-cbind.data.frame(F=(img_list_suffled[,2]),NF=(img_list_suffled[,3]) )##Target output/labels
 mat_Y <- t(apply(as.matrix(label_list),2,strtoi))
@@ -467,9 +471,9 @@ mat_Y <- t(apply(as.matrix(label_list),2,strtoi))
 
 dLearningRate    <- 0.0
 # TRAIN On Fish 
-dnetout <- net_proc_images_batch(mat_X, mat_W, Layer_Bias, mat_Y, dLearningRate )
+dnetoutV <- net_proc_images_batch(mat_X, mat_W, Layer_Bias, mat_Y, dLearningRate )
             
-message("Final MSQERR:",dnetout$MSQError)
+message("Final MSQERR:",dnetoutV$MSQError)
 
   
 hist(dnetout$Target - N_transfer( dnetout$output) )
@@ -479,7 +483,7 @@ hist(dnetout$W[[1]],main="After")
 
 
 
-## FOR EXAPORT TO YAML
+## FOR EXPORT TO YAML
 
 fishNet <- list(LW1=dnetout$W[[1]],
                 LW2=dnetout$W[[2]],

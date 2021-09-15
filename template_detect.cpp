@@ -52,7 +52,7 @@ extern bool bTemplateSearchThroughRows;
 
 static cv::Mat loadImage(const std::string& name)
 {
-    cv::Mat image = cv::imread(name, cv::IMREAD_GRAYSCALE);
+    cv::Mat image = cv::imread(name,cv::IMREAD_GRAYSCALE );//
     if (image.empty())
     {
         std::cerr << "Can't load image - " << name << std::endl;
