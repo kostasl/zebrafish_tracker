@@ -362,6 +362,7 @@ hist(colSums(mat_W[[1]]),main="Number of inputs per KC")
 ##Layer 2 (Output Perceptron)
 #L2_Neurons <<- 2
 
+### RUN BATCH TRAINING ###
 ## Apply Input Image ##
 ## list training files 
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
@@ -397,8 +398,8 @@ img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,
 
 ##img_list_train <-  rbind.data.frame(img_list_debug_f,img_list_debug_nf)
 
-batchSize = 10 # Number of Training IMages for Each Leanring Episode (which will define error graident )
-Nbatches = 1500
+batchSize = 15 # Number of Training IMages for Each Leanring Episode (which will define error graident )
+Nbatches = 1000
 trainingN = 5 ##Training Cycles For Each Batch
 
 
