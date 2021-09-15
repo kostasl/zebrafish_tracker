@@ -331,8 +331,8 @@ img_dim <- c(38,28)
 N_Layers <- 2
 
 n_top_px <- img_dim[2]*img_dim[1]
-N_KC = n_top_px*5 ## Number of Kenyon Cells (Input layer High Dim Coding)
-N_SYN_per_KC <- 10# n_top_px/500 ## Number of pic Features each KC neuron Codes for
+N_KC = n_top_px*6 ## Number of Kenyon Cells (Input layer High Dim Coding)
+N_SYN_per_KC <- 5# n_top_px/500 ## Number of pic Features each KC neuron Codes for
 #KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 v_Layer_N <- c(n_top_px, N_KC, 2)
 v_Layer_N3 <- c(n_top_px, N_KC,100, 2)
@@ -399,7 +399,7 @@ img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,
 ##img_list_train <-  rbind.data.frame(img_list_debug_f,img_list_debug_nf)
 
 batchSize = 15 # Number of Training IMages for Each Leanring Episode (which will define error graident )
-Nbatches = 1000
+Nbatches = 1500
 trainingN = 5 ##Training Cycles For Each Batch
 
 
@@ -448,15 +448,13 @@ for (b in 1:Nbatches)
 } ## Different Batch Suffles  
 
 
-
-
 plot(c) #ylim=c(0,1)
 
 
 
 
 
-### Calcl Final Performance 
+### Calc Final Performance 
 
 ##Select Subset Batch
 img_list_suffled <- img_list_all[sample(1:nrow(img_list_all),50 ),]#rbind.data.frame(img_list_debug_f,img_list_debug_nf) img_list_train_nonfish#img_list_all[sample(1:nrow(img_list_all),50 ),] #img_list_test_nonfish #img_list_test_nonfish # 

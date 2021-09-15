@@ -230,14 +230,14 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 
   /// SliDing Window Scanning
-  int iSlidePx_H_step = 1;
-  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2-0;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = iSlidePx_H_begin+0;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidePx_H_step = 2;
+  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2-4;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = iSlidePx_H_begin+4;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
-  int iSlidePx_V_step = 1;
-  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-0); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin +0); //(int)(sztemplate.height/2)
+  int iSlidePx_V_step = 2;
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-2); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin +6); //(int)(sztemplate.height/2)
 
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
@@ -351,31 +351,32 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     if (imgRegion_bin.cols*imgRegion_bin.rows != mW_L1.cols)
         return 0.0;
 
-    qDebug() << "input img Type:" << type2str(imgRegion_bin.type());
-    cv::imshow("Input Img ", imgRegion_bin);
+    //qDebug() << "input img Type:" << type2str(imgRegion_bin.type());
+    //cv::imshow("Input Img ", imgRegion_bin);
 
-    cv::Mat vIn(mW_L1.cols,1,imgRegion_bin.type()); //imgRegion_bin.reshape(0,mW_L1.cols);  //Col Vector
+    cv::Mat vIn =imgRegion_bin.reshape(0,mW_L1.cols);  //Col Vector (mW_L1.cols,1,imgRegion_bin.type());
 
 
-    //Apply Neural Transfer Function
-    int i = 0;
-    for (int c=0; c<imgRegion_bin.cols;c++){
-        for (int r=0; r<imgRegion_bin.rows;r++){
-        vIn.at<uchar>(i,0) = imgRegion_bin.at<uchar>(r,c);//netNeuralTF(vIn.at<float>(0,i));
-        //qDebug() << i << ". " << vIn.at<uchar>(i,0);
-        i++;
-        }
-    }
+//    //Apply Neural Transfer Function
+//    int i = 0;
+//    for (int c=0; c<imgRegion_bin.cols;c++){
+//        for (int r=0; r<imgRegion_bin.rows;r++){
+//        vIn.at<uchar>(i,0) = imgRegion_bin.at<uchar>(r,c);//netNeuralTF(vIn.at<float>(0,i));
+//        //qDebug() << i << ". " << vIn.at<uchar>(i,0);
+//        i++;
+//        }
+//    }
 
+
+    //cv::imshow("Vin Out 8bit ", vIn.reshape(1,imgRegion_bin.rows));
 
     vIn.convertTo(vIn, CV_32FC1);
     mW_L1.convertTo(mW_L1,CV_32FC1);
     mB_L1.convertTo(mB_L1,CV_32FC1);
 
+    //cv::imshow("Vin Out 32Fbit ", vIn.reshape(1,imgRegion_bin.rows));
     //qDebug() << "W_l1 Type:" << type2str(mW_L1.type());
 
-
-    cv::imshow("Vin Out ", vIn.reshape(1,imgRegion_bin.cols));
 
     //cv::imshow("Vin Out TF", vIn.reshape(1,imgRegion_bin.rows));
 
@@ -400,7 +401,7 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
 
 
     // Display KC Thresholded Output
-    cv::Mat KC_show = mL1_out.reshape(1,38*5);
+    //cv::Mat KC_show = mL1_out.reshape(1,38*5);
     //KC_show.convertTo(KC_show,imgRegion_bin.type());
     //cv::imshow("L1 out TF",KC_show);
 
