@@ -55,8 +55,10 @@ fishdetector::fishdetector()
     ///Matrices Are read Serialized per Column - not per row (as is the default R ser. of matrices)
     fsNet["LW1"] >> mW_L1;
     fsNet["LW2"] >> mW_L2;
+    fsNet["LW3"] >> mW_L3;
     fsNet["LB1"] >> mB_L1;
     fsNet["LB2"] >> mB_L2;
+    fsNet["LB3"] >> mB_L3;
 //    mW_L1 = loadImage();
 //    mW_L2 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L2_W_SparseNet.pgm") );
 
@@ -68,8 +70,10 @@ fishdetector::fishdetector()
 
     mW_L1.convertTo(mW_L1, CV_32FC1);
     mW_L2.convertTo(mW_L2, CV_32FC1);
+    mW_L3.convertTo(mW_L3, CV_32FC1);
     mB_L1.convertTo(mB_L1, CV_32FC1);
     mB_L2.convertTo(mB_L2, CV_32FC1);
+    mB_L3.convertTo(mB_L3, CV_32FC1);
 }
 
 /// \brief Utility function takes img contained in rotated rect and returns the contained image region
@@ -231,13 +235,13 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
   /// SliDing Window Scanning
   int iSlidePx_H_step = 2;
-  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2-4;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = iSlidePx_H_begin+4;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2-0;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = iSlidePx_H_begin+0;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
   int iSlidePx_V_step = 2;
-  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-2); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin +6); //(int)(sztemplate.height/2)
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-0); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin +0); //(int)(sztemplate.height/2)
 
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
@@ -356,7 +360,6 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
 
     cv::Mat vIn =imgRegion_bin.reshape(0,mW_L1.cols);  //Col Vector (mW_L1.cols,1,imgRegion_bin.type());
 
-
 //    //Apply Neural Transfer Function
 //    int i = 0;
 //    for (int c=0; c<imgRegion_bin.cols;c++){
@@ -366,57 +369,43 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
 //        i++;
 //        }
 //    }
-
-
     //cv::imshow("Vin Out 8bit ", vIn.reshape(1,imgRegion_bin.rows));
 
     vIn.convertTo(vIn, CV_32FC1);
-    mW_L1.convertTo(mW_L1,CV_32FC1);
-    mB_L1.convertTo(mB_L1,CV_32FC1);
+    //mW_L1.convertTo(mW_L1,CV_32FC1);
+    //mB_L1.convertTo(mB_L1,CV_32FC1);
 
     //cv::imshow("Vin Out 32Fbit ", vIn.reshape(1,imgRegion_bin.rows));
     //qDebug() << "W_l1 Type:" << type2str(mW_L1.type());
-
-
     //cv::imshow("Vin Out TF", vIn.reshape(1,imgRegion_bin.rows));
 
     /// \TODO Matrices are not read correctly beyond 1st column mW_L1
     // operation multiplies matrix A of size [a x b] with matrix B of size [b x c]
     //to the Layer 1 output produce matrix C of size [a x c]
     mL1_out = mW_L1*vIn + mB_L1;
-
-
-    //cv::imshow("L1 out ",mL1_out.reshape(1,38*5));
-
-
     //Apply Neural Transfer Function
     for (int i=0; i<mL1_out.cols;i++)
     {
-        float fnOut = netNeuralTF(mL1_out.at<float>(0,i));
-        //qDebug() << "mL1_out " << mL1_out.at<float>(0,i) << "-> " << fnOut;
-        mL1_out.at<float>(0,i) = fnOut;
+        mL1_out.at<float>(0,i) = netNeuralTF(mL1_out.at<float>(0,i));
     }
-    // Threshold for Activation Function
-    //cv::threshold(mL1_out,mL1_out,fL1_activity_thres,1,cv::THRESH_BINARY);
 
-
-    // Display KC Thresholded Output
-    //cv::Mat KC_show = mL1_out.reshape(1,38*5);
-    //KC_show.convertTo(KC_show,imgRegion_bin.type());
-    //cv::imshow("L1 out TF",KC_show);
-
-    //Calc Layer Activation
+    //Calc Layer 2 (Hidden Layer 2) Activation
     mL2_out =  mW_L2*mL1_out + mB_L2;
-
     //Apply Neural Transfer Function
     for (int i=0; i<mL2_out.rows;i++)
         mL2_out.at<float>(i,0) = netNeuralTF(mL2_out.at<float>(i,0));
 
+    //Calc Layer 3 (Output) Activation
+    mL3_out =  mW_L3*mL2_out + mB_L3;
+    //Apply Neural Transfer Function
+    for (int i=0; i<mL3_out.rows;i++)
+        mL3_out.at<float>(i,0) = netNeuralTF(mL3_out.at<float>(i,0));
+
 
     //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)
-    fFishClass = mL2_out.at<float>(0,0);
+    fFishClass = mL3_out.at<float>(0,0);
     // Check 2 row (neuron) output
-    fNonFishClass = mL2_out.at<float>(1,0);
+    fNonFishClass = mL3_out.at<float>(1,0);
 
     //double minL1,maxL1;
     //cv::minMaxLoc(mL1_out,&minL1,&maxL1);

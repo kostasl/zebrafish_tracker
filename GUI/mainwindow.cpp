@@ -1282,7 +1282,7 @@ void MainWindow::on_spinBoxFishnetL1thres_valueChanged(int arg1)
     gTrackerState.fishnet_L1_threshold = (float)arg1/10.0;
 }
 
-
+///\todo Slot no longer needed
 void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(int arg1)
 {
     gTrackerState.fishnet_L2_classifier = (float)arg1;
@@ -1292,5 +1292,11 @@ void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(int arg1)
 void MainWindow::on_spinBoxFishNetSparseness_valueChanged(int arg1)
 {
     gTrackerState.fishnet_inputSparseness = (float)arg1/100.0;
+}
+
+
+void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(double arg1)
+{
+     gTrackerState.fishnet_L2_classifier = arg1;
 }
 

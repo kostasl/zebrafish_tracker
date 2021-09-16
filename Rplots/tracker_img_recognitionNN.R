@@ -9,15 +9,14 @@
 library("pixmap")
 library("yaml")
 
-## TODO GIGURE OUT INIT That Works
 
-## Initialiaze the random Weight vector of an L1 (KC) neuron  
+## Initialize the random Weight vector of an L1 (KC) neuron  
 init_random_W <- function(m, p){
   # Draw random Number N of Sampled Inputs From Binomial
   #n <- rbinom(1,length(m),p)
   ## Set N random synapses as inputs to KC
   #idx <- sample(1:length(m),n)
-  m <- rnorm(NROW(m),0,sd=0.5) #runif(NROW(m))/(10*NROW(m)) ##Weak Synapses
+  m <- rnorm(NROW(m),0,sd=0.1) ## larger SD sizes make learning divergent ///#runif(NROW(m))/(10*NROW(m)) ##Weak Synapses
   ## Likely Stronger Subset
   #m[idx] <- 1#/length(m) #runif(n)/(10*length(m)) #1/NROW(m)
   #print(length(m))
@@ -240,13 +239,15 @@ net_proc_images_batch <- function(mat_X,inmat_W,inLayer_Bias,mat_Y,learningRate 
       {
         #L_X[[l-1]][1,] = 1 ##No Need - Removed for TEST/ Add COnst Input so W_i operates as a Bias IxW
         L_A[[l]] <- N_activation(L_X[[l-1]], inmat_W[[l-1]], inLayer_Bias[[l-1]] )
+        
         L_X[[l]] <- N_transfer( L_A[[l]])
+        
       }
     }
     MSQError =  sum(((mat_Y) - L_X[[N_Layers+1]] )^2)/ ncol(mat_X)
 
     ## Note Indexes L_X and mat/biases are off by one because LX_1 is considerened an input layer, while neural layer is l=2
-    ## Back Propagation ##
+    ### Back Propagation ###
     for (l in (N_Layers):1 )
     {
       ##On Output Layer
@@ -290,12 +291,14 @@ net_proc_images_batch <- function(mat_X,inmat_W,inLayer_Bias,mat_Y,learningRate 
       {
         ##Activation 
         L_A[[1]] <- mat_X
-        L_X[[1]] <- mat_X##N_transfer(X-0.5)
+        L_X[[1]] <- mat_X ##N_transfer(X-0.5)
         
       }else
       {
         L_A[[l]] <- N_activation(L_X[[l-1]], inmat_W[[l-1]], inLayer_Bias[[l-1]] )
+        stopifnot(!any(is.nan( L_A[[l]]))) ##Check LAST W update did not cause NAN
         L_X[[l]] <- N_transfer( L_A[[l]])
+        stopifnot(!any(is.nan(L_X[[l]]))) ##Check For NAN
       }
     }
     MSQError =  sum(((mat_Y) - L_X[[N_Layers+1]] )^2)/ ncol(mat_X)
@@ -328,14 +331,14 @@ net_proc_images_batch <- function(mat_X,inmat_W,inLayer_Bias,mat_Y,learningRate 
 
 
 img_dim <- c(38,28)
-N_Layers <- 2
-
+N_Layers <- 3
+dInitialLearningRate    <- dLearningRate <- 0.0001
 n_top_px <- img_dim[2]*img_dim[1]
-N_KC = n_top_px*6 ## Number of Kenyon Cells (Input layer High Dim Coding)
-N_SYN_per_KC <- 5# n_top_px/500 ## Number of pic Features each KC neuron Codes for
+N_KC = n_top_px*5 ## Number of Kenyon Cells (Input layer High Dim Coding)
+N_SYN_per_KC <- 5  #ONLY FOR L1-2  n_top_px/500 ## Number of pic Features each KC neuron Codes for
 #KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
-v_Layer_N <- c(n_top_px, N_KC, 2)
-v_Layer_N3 <- c(n_top_px, N_KC,100, 2)
+v_Layer_N2 <- c(n_top_px, N_KC, 2)
+v_Layer_N <- c(n_top_px, N_KC,500, 2)
 
 #v_Layer_CON <- c(N_SYN_per_KC/n_top_px,)
 Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
@@ -398,9 +401,9 @@ img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,
 
 ##img_list_train <-  rbind.data.frame(img_list_debug_f,img_list_debug_nf)
 
-batchSize = 15 # Number of Training IMages for Each Leanring Episode (which will define error graident )
+batchSize = 50 # Number of Training IMages for Each Leanring Episode (which will define error graident )
 Nbatches = 1500
-trainingN = 5 ##Training Cycles For Each Batch
+trainingN = 15 ##Training Cycles For Each Batch
 
 
 
@@ -423,11 +426,13 @@ for (b in 1:Nbatches)
   label_list <-cbind.data.frame(F=(img_list_suffled[,2]),NF=(img_list_suffled[,3]) )##Target output/labels
   mat_Y <- t(apply(as.matrix(label_list),2,strtoi))  
 
+  message("~~~~ Learning Rate: ",dLearningRate)
   
   for (i in 1:trainingN)
   {  
     
-    dLearningRate    <- 0.0001
+    dLearningRate    <- dInitialLearningRate/i
+    
     
     # TRAIN On Fish 
     dnetout <- net_proc_images_batch(mat_X, mat_W, Layer_Bias, mat_Y, dLearningRate )
@@ -441,12 +446,13 @@ for (b in 1:Nbatches)
     vTrainingError[rIdx] = dnetout$MSQError  #plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
     rIdx = rIdx +1
     
-    plot(vTrainingError) #ylim=c(0,1)xlim=c(0,trainingN*Nbatches)
+    plot(vTrainingError,ylim=c(0.00001,1),type="l",log="y") #ylim=c(0,1)xlim=c(0,trainingN*Nbatches)
     
   }## Repeated Training On Batch 
 
 } ## Different Batch Suffles  
 
+save.image(file="fishNetL3.RData")
 
 plot(c) #ylim=c(0,1)
 
@@ -457,7 +463,7 @@ plot(c) #ylim=c(0,1)
 ### Calc Final Performance 
 
 ##Select Subset Batch
-img_list_suffled <- img_list_all[sample(1:nrow(img_list_all),50 ),]#rbind.data.frame(img_list_debug_f,img_list_debug_nf) img_list_train_nonfish#img_list_all[sample(1:nrow(img_list_all),50 ),] #img_list_test_nonfish #img_list_test_nonfish # 
+img_list_suffled <- img_list_all[sample(1:nrow(img_list_all),100 ),]#rbind.data.frame(img_list_debug_f,img_list_debug_nf) img_list_train_nonfish#img_list_all[sample(1:nrow(img_list_all),50 ),] #img_list_test_nonfish #img_list_test_nonfish # 
 mat_X <- makeInputMatrix(img_list_suffled,mat_W)
 label_list <-cbind.data.frame(F=(img_list_suffled[,2]),NF=(img_list_suffled[,3]) )##Target output/labels
 mat_Y <- t(apply(as.matrix(label_list),2,strtoi))
@@ -486,15 +492,18 @@ hist(dnetout$W[[1]],main="After")
 
 fishNet <- list(LW1=dnetout$W[[1]],
                 LW2=dnetout$W[[2]],
+                LW3=dnetout$W[[3]],
                 LB1=dnetout$B[[1]],
-                LB2=dnetout$B[[2]] 
+                LB2=dnetout$B[[2]],
+                LB3=dnetout$B[[3]] 
 )
 
 #attr(fishNet$LW1, "tag") <- "!!opencv-matrix" ##Adding tags Also Change The Header to Verbatim, which does not work in OPENCV
 attr(fishNet$LW2, "tag") <- "!!opencv-matrix"
+attr(fishNet$LW3, "tag") <- "!!opencv-matrix"
 attr(fishNet$LB1, "tag") <- "!!opencv-matrix"
 attr(fishNet$LB2, "tag") <- "!!opencv-matrix"
-
+attr(fishNet$LB3, "tag") <- "!!opencv-matrix"
 
 
 #fishNet <- list(LW1=Layer_Bias[[2]]
