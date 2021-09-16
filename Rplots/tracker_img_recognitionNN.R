@@ -10,13 +10,21 @@ library("pixmap")
 library("yaml")
 
 
+
 ## Initialize the random Weight vector of an L1 (KC) neuron  
-init_random_W <- function(m, p){
+init_random_W3 <- function(m, p){
+  m <- rnorm(NROW(m),0.0,sd=0.5) ## larger SD sizes make learning divergent ///#runif(NROW(m))/(10*NROW(m)) ##Weak Synapses
+  return (m)
+}
+
+
+## Initialize the random Weight vector of an L1 (KC) neuron  
+init_random_W2 <- function(m, p){
   # Draw random Number N of Sampled Inputs From Binomial
   #n <- rbinom(1,length(m),p)
   ## Set N random synapses as inputs to KC
   #idx <- sample(1:length(m),n)
-  m <- rnorm(NROW(m),0,sd=0.1) ## larger SD sizes make learning divergent ///#runif(NROW(m))/(10*NROW(m)) ##Weak Synapses
+  m <- rnorm(NROW(m),0,sd=0.5) ## larger SD sizes make learning divergent ///#runif(NROW(m))/(10*NROW(m)) ##Weak Synapses
   ## Likely Stronger Subset
   #m[idx] <- 1#/length(m) #runif(n)/(10*length(m)) #1/NROW(m)
   #print(length(m))
@@ -332,13 +340,13 @@ net_proc_images_batch <- function(mat_X,inmat_W,inLayer_Bias,mat_Y,learningRate 
 
 img_dim <- c(38,28)
 N_Layers <- 3
-dInitialLearningRate    <- dLearningRate <- 0.0001
+dInitialLearningRate    <- dLearningRate <- 0.00001
 n_top_px <- img_dim[2]*img_dim[1]
 N_KC = n_top_px*5 ## Number of Kenyon Cells (Input layer High Dim Coding)
-N_SYN_per_KC <- 5  #ONLY FOR L1-2  n_top_px/500 ## Number of pic Features each KC neuron Codes for
+N_SYN_per_KC <- 50  #ONLY FOR L1-2  n_top_px/500 ## Number of pic Features each KC neuron Codes for
 #KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 v_Layer_N2 <- c(n_top_px, N_KC, 2)
-v_Layer_N <- c(n_top_px, N_KC,500, 2)
+v_Layer_N <- c(n_top_px, N_KC,20, 2)
 
 #v_Layer_CON <- c(N_SYN_per_KC/n_top_px,)
 Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
@@ -353,9 +361,14 @@ for (k in 1:N_Layers)
   ## Init Random
   if (k==1)
     mat_W[[k]] <- t(apply(mat_W[[k]],1,init_sparse_W,N_SYN_per_KC/n_top_px)) ##
-  else
-    mat_W[[k]] <- t(apply(mat_W[[k]],1,init_random_W,0)) ##
   
+  if (k==2)
+    mat_W[[k]] <- t(apply(mat_W[[k]],1,init_random_W2,0)) ##
+  
+  if (k==3)
+    mat_W[[k]] <- t(apply(mat_W[[k]],1,init_random_W3,0)) ##
+  
+    
   Layer_Bias[[k]] <- matrix(1,ncol=1,nrow=v_Layer_N[k+1] )  #rep(1,) ## Initialiaze Neural Biases
 }
 
@@ -375,6 +388,8 @@ sPathTestingSamplesFish="../img/fish/"
 sPathTestingSamplesNonFish="../img/nonfish/"
 
 
+#load(file="fishNetL3.RData")
+
 img_list_train_fish =  cbind(files=list.files(path=sPathTrainingSamples,pattern="*pgm",full.names = T),F=1,NF=0) 
 img_list_test_fish = cbind(files=list.files(path=sPathTestingSamplesFish,pattern="*pgm",full.names = T),F=1,NF=0)
 img_list_train_nonfish =   cbind(files=list.files(path=sPathTrainingNonSamples,pattern="*pgm",full.names = T),F=0,NF=1)
@@ -393,7 +408,7 @@ img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list
 #img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T) Samples ##
 
 
-img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,
+img_list_train <- rbind.data.frame(img_list_train_fish, img_list_test_fish,
                                    img_list_test_nonfish,img_list_train_nonfish,
                                    stringsAsFactors = FALSE)
 #img_list_train <- rbind.data.frame(img_list_train_ones,img_list_train_X)
@@ -401,9 +416,9 @@ img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,
 
 ##img_list_train <-  rbind.data.frame(img_list_debug_f,img_list_debug_nf)
 
-batchSize = 50 # Number of Training IMages for Each Leanring Episode (which will define error graident )
-Nbatches = 1500
-trainingN = 15 ##Training Cycles For Each Batch
+batchSize = 60 # Number of Training IMages for Each Leanring Episode (which will define error graident )
+Nbatches = 500
+trainingN = 150 ##Training Cycles For Each Batch
 
 
 
@@ -427,6 +442,7 @@ for (b in 1:Nbatches)
   mat_Y <- t(apply(as.matrix(label_list),2,strtoi))  
 
   message("~~~~ Learning Rate: ",dLearningRate)
+
   
   for (i in 1:trainingN)
   {  
@@ -449,7 +465,9 @@ for (b in 1:Nbatches)
     plot(vTrainingError,ylim=c(0.00001,1),type="l",log="y") #ylim=c(0,1)xlim=c(0,trainingN*Nbatches)
     
   }## Repeated Training On Batch 
-
+  
+  ##Mark End Of Batch
+  points(length(vTrainingError),tail(vTrainingError,1),ylim=c(0.00001,1),type="p",log="y") #ylim=c(0,1)xlim=c(0,trainingN*Nbatches)
 } ## Different Batch Suffles  
 
 save.image(file="fishNetL3.RData")
