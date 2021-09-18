@@ -13,7 +13,7 @@ library("yaml")
 
 ## Initialize the random Weight vector of an L1 (KC) neuron  
 init_random_W3 <- function(m, p){
-  m <- rnorm(NROW(m),0.0,sd=1) ## larger SD sizes make learning divergent ///#runif(NROW(m))/(10*NROW(m)) ##Weak Synapses
+  m <- rnorm(NROW(m),0.0,sd=0.1) ## larger SD sizes make learning divergent ///#runif(NROW(m))/(10*NROW(m)) ##Weak Synapses
   return (m)
 }
 
@@ -24,7 +24,7 @@ init_random_W2 <- function(m, p){
   #n <- rbinom(1,length(m),p)
   ## Set N random synapses as inputs to KC
   #idx <- sample(1:length(m),n)
-  m <- rnorm(NROW(m),0,sd=1) ## larger SD sizes make learning divergent ///#runif(NROW(m))/(10*NROW(m)) ##Weak Synapses
+  m <- rnorm(NROW(m),0,sd=0.1) ## larger SD sizes make learning divergent ///#runif(NROW(m))/(10*NROW(m)) ##Weak Synapses
   ## Likely Stronger Subset
   #m[idx] <- 1#/length(m) #runif(n)/(10*length(m)) #1/NROW(m)
   #print(length(m))
@@ -340,21 +340,21 @@ net_proc_images_batch <- function(mat_X,inmat_W,inLayer_Bias,mat_Y,learningRate 
 
 
 img_dim <- c(38,28)
-N_Layers <- 4
-dInitialLearningRate    <- dLearningRate <- 0.01
+N_Layers <- 3
+dInitialLearningRate    <- dLearningRate <- 0.0001
 n_top_px <- img_dim[2]*img_dim[1]
 N_KC = round(n_top_px*10) ## Number of Kenyon Cells (Input layer High Dim Coding)
 #N_SYN_per_KC <- 50 NOT USED  #ONLY FOR L1-2  n_top_px/500 ## Number of pic Features each KC neuron Codes for
 #KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 #v_Layer_N2 <- c(n_top_px, N_KC, 2)
-v_Layer_N <- c(n_top_px, 150,70,20, 2) ##number of Units per layer (assume fully connected with Normal Dist of Strength)
+v_Layer_N <- c(n_top_px, 250,20, 2) ##number of Units per layer (assume fully connected with Normal Dist of Strength)
 
 #v_Layer_CON <- c(N_SYN_per_KC/n_top_px,)
 Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
 INPUT_SPARSENESS = 0.25
 
 
-batchSize = 150 # Number of Training IMages for Each Leanring Episode (which will define error graident )
+batchSize = 50 # Number of Training IMages for Each Leanring Episode (which will define error graident )
 Nbatches = 1500 ## Number of random batchs (of size batchSize) to repeat training over
 trainingN = 120 ## Training Cycles For Each Batch
 
@@ -462,7 +462,11 @@ for (b in 1:Nbatches)
     mat_B   <<- dnetout$B
 
     #message(fileidx,". MSQERR:",MSQError,"  ", L2_out[[fileidx]]$L2_F, "-", L2_out[[fileidx]]$L2_NF, " ERR: ", L2_out[[fileidx]]$Err ," ",in_img)
-    message(rIdx,". MSQERR:",dnetout$MSQError,"  ")
+    ## Evaluate Fraction Correct - Check If Fish Out Neuron Is Maximum - Compare to Target Vector 
+    vclassOut <- apply(dnetout$output,2,function(x){ if(which(x== max(x) )==2) return(0) else return(1) })
+    fractCorrect <- sum(dnetout$Target[1,] == vclassOut)/length(vclassOut)
+    
+    message(rIdx,". MSQERR:",dnetout$MSQError,", % Correct: ",fractCorrect)
     
         
     vTrainingError[rIdx] = dnetout$MSQError  #plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
@@ -517,11 +521,11 @@ hist(dnetout$W[[1]],main="After")
 fishNet <- list(LW1=dnetout$W[[1]],
                 LW2=dnetout$W[[2]],
                 LW3=dnetout$W[[3]],
-                LW4=dnetout$W[[4]],
+                #LW4=dnetout$W[[4]],
                 LB1=dnetout$B[[1]],
                 LB2=dnetout$B[[2]],
-                LB3=dnetout$B[[3]],
-                LB4=dnetout$B[[4]] 
+                LB3=dnetout$B[[3]]
+                #LB4=dnetout$B[[4]] 
 )
 
 #attr(fishNet$LW1, "tag") <- "!!opencv-matrix" ##Adding tags Also Change The Header to Verbatim, which does not work in OPENCV
