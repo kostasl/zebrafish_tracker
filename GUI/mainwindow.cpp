@@ -992,7 +992,24 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
             fishblob->response = 101.0f;
             bBlobClicked = true;
         }
-        qDebug() << "Make Fish Model for Blob at x: " << ptMouse.x << " y:" << ptMouse.y;
+
+        if (bBlobClicked)
+            qDebug() << "Existing Blob selected at x: " << ptMouse.x << " y:" << ptMouse.y;
+        else
+        {   qDebug() << "Make Blob at x: " << ptMouse.x << " y:" << ptMouse.y;
+            zftblob fishblob( ptMouse.x,ptMouse.y,50,0,101,0);
+            vfishblobs_pt.push_back(fishblob);
+
+            fishModel* fish= new fishModel(fishblob,0,ptMouse);
+            fish->ID = ++gTrackerState.gi_MaxFishID;
+            fish->idxTemplateRow = 0;
+            fish->idxTemplateCol = 0;
+
+            fish->updateState(&fishblob,101,0,ptMouse,nFrame,
+                              gTrackerState.gFishTailSpineSegmentLength,0,0);
+
+            vfishmodels.insert(IDFishModel(fish->ID,fish));
+        }
     }
 
 

@@ -234,14 +234,14 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 
   /// SliDing Window Scanning
-  int iSlidePx_H_step = 2;
+  int iSlidePx_H_step = 3;
   int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2-0;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = iSlidePx_H_begin+0;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidePx_H_lim = iSlidePx_H_begin+6;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
-  int iSlidePx_V_step = 2;
+  int iSlidePx_V_step = 3;
   int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-0); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin +0); //(int)(sztemplate.height/2)
+  int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 6); //(int)(sztemplate.height/2)
 
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
@@ -353,7 +353,11 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     // Input Is converted to Row Vector So we can do Matrix Multiplation
     //assert(imgRegion_bin.cols*imgRegion_bin.rows == mW_L1.cols);
     if (imgRegion_bin.cols*imgRegion_bin.rows != mW_L1.cols)
+    {
+        fFishClass = -1;
+        fNonFishClass = -1;
         return 0.0;
+    }
 
     //qDebug() << "input img Type:" << type2str(imgRegion_bin.type());
     //cv::imshow("Input Img ", imgRegion_bin);
@@ -424,6 +428,8 @@ void fishdetector::test()
     QString strDirNonFish("/home/kostasl/workspace/zebrafishtrack/img/trainset/nonfish/");
 
     std::vector<cv::Mat> vfish_mat = loadTemplatesFromDirectory(strDirFish);
+    float fsumErrF =0.0f;
+    float fsumErrNF =0.0f;
 
     qDebug() << "~~~Test Fish templates~~~";
     float fishClassScore,nonfishScore,dscore;
@@ -432,8 +438,13 @@ void fishdetector::test()
         cv::Mat imgTempl = vfish_mat[i];
 
         dscore = gTrackerState.fishnet.netDetect(imgTempl,fishClassScore,nonfishScore);
-        qDebug() << "Fish img gave F:" << fishClassScore << " NF:" << nonfishScore;
+        if (fishClassScore > -1)
+            fsumErrF += pow((1-fishClassScore) + (0-nonfishScore),2);
+         qDebug() << "Fish img gave F:" << fishClassScore << " NF:" << nonfishScore;
     }
+
+    fsumErrF = fsumErrF/vfish_mat.size();
+    qDebug() << "Fish Class MSQ ERR:" << fsumErrF;
 
     qDebug() << "~~~Test NON-Fish templates~~~";
     std::vector<cv::Mat> vnonfish_mat = loadTemplatesFromDirectory(strDirNonFish);
@@ -444,6 +455,12 @@ void fishdetector::test()
 
         dscore = gTrackerState.fishnet.netDetect(imgTempl,fishClassScore,nonfishScore);
         qDebug() << "Non-Fish img gave F:" << fishClassScore << " NF:" << nonfishScore;
+        if (fishClassScore > -1)
+            fsumErrNF += pow((0-fishClassScore) + (1-nonfishScore),2);
     }
+    fsumErrNF = fsumErrNF/vnonfish_mat.size();
+    qDebug() << "Non Fish Class MSQ ERR:" << fsumErrNF;
+
+    qDebug() << "~~~Total Error:" << (fsumErrNF + fsumErrF)/2;
 
 }
