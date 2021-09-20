@@ -349,6 +349,7 @@ N_KC = round(n_top_px*5) ## Number of Kenyon Cells (Input layer High Dim Coding)
 #N_SYN_per_KC <- 50 NOT USED  #ONLY FOR L1-2  n_top_px/500 ## Number of pic Features each KC neuron Codes for
 #KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 #v_Layer_N2 <- c(n_top_px, N_KC, 2)
+###THESE SETTINGS L=5 (500,300,100,20, 2) WORKED WITH eta=10e-4
 v_Layer_N <- c(n_top_px, 500,300,100,20, 2) ##number of Units per layer (assume fully connected with Normal Dist of Strength)
 N_Layers <- length(v_Layer_N)-1
 #v_Layer_CON <- c(N_SYN_per_KC/n_top_px,)
