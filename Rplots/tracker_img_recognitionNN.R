@@ -123,7 +123,7 @@ makeInputMatrix <- function(img_list,inmat_W)
     fileidx= fileidx + 1
     
     imgT <- read.pnm(as.character(in_img) )
-    mat_img <- getChannels(imgT)*255  ##x255 Convert back to uint 8-bit
+    mat_img <- getChannels(imgT)  ## Converted 0..1 real
     X <- as.vector(mat_img)
     ### Add Fixed input 1 - To operate As Adjustable Bias for each input   
     ##X[length(X)] <- 1 # c(as.vector(mat_img),1)
@@ -349,14 +349,14 @@ N_KC = round(n_top_px*5) ## Number of Kenyon Cells (Input layer High Dim Coding)
 #N_SYN_per_KC <- 50 NOT USED  #ONLY FOR L1-2  n_top_px/500 ## Number of pic Features each KC neuron Codes for
 #KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 #v_Layer_N2 <- c(n_top_px, N_KC, 2)
-v_Layer_N <- c(n_top_px, 1800,900,400,200,100,50, 2) ##number of Units per layer (assume fully connected with Normal Dist of Strength)
+v_Layer_N <- c(n_top_px, 500,300,100,20, 2) ##number of Units per layer (assume fully connected with Normal Dist of Strength)
 N_Layers <- length(v_Layer_N)-1
 #v_Layer_CON <- c(N_SYN_per_KC/n_top_px,)
 Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
 INPUT_SPARSENESS = 0.25
 
 
-batchSize = 300 # Number of Training IMages for Each Leanring Episode (which will define error graident )
+batchSize = 132 # Number of Training IMages for Each Leanring Episode (which will define error graident )
 Nbatches = 1500 ## Number of random batchs (of size batchSize) to repeat training over
 trainingN = 100 ## Training Cycles For Each Batch
 
@@ -393,18 +393,21 @@ hist(colSums(mat_W[[1]]),main="Number of inputs per KC")
 ## list training files 
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 sPathTrainingSamples="../img/trainset/fish"
+sPathTrainingSamplesB="../img/trainset/fish_B"
 sPathTrainingNonSamples="../img/trainset/nonfish/"
+sPathTrainingNonSamplesB="../img/trainset/nonfish_B/"
 sPathTestingSamplesFish="../img/fish/"
 sPathTestingSamplesNonFish="../img/nonfish/"
 
 
 #load(file="fishNetL3.RData")
+#load(file=paste0("fishNetL",7,"-B.RData"))
 
-load(file=paste0("fishNetL",7,"-B.RData"))
-
-img_list_train_fish =  cbind(files=list.files(path=sPathTrainingSamples,pattern="*pgm",full.names = T),F=1,NF=0) 
+img_list_train_fish =  cbind(files=list.files(path=sPathTrainingSamples,pattern="*pgm",full.names = T),F=1,NF=0)
+img_list_train_fishB =  cbind(files=list.files(path=sPathTrainingSamplesB,pattern="*pgm",full.names = T),F=1,NF=0) 
 img_list_test_fish = cbind(files=list.files(path=sPathTestingSamplesFish,pattern="*pgm",full.names = T),F=1,NF=0)
 img_list_train_nonfish =   cbind(files=list.files(path=sPathTrainingNonSamples,pattern="*pgm",full.names = T),F=0,NF=1)
+img_list_train_nonfishB =   cbind(files=list.files(path=sPathTrainingNonSamplesB,pattern="*pgm",full.names = T),F=0,NF=1)
 img_list_test_nonfish =  cbind(files=list.files(path=sPathTestingSamplesNonFish,pattern="*pgm",full.names = T),F=0,NF=1)
 
 ## A Small Sample set for Testing the Algorithm Discrimiation between X and 1 
@@ -415,14 +418,20 @@ img_list_debug_f <-  cbind(files=list.files(path="../img/debug/fish/",pattern="*
 img_list_debug_nf <-  cbind(files=list.files(path="../img/debug/nonfish/",pattern="*pgm",full.names = T),F=0,NF=1)
 
 
-img_list_all <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_test_nonfish,stringsAsFactors = FALSE) #
+img_list_all <- rbind.data.frame(img_list_train_fish,
+                                 img_list_train_fishB,
+                                 img_list_test_fish,
+                                 img_list_train_nonfish,
+                                 img_list_train_nonfishB,
+                                 img_list_test_nonfish,stringsAsFactors = FALSE) #
 #img_list_train <- rbind.data.frame(img_list_train_fish,img_list_test_fish,img_list_train_nonfish,img_list_train_nonfish,stringsAsFactors = FALSE)
 #img_list_test=  list.files(path=sPathTestingSamples,pattern="*pgm",full.names = T) Samples ##
 
 
-img_list_train <- rbind.data.frame(img_list_train_fish, img_list_test_fish,
-                                   img_list_test_nonfish,img_list_train_nonfish,
-                                   stringsAsFactors = FALSE)
+img_list_train <- rbind.data.frame(img_list_train_fish,
+                                   img_list_train_fishB,
+                                   img_list_train_nonfish,
+                                   img_list_train_nonfishB, stringsAsFactors = FALSE) #
 #img_list_train <- rbind.data.frame(img_list_train_ones,img_list_train_X)
 #img_list_all <- rbind.data.frame(img_list_train_fish,stringsAsFactors = FALSE)
 #img_list_train <-  rbind.data.frame(img_list_debug_f,img_list_debug_nf)
@@ -524,38 +533,17 @@ hist(dnetoutV$Target - N_transfer( dnetoutV$output) )
 
 
 ## FOR EXPORT MATRICES TO YAML SO THEY CAN BE LOADED INTO TRACKER  ##
+fishNet <- list(NLayer=length(dnetout$W))
+for (l in 1:fishNet$NLayer)
+{
+  fishNet[[paste0("LW",as.character(l))]] = dnetout$W[[l]]
+  fishNet[[paste0("LB",as.character(l))]] = dnetout$B[[l]]
+  attr(fishNet[[paste0("LW",as.character(l))]], "tag") <- "!!opencv-matrix" ##Adding tags Also Change The Header to Verbatim, which does not work in OPENCV
+  attr(fishNet[[paste0("LB",as.character(l))]], "tag") <- "!!opencv-matrix" ##Adding tags Also Change The Header to Verbatim, which does not work in OPENCV
+}
 
-fishNet <- list(NLayer=length(dnetout$W),
-                LW1=dnetout$W[[1]],
-                LW2=dnetout$W[[2]],
-                LW3=dnetout$W[[3]],
-                LW4=dnetout$W[[4]],
-                LW5=dnetout$W[[5]],
-                LW6=dnetout$W[[6]],
-                LW7=dnetout$W[[7]],
-                LB1=dnetout$B[[1]],
-                LB2=dnetout$B[[2]],
-                LB3=dnetout$B[[3]],
-                LB4=dnetout$B[[4]],
-                LB5=dnetout$B[[5]],
-                LB6=dnetout$B[[6]],
-                LB7=dnetout$B[[7]]
-)
 
-attr(fishNet$LW1, "tag") <- "!!opencv-matrix" ##Adding tags Also Change The Header to Verbatim, which does not work in OPENCV
-attr(fishNet$LW2, "tag") <- "!!opencv-matrix"
-attr(fishNet$LW3, "tag") <- "!!opencv-matrix"
-attr(fishNet$LW4, "tag") <- "!!opencv-matrix"
-attr(fishNet$LW5, "tag") <- "!!opencv-matrix"
-attr(fishNet$LW6, "tag") <- "!!opencv-matrix"
-attr(fishNet$LW7, "tag") <- "!!opencv-matrix"
-attr(fishNet$LB1, "tag") <- "!!opencv-matrix"
-attr(fishNet$LB2, "tag") <- "!!opencv-matrix"
-attr(fishNet$LB3, "tag") <- "!!opencv-matrix"
-attr(fishNet$LB4, "tag") <- "!!opencv-matrix"
-attr(fishNet$LB5, "tag") <- "!!opencv-matrix"
-attr(fishNet$LB6, "tag") <- "!!opencv-matrix"
-attr(fishNet$LB7, "tag") <- "!!opencv-matrix"
+
 #fishNet <- list(LW1=Layer_Bias[[2]]
 #)
 ## EXPORT TO YAML FOR OPENCV - Custom/hacked exporter routine specific to OPENCV
