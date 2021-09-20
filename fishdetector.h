@@ -32,13 +32,17 @@ public:
 
 private:
 
-    cv::Mat mW_L1,mB_L1; //Weights and Biases Layer 1
-    cv::Mat mW_L2,mB_L2; //Weights and Biases Layer 2
-    cv::Mat mW_L3,mB_L3; //Weights and Biases Layer 2
-    ///Matrices Holding Layer state / Result of FWD prop
-    cv::Mat mL1_out;
-    cv::Mat mL2_out;
-    cv::Mat mL3_out;
+    /// Vector of Matrices Holding Layer state / Result of FWD prop
+    //Weights and Biases Layer
+    std::vector<cv::Mat> vmW_L;
+    std::vector<cv::Mat> vmB_L;
+    std::vector<cv::Mat> vmL_out;
+
+
+    //cv::Mat mL2_out;
+    //cv::Mat mL3_out;
+    //cv::Mat mL4_out;
+    //cv::Mat mL5_out;
 };
 
 #endif // FISHDETECTOR_H

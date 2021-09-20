@@ -51,29 +51,35 @@ fishdetector::fishdetector()
 
     FileStorage fsNet;
     fsNet.open( sDir, FileStorage::READ,String("UTF-8"));
+    int iLayerCount = 0;
+
+    // Load Network Into Array of Matrices -
+    fsNet["NLayer"] >> iLayerCount;
+    vmW_L.resize(iLayerCount);
+    vmB_L.resize(iLayerCount);
+    vmL_out.resize(iLayerCount);
 
     ///Matrices Are read Serialized per Column - not per row (as is the default R ser. of matrices)
-    fsNet["LW1"] >> mW_L1;
-    fsNet["LW2"] >> mW_L2;
-    fsNet["LW3"] >> mW_L3;
-    fsNet["LB1"] >> mB_L1;
-    fsNet["LB2"] >> mB_L2;
-    fsNet["LB3"] >> mB_L3;
-//    mW_L1 = loadImage();
-//    mW_L2 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L2_W_SparseNet.pgm") );
+    for (int l=0;l<iLayerCount;l++)
+    {
+        //cv::Mat mW_L;
+        //cv::Mat mB_L;
+        string sLayerW_ID = string("LW") + QString::number(l+1).toStdString();
+        string sLayerB_ID = string("LB") + QString::number(l+1).toStdString();
 
-//    mB_L1 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L1_B_SparseNet.pgm"));
-//    mB_L2 = loadImage(std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/L2_B_SparseNet.pgm") );
+        fsNet[sLayerW_ID] >> vmW_L[l];
+        fsNet[sLayerB_ID] >> vmB_L[l];
 
-    //cv::threshold(mW_L1,mW_L1,0.1,1,cv::THRESH_BINARY);
-    //cv::threshold(mW_L2,mW_L2,0.1,1,cv::THRESH_BINARY);
+        //vmW_L[l].convertTo(vmW_L[l], CV_32FC1);
+        //vmB_L[l].convertTo(vmW_L[l], CV_32FC1);
+    }
 
-    mW_L1.convertTo(mW_L1, CV_32FC1);
-    mW_L2.convertTo(mW_L2, CV_32FC1);
-    mW_L3.convertTo(mW_L3, CV_32FC1);
-    mB_L1.convertTo(mB_L1, CV_32FC1);
-    mB_L2.convertTo(mB_L2, CV_32FC1);
-    mB_L3.convertTo(mB_L3, CV_32FC1);
+    //fsNet["LW2"] >> mW_L2;    fsNet["LW3"] >> mW_L3;    fsNet["LW4"] >> mW_L4;    fsNet["LW5"] >> mW_L5;    fsNet["LB1"] >> mB_L1;    fsNet["LB2"] >> mB_L2;    fsNet["LB3"] >> mB_L3;
+    //fsNet["LB4"] >> mB_L4;
+    //fsNet["LB5"] >> mB_L5;
+
+    //mW_L1.convertTo(mW_L1, CV_32FC1);    mW_L2.convertTo(mW_L2, CV_32FC1);    mW_L3.convertTo(mW_L3, CV_32FC1);    mW_L4.convertTo(mW_L4, CV_32FC1);
+    //mB_L1.convertTo(mB_L1, CV_32FC1);    mB_L2.convertTo(mB_L2, CV_32FC1);    mB_L3.convertTo(mB_L3, CV_32FC1);    mB_L4.convertTo(mB_L4, CV_32FC1);
 }
 
 /// \brief Utility function takes img contained in rotated rect and returns the contained image region
@@ -230,7 +236,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
   //Binarize Input To set Specific Sparseness/Density
   //imgFishAnterior_Norm_bin = sparseBinarize(imgFishAnterior_Norm,gTrackerState.fishnet_inputSparseness);
   imgFishAnterior_Norm_bin = imgFishAnterior_Norm;
-  cv::imshow(std::string("BIN") + regTag,imgFishAnterior_Norm_bin);
+   //cv::imshow(std::string("BIN") + regTag,imgFishAnterior_Norm_bin);
 
 
   /// SliDing Window Scanning
@@ -265,8 +271,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           /// Score Number of Bin Pix In cropped region so as to push for regions that fully contain the eyes
           //float activePixRatio = (1+cv::sum(imgFishAnterior_Norm_tmplcrop)[0])/(imgFishAnterior_Norm_tmplcrop.cols*imgFishAnterior_Norm_tmplcrop.rows);
           ///  Store recognition score in Mask at(row,col) -//
-          maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2,
-                                         i+gTrackerState.gszTemplateImg.width/2) = dscore;//max(0.0f,dscore);//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
+          maskRegionScore_Norm.at<float>(j +gTrackerState.gszTemplateImg.height/2, // ,
+                                         i +gTrackerState.gszTemplateImg.width/2) = dscore;// //max(0.0f,dscore);//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
           //qDebug() << "(" << i+sztemplate.width/2 << "," <<j+sztemplate.height/2<<") = " << round(sc1*100)/100.0;
             //qDebug() << maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2,
             //                                           i+gTrackerState.gszTemplateImg.width/2);
@@ -304,8 +310,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
     /// Find Max Score Coords In Normed FishAnterior / Around Best Match Region (Using Normed Region)
 
-    cv::Point ptTopLeftTemplate(max(0,ptmax.x-gTrackerState.gLastfishimg_template.size().width/2),
-                                max(0,ptmax.y-gTrackerState.gLastfishimg_template.size().height/2) );
+    cv::Point ptTopLeftTemplate(max(0,ptmax.x-gTrackerState.gszTemplateImg.width/2),
+                                max(0,ptmax.y-gTrackerState.gszTemplateImg.height/2) );
     // Stick To Boundary for Template Size Window
     ptTopLeftTemplate.x =((ptTopLeftTemplate.x + gTrackerState.gszTemplateImg.width) >= maskRegionScore_Norm.cols)?maskRegionScore_Norm.cols-gTrackerState.gszTemplateImg.width:ptTopLeftTemplate.x;
     ptTopLeftTemplate.y =((ptTopLeftTemplate.y + gTrackerState.gszTemplateImg.height) >= maskRegionScore_Norm.rows)?maskRegionScore_Norm.rows-gTrackerState.gszTemplateImg.height: ptTopLeftTemplate.y;
@@ -352,7 +358,7 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
 
     // Input Is converted to Row Vector So we can do Matrix Multiplation
     //assert(imgRegion_bin.cols*imgRegion_bin.rows == mW_L1.cols);
-    if (imgRegion_bin.cols*imgRegion_bin.rows != mW_L1.cols)
+    if (imgRegion_bin.cols*imgRegion_bin.rows != vmW_L[0].cols)
     {
         fFishClass = -1;
         fNonFishClass = -1;
@@ -362,54 +368,85 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     //qDebug() << "input img Type:" << type2str(imgRegion_bin.type());
     //cv::imshow("Input Img ", imgRegion_bin);
 
-    cv::Mat vIn =imgRegion_bin.reshape(0,mW_L1.cols);  //Col Vector (mW_L1.cols,1,imgRegion_bin.type());
+    // Make Col Vector
+    cv::Mat vIn(vmW_L[0].cols,1,imgRegion_bin.type()); /// =imgRegion_bin.reshape(0,mW_L1.cols);  <- Reshape Does not work as intented
 
-//    //Apply Neural Transfer Function
-//    int i = 0;
-//    for (int c=0; c<imgRegion_bin.cols;c++){
-//        for (int r=0; r<imgRegion_bin.rows;r++){
-//        vIn.at<uchar>(i,0) = imgRegion_bin.at<uchar>(r,c);//netNeuralTF(vIn.at<float>(0,i));
-//        //qDebug() << i << ". " << vIn.at<uchar>(i,0);
-//        i++;
-//        }
-//    }
+    //for (int i=0; i<vIn.rows;i++){
+    //      qDebug() << i << ". " << vIn.at<uchar>(0,i);
+    //}
+     // Reshape Image Matrix into column vector  (Custom required)
+     int i = 0;
+     for (int c=0; c<imgRegion_bin.cols;c++){
+         for (int r=0; r<imgRegion_bin.rows;r++){
+        vIn.at<uchar>(i,0) = imgRegion_bin.at<uchar>(r,c);//netNeuralTF(vIn.at<float>(0,i));
+        //qDebug() << i << ". " << vIn.at<uchar>(i,0);
+        i++;
+        }
+    }
     //cv::imshow("Vin Out 8bit ", vIn.reshape(1,imgRegion_bin.rows));
 
     vIn.convertTo(vIn, CV_32FC1);
-    //mW_L1.convertTo(mW_L1,CV_32FC1);
-    //mB_L1.convertTo(mB_L1,CV_32FC1);
 
+    for (int l=0;l<vmW_L.size();l++)
+    {
+        if (l==0)
+            vmL_out[l] = vmW_L[l]*vIn +vmB_L[l];
+        else
+            vmL_out[l] = vmW_L[l]*vmL_out[l-1] +vmB_L[l];
+
+        //Apply Neural Transfer Function
+        for (int i=0; i<vmL_out[l].rows;i++)
+        {
+            vmL_out[l].at<float>(i,0) = netNeuralTF(vmL_out[l].at<float>(i,0));
+        }
+    }
     //cv::imshow("Vin Out 32Fbit ", vIn.reshape(1,imgRegion_bin.rows));
     //qDebug() << "W_l1 Type:" << type2str(mW_L1.type());
     //cv::imshow("Vin Out TF", vIn.reshape(1,imgRegion_bin.rows));
 
-    /// \TODO Matrices are not read correctly beyond 1st column mW_L1
-    // operation multiplies matrix A of size [a x b] with matrix B of size [b x c]
-    //to the Layer 1 output produce matrix C of size [a x c]
-    mL1_out = mW_L1*vIn + mB_L1;
-    //Apply Neural Transfer Function
-    for (int i=0; i<mL1_out.cols;i++)
-    {
-        mL1_out.at<float>(0,i) = netNeuralTF(mL1_out.at<float>(0,i));
-    }
+//    /// \TODO Matrices are not read correctly beyond 1st column mW_L1
+//    // operation multiplies matrix A of size [a x b] with matrix B of size [b x c]
+//    //to the Layer 1 output produce matrix C of size [a x c]
+//    mL1_out = mW_L1*vIn + mB_L1;
+//    //Apply Neural Transfer Function
+//    for (int i=0; i<mL1_out.cols;i++)
+//    {
+//        mL1_out.at<float>(0,i) = netNeuralTF(mL1_out.at<float>(0,i));
+//    }
 
-    //Calc Layer 2 (Hidden Layer 2) Activation
-    mL2_out =  mW_L2*mL1_out + mB_L2;
-    //Apply Neural Transfer Function
-    for (int i=0; i<mL2_out.rows;i++)
-        mL2_out.at<float>(i,0) = netNeuralTF(mL2_out.at<float>(i,0));
+//    //Calc Layer 2 (Hidden Layer 2) Activation
+//    mL2_out =  mW_L2*mL1_out + mB_L2;
+//    //Apply Neural Transfer Function
+//    for (int i=0; i<mL2_out.rows;i++)
+//        mL2_out.at<float>(i,0) = netNeuralTF(mL2_out.at<float>(i,0));
 
-    //Calc Layer 3 (Output) Activation
-    mL3_out =  mW_L3*mL2_out + mB_L3;
-    //Apply Neural Transfer Function
-    for (int i=0; i<mL3_out.rows;i++)
-        mL3_out.at<float>(i,0) = netNeuralTF(mL3_out.at<float>(i,0));
+//    //Calc Layer 3 (Output) Activation
+//    mL3_out =  mW_L3*mL2_out + mB_L3;
+//    //Apply Neural Transfer Function
+//    for (int i=0; i<mL3_out.rows;i++)
+//        mL3_out.at<float>(i,0) = netNeuralTF(mL3_out.at<float>(i,0));
+
+//    //Calc Layer 4 (Output) Activation
+//    mL4_out =  mW_L4*mL3_out + mB_L4;
+//    //Apply Neural Transfer Function
+//    for (int i=0; i<mL4_out.rows;i++)
+//        mL4_out.at<float>(i,0) = netNeuralTF(mL4_out.at<float>(i,0));
+
+//    //Calc Layer 5 (Output) Activation
+//    mL5_out =  mW_L5*mL4_out + mB_L5;
+//    //Apply Neural Transfer Function
+//    for (int i=0; i<mL5_out.rows;i++)
+//        mL5_out.at<float>(i,0) = netNeuralTF(mL5_out.at<float>(i,0));
 
 
-    //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)
-    fFishClass = mL3_out.at<float>(0,0);
-    // Check 2 row (neuron) output
-    fNonFishClass = mL3_out.at<float>(1,0);
+//    //Output fraction of Active Input that is filtered by Synaptic Weights, (Fraction of Active Pass-through KC neurons)
+//    fFishClass = mL5_out.at<float>(0,0);
+//    // Check 2 row (neuron) output
+//    fNonFishClass = mL5_out.at<float>(1,0);
+
+    /// Net Output on Last layer
+    fFishClass = vmL_out[vmL_out.size()-1].at<float>(0,0);
+    fNonFishClass = vmL_out[vmL_out.size()-1].at<float>(1,0);
 
     //double minL1,maxL1;
     //cv::minMaxLoc(mL1_out,&minL1,&maxL1);
@@ -424,12 +461,14 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
 void fishdetector::test()
 {
     qDebug() << "Testing fishNet Classifier Using stock template pics from disk.";
-    QString strDirFish("/home/kostasl/workspace/zebrafishtrack/img/trainset/fish/");
-    QString strDirNonFish("/home/kostasl/workspace/zebrafishtrack/img/trainset/nonfish/");
+    QString strDirFish("/home/kostasl/workspace/zebrafishtrack/img/debug/fish/");
+    QString strDirNonFish("/home/kostasl/workspace/zebrafishtrack/img/debug/nonfish/");
 
     std::vector<cv::Mat> vfish_mat = loadTemplatesFromDirectory(strDirFish);
     float fsumErrF =0.0f;
     float fsumErrNF =0.0f;
+    float fCorrectF_class = 0.0;
+    float fCorrectNF_class = 0.0;
 
     qDebug() << "~~~Test Fish templates~~~";
     float fishClassScore,nonfishScore,dscore;
@@ -440,10 +479,17 @@ void fishdetector::test()
         dscore = gTrackerState.fishnet.netDetect(imgTempl,fishClassScore,nonfishScore);
         if (fishClassScore > -1)
             fsumErrF += pow((1-fishClassScore) + (0-nonfishScore),2);
+        if (fishClassScore > nonfishScore) //Count Classification Errors
+            fCorrectF_class += 1.0;
+        else
+           //  cv::imshow(string("Fail Fish")+to_string(i),imgTempl);
+              cv::imwrite(gTrackerState.gstroutDirTemplates + string("/FailFish")+to_string(i)+".pgm", imgTempl);
+
          qDebug() << "Fish img gave F:" << fishClassScore << " NF:" << nonfishScore;
     }
 
     fsumErrF = fsumErrF/vfish_mat.size();
+    fCorrectF_class = fCorrectF_class/vfish_mat.size();
     qDebug() << "Fish Class MSQ ERR:" << fsumErrF;
 
     qDebug() << "~~~Test NON-Fish templates~~~";
@@ -457,10 +503,19 @@ void fishdetector::test()
         qDebug() << "Non-Fish img gave F:" << fishClassScore << " NF:" << nonfishScore;
         if (fishClassScore > -1)
             fsumErrNF += pow((0-fishClassScore) + (1-nonfishScore),2);
+            if (nonfishScore >=fishClassScore)
+            {
+                fCorrectNF_class += 1.0;
+            }else
+               //cv::imshow(string("Fail NonFish")+to_string(i),imgTempl);
+                cv::imwrite(gTrackerState.gstroutDirTemplates + string("/FailNONFish")+to_string(i)+".pgm", imgTempl);
     }
     fsumErrNF = fsumErrNF/vnonfish_mat.size();
+    fCorrectNF_class = fCorrectNF_class/vnonfish_mat.size();
+
     qDebug() << "Non Fish Class MSQ ERR:" << fsumErrNF;
 
+    qDebug() << "Correctly classified %Fish:" << fCorrectF_class << " , %Non-Fish:" <<  fCorrectNF_class;
     qDebug() << "~~~Total Error:" << (fsumErrNF + fsumErrF)/2;
 
 }
