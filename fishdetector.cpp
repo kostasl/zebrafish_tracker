@@ -369,7 +369,7 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     //cv::imshow("Input Img ", imgRegion_bin);
 
     // Make Col Vector
-    cv::Mat vIn(vmW_L[0].cols,1,imgRegion_bin.type()); /// =imgRegion_bin.reshape(0,mW_L1.cols);  <- Reshape Does not work as intented
+    cv::Mat vIn(vmW_L[0].cols,1,CV_32FC1); /// =imgRegion_bin.reshape(0,mW_L1.cols);  <- Reshape Does not work as intented
 
     //for (int i=0; i<vIn.rows;i++){
     //      qDebug() << i << ". " << vIn.at<uchar>(0,i);
@@ -378,14 +378,14 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
      int i = 0;
      for (int c=0; c<imgRegion_bin.cols;c++){
          for (int r=0; r<imgRegion_bin.rows;r++){
-        vIn.at<uchar>(i,0) = imgRegion_bin.at<uchar>(r,c);//netNeuralTF(vIn.at<float>(0,i));
-        //qDebug() << i << ". " << vIn.at<uchar>(i,0);
+        vIn.at<float>(i,0) = (float)imgRegion_bin.at<uchar>(r,c)/255.0f;//netNeuralTF(vIn.at<float>(0,i));
+        //qDebug() << i << ". " << vIn.at<float>(i,0);
         i++;
         }
     }
     //cv::imshow("Vin Out 8bit ", vIn.reshape(1,imgRegion_bin.rows));
 
-    vIn.convertTo(vIn, CV_32FC1);
+    //vIn.convertTo(vIn, CV_32FC1);
 
     for (int l=0;l<vmW_L.size();l++)
     {
@@ -515,7 +515,7 @@ void fishdetector::test()
 
     qDebug() << "Non Fish Class MSQ ERR:" << fsumErrNF;
 
-    qDebug() << "Correctly classified %Fish:" << fCorrectF_class << " , %Non-Fish:" <<  fCorrectNF_class;
-    qDebug() << "~~~Total Error:" << (fsumErrNF + fsumErrF)/2;
+    qDebug() << "** Correctly classified %Fish:" << fCorrectF_class << " , %Non-Fish:" <<  fCorrectNF_class << " **";
+    qDebug() << "~~~ Total MSQ Error:" << (fsumErrNF + fsumErrF)/2;
 
 }

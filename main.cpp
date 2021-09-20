@@ -2856,20 +2856,6 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
               float fR = fish->zfishBlob.response; //The FishNet Recognition Score
 
-              /// \TODO MOVE THIS
-              /// Store Norm Image as Template - If Flag Is set
-              if (gTrackerState.bStoreThisTemplate)
-              {   std::stringstream ssMsg;
-                  //addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
-                  //Try This New Template On the Next Search
-                  gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
-                  fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
-                  window_main.saveTemplateImage(imgFishAnterior_Norm);
-                  ssMsg << "Fish Template saved to disk - (No Cache update) #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
-                  window_main.LogEvent(QString::fromStdString(ssMsg.str() ));
-                  gTrackerState.bStoreThisTemplate = false;
-              }
-
 
               //Allow For Sub Optimal Matches To be processed Up to Here //
               //if (fish->templateScore < gTemplateMatchThreshold)
@@ -2901,6 +2887,24 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                     window_main.LogEvent(QString::fromStdString(ss.str()));
                 }
               }
+              //else
+                  //gTrackerState.bStoreThisTemplate = true; //Save FishLike Templates
+
+
+                  /// \TODO MOVE THIS
+                  /// Store Norm Image as Template - If Flag Is set
+                  if (gTrackerState.bStoreThisTemplate)
+                  {   std::stringstream ssMsg;
+                      //addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+                      //Try This New Template On the Next Search
+                      gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
+                      fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
+                      window_main.saveTemplateImage(imgFishAnterior_Norm);
+                      ssMsg << "Fish Template saved to disk - (No Cache update) #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
+                      window_main.LogEvent(QString::fromStdString(ssMsg.str() ));
+                      gTrackerState.bStoreThisTemplate = false;
+                  }
+
 
               //Copy Detected Ellipse Frame To The Output Frame
               if (imgFishHeadProcessed.u)
@@ -2970,6 +2974,9 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                     //fish->idxTemplateRow = iLastKnownGoodTemplateRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
                     //pwindow_main->LogEvent(QString("[warning] Too Many Eye detection Failures - Change Template Randomly to :" + QString::number(iLastKnownGoodTemplateRow)));
               }
+
+              /// END OF EYE DETECTION //
+
 
               /// SPINE Fitting And Drawing ///
               /// \note two methods
