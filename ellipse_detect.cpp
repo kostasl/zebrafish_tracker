@@ -74,7 +74,7 @@ extern int gi_CannyThres;
 extern int gi_VotesEllipseThres;
 extern int gi_minEllipseMajor;
 extern int gi_maxEllipseMajor;
-extern int g_BGthresh;
+//extern int g_BGthresh;
 extern int gEyeTemplateAngleSteps;
 extern int giHeadIsolationMaskVOffset; //V Distance When Drawing Arc In getEyeSegThreshold
 extern int gi_MaxEllipseSamples;

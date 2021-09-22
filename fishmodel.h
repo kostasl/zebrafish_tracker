@@ -152,7 +152,7 @@ public:
   zftblob  zfishBlob; //Copy To assigned Blob structure
   t_fishspline spline; ///X-Y Coordinates of Fitted spline to contour
 
-  double c_spineSegL; //FloatPoint so variational approach works
+  double c_spineSegL = 9.0; //FloatPoint so variational approach works
   static const int c_spinePoints   = ZTF_TAILSPINECOUNT; //\todo fix compilation Problems with Including COnfig.h
   static const int c_spineParamCnt = c_spinePoints+3; //Parametrization of Spline with : 1st,2nd being root node: x0,y0 and 3rd:spineSegLength
 

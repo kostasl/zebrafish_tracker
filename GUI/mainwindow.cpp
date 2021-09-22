@@ -122,8 +122,8 @@ void MainWindow::createSpinBoxes()
 
 
     this->ui->spinBoxFishThres->installEventFilter(this);
-    this->ui->spinBoxFishThres->setRange(1,100); //Too low Below 19 App Stalls -- Too many Large Objects Appear
-    this->ui->spinBoxFishThres->setValue(gTrackerState.g_Segthresh);
+    this->ui->spinBoxFishThres->setRange(1,200); //Too low Below 19 App Stalls -- Too many Large Objects Appear
+    this->ui->spinBoxFishThres->setValue(gTrackerState.g_FGSegthresh);
 
 
 
@@ -413,7 +413,7 @@ void MainWindow::UpdateSpinBoxToValue()
 {
 
     this->ui->spinBoxEyeThres->setValue(gTrackerState.gthresEyeSeg);
-    this->ui->spinBoxFishThres->setValue(gTrackerState.g_Segthresh);
+    this->ui->spinBoxFishThres->setValue(gTrackerState.g_FGSegthresh);
 
     this->ui->spinBoxFoodThresMax->setValue(gTrackerState.g_SegFoodThesMax);
     this->ui->spinBoxFoodThresMin->setValue(gTrackerState.g_SegFoodThesMin);
@@ -434,7 +434,7 @@ void MainWindow::fishvalueChanged(int i)
 {
     qDebug() << "fish SpinBox gave " << i;
     LogEvent(QString("Changed Fish BG Threshold:") + QString::number(i));
-    gTrackerState.g_Segthresh = i;
+    gTrackerState.g_FGSegthresh = i;
 
  }
 

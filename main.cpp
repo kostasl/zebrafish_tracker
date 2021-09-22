@@ -165,8 +165,8 @@ int main(int argc, char *argv[])
         "{startpaused P | 0  | Start tracking Paused On 1st Frame/Need to Run Manually}"
         "{duration d | 0  | Number of frames to Track for starting from start frame}"
         "{logtofile l |    | Filename to save clog stream to }"
-        "{ModelBG b | 1  | Learn and Substract Stationary Objects from Foreground mask}"
-        "{BGThreshold bgthres | 30  | Absolute grey value used to segment BG (g_Segthresh)}"
+        "{ModelBG b | 1  | Initiate BG modelling by running over scattered video frames to obtain Foreground mask}"
+        "{BGThreshold bgthres | 40  | Absolute grey value used to segment BG (g_Segthresh)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
@@ -374,7 +374,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
-       if ((gTrackerState.bUseBGModelling && gTrackerState.gbUpdateBGModel) || (gTrackerState.bUseBGModelling && gTrackerState.gbUpdateBGModelOnAllVids) )
+       if ((gTrackerState.bStaticAccumulatedBGMaskRemove && gTrackerState.gbUpdateBGModel) || (gTrackerState.bStaticAccumulatedBGMaskRemove && gTrackerState.gbUpdateBGModelOnAllVids) )
        {
            //If BG Model Returns >1 frames
             if (getBGModelFromVideo(bgStaticMask, window_main,invideoname,gTrackerState.outfilename,gTrackerState.MOGhistory))
@@ -519,7 +519,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
         /// Choose FG image prior to template matching
         /// \note this can fail badly if Mask is thick outline of larva/or a bad match hidding features
         if (gTrackerState.bApplyFishMaskBeforeFeatureDetection)
-            fgImgFrame.copyTo(fgFishImgMasked,fgFishMask); //fgMask / NOT fish Mask //Use Enhanced Mask
+            fgImgFrame.copyTo(fgFishImgMasked,fgMask); //fgMask / NOT fish Mask //Use Enhanced Mask
         else
             fgImgFrame.copyTo(fgFishImgMasked);
 
@@ -889,9 +889,9 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     nErrorFrames = 0;
 
     //If No Mask Exist Then Make A blank Full On One
-    if (bgStaticMask.cols == 0)  {
-       bgStaticMask = cv::Mat::ones(frame.rows,frame.cols,CV_8UC1);
-    }
+    //if (bgStaticMask.cols == 0)  {
+    //   bgStaticMask = cv::Mat::ones(frame.rows,frame.cols,CV_8UC1);
+   // }
 
     //Blank Drawing Canvas for output - We then Blend with original Image
     if (gTrackerState.bRenderWithAlpha)
@@ -3119,13 +3119,13 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 void thresh_callback(int, void* )
 {
 
-    if (gTrackerState.g_BGthresh % 2 == 0)
-        gTrackerState.g_BGthresh ++;
+//    if (gTrackerState.g_BGthresh % 2 == 0)
+//        gTrackerState.g_BGthresh ++;
 
-    if (gTrackerState.g_Segthresh <= 3) gTrackerState.g_Segthresh = 3;
+    if (gTrackerState.g_FGSegthresh <= 3) gTrackerState.g_FGSegthresh = 3;
 
-    if (gTrackerState.g_Segthresh%2 == 0)
-        gTrackerState.g_Segthresh++;
+    if (gTrackerState.g_FGSegthresh%2 == 0)
+        gTrackerState.g_FGSegthresh++;
 
     if (gTrackerState.gi_CannyThres <2)
         gTrackerState.gi_CannyThres = 2;

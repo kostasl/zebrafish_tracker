@@ -357,7 +357,7 @@ Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fir
 INPUT_SPARSENESS = 0.25
 
 
-batchSize = 132 # Number of Training IMages for Each Leanring Episode (which will define error graident )
+batchSize = 132 # Number of Training IMages for Each Learning Episode (which will define error graident )
 Nbatches = 1500 ## Number of random batchs (of size batchSize) to repeat training over
 trainingN = 100 ## Training Cycles For Each Batch
 

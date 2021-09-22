@@ -144,10 +144,10 @@ class trackerState
       double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
 
       const double dLearningRate                = 1.0/(MOGhistory); //Learning Rate During Initial BG Modelling - Learn Slow So 1st Playbacl Frame doesnt look new anymore
-      const double dLearningRateNominal         = 0.0001; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
+      const double dLearningRateNominal         = 0.001; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
       double dactiveMOGLearningRate             = dLearningRateNominal;
       //Processing Loop delay
-      uint cFrameDelayms              = 1;
+      uint cFrameDelayms                        = 1;
 
       /// Constants ///
       /// BLOB DETECTION Filters //
@@ -246,7 +246,7 @@ class trackerState
       bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
-      bool bApplyFishMaskBeforeFeatureDetection = false; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
+      bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
       bool bFitSpineToTail                      = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bUseContourToFitSpine                = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
@@ -269,11 +269,11 @@ class trackerState
       uint iSpineContourFitFramePeriod         = 20; //Check that Tail Fitting Matches Contour Every X Frames
 
       /// Segmentation / threshold  Params
-      int g_Segthresh             = 5; //Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
-      int g_SegFoodThesMin        = g_Segthresh+5; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
+      int g_FGSegthresh             = 40; //Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+      int g_SegFoodThesMin        = g_FGSegthresh+5; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
       int g_SegFoodThesMax        = g_SegFoodThesMin+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
       //int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
-      int g_BGthresh              = 5; //BG threshold segmentation
+      //int g_BGthresh              = 5; //BG threshold segmentation
       int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 
       /// Eye Tracking Params
@@ -362,7 +362,7 @@ class trackerState
             bRenderToDisplay,bRenderWithAlpha,bOffLineTracking,bDrawFoodBlob,curveSmoothKernelSigma,curveSmoothKernelSize_M,
             bUseBGModelling,gbUpdateBGModel,gbUpdateBGModelOnAllVids,
             bSkipExisting,bTrackFood,bTracking,bStartPaused,uiStartFrame,uiStopFrame,
-            g_Segthresh,g_SegFoodThesMax,g_SegFoodThesMin,gthresEyeSeg,gthresEyeSegL,gi_MaxEllipseSamples,gi_VotesEllipseThres,gi_minEllipseMinor,gi_minEllipseMajor,gi_maxEllipseMajor,gi_CannyThresSmall,gi_CannyThres,
+            g_FGSegthresh,g_SegFoodThesMax,g_SegFoodThesMin,gthresEyeSeg,gthresEyeSegL,gi_MaxEllipseSamples,gi_VotesEllipseThres,gi_minEllipseMinor,gi_minEllipseMajor,gi_maxEllipseMajor,gi_CannyThresSmall,gi_CannyThres,
             gdMOGBGRatio,MOGhistory,gfVidfps
             ); // serialize things by passing them to the archive
      //archive();

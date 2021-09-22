@@ -267,7 +267,7 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
 
  //If We are during the Static Mask Accumulation phase ie (fgStaticMaskIn.type() !=  CV_8U) then Produce the Threshold Image
  // The threshold mask is blended with OR with the MOG mask.
- cv::threshold( fgFrameOut, threshold_output, gTrackerState.g_Segthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+ cv::threshold( fgFrameOut, threshold_output, gTrackerState.g_FGSegthresh, max_thresh, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
 
 /// \todo: The CUDA code below Needs to Be Revised so it matches the Non-Cuda Process
 #if defined(USE_CUDA) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
@@ -338,8 +338,9 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
       {
             //No Static Mask - But Combine With threshold So MOG Ghosts Are Erased
            ///TODO make into and mask , and isolate threshold mask around fish
-           cv::bitwise_or(fgMOGMask,threshold_output,fgMaskInOut); //Do not Combine with Threshold
-
+           //cv::bitwise_or(fgMOGMask,threshold_output,fgMaskInOut); //Do not Combine with Threshold
+          //Use MOG mask Not Thresholded OUtput - Improves Boundary Removal
+           fgMOGMask.copyTo(fgMaskInOut);
             //Combine Static Mask and Remove Stationary Learned Pixels From Mask If Option Is Set
             if (gTrackerState.bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)//Although bgMask Init To zero, it may appear empty here!
                   cv::bitwise_and(fgStaticMaskIn,fgMaskInOut,fgMaskInOut); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
@@ -797,7 +798,7 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
 
     pwindow_main->showVideoFrame(bgMask,nFrame);
     //Accumulate things that look like food / so we can isolate the stationary ones
-    cv::threshold( fgFrameImg, bgMaskThresholded, gTrackerState.g_Segthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold( fgFrameImg, bgMaskThresholded, gTrackerState.g_FGSegthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
     cv::accumulateWeighted(bgMaskThresholded,bgAcc,gTrackerState.dBGMaskAccumulateSpeed);
 
     return ret; //If False then tell calling function to stop updating

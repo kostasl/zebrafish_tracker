@@ -370,7 +370,7 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
          bMakeCustomROIRegion = (parser.get<int>("PolygonROI") == 1)?true:false;
 
       if (parser.has("BGThreshold"))
-           g_Segthresh = parser.get<int>("BGThreshold");
+           g_FGSegthresh = parser.get<int>("BGThreshold");
 
     if (parser.has("FilterPixelNoise"))
     {
