@@ -241,13 +241,13 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
   /// SliDing Window Scanning
   int iSlidePx_H_step = 2;
-  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2-10;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_begin = ptRotCenter.x- 10;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
   int iSlidePx_H_lim = iSlidePx_H_begin+10;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
   int iSlidePx_V_step = 2;
-  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-10); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)+10); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = iSlidePx_V_begin + 10;//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
@@ -296,7 +296,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
     //Update Blob Location And add Classifier Score
     fishblob.response = maxL1; //Save Recognition Score
-    fishblob.pt = ptmax_orig+fishRotAnteriorBox.boundingRect().tl(); //Shift Blob Position To Max Recognition Point
+    //fishblob.pt = ptmax_orig+fishRotAnteriorBox.boundingRect().tl(); //Shift Blob Position To Max Recognition Point
 
     // DEBUG IMG //
     //cv::circle(imgFishAnterior,ptmax_orig,4,CV_RGB(250,200,210),2);
@@ -354,7 +354,7 @@ float fishdetector::netNeuralTF(float a)
 /// More active inputs increase the output scores - reducing the networks selectivity
 float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass)
 {
-    fL1_activity_thres = gTrackerState.fishnet_L1_threshold;
+    //fL1_activity_thres = gTrackerState.fishnet_L1_threshold;
 
     // Input Is converted to Row Vector So we can do Matrix Multiplation
     //assert(imgRegion_bin.cols*imgRegion_bin.rows == mW_L1.cols);

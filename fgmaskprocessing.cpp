@@ -338,9 +338,11 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
       {
             //No Static Mask - But Combine With threshold So MOG Ghosts Are Erased
            ///TODO make into and mask , and isolate threshold mask around fish
-           //cv::bitwise_or(fgMOGMask,threshold_output,fgMaskInOut); //Do not Combine with Threshold
-          //Use MOG mask Not Thresholded OUtput - Improves Boundary Removal
-           fgMOGMask.copyTo(fgMaskInOut);
+           cv::bitwise_and(fgMOGMask,threshold_output,fgMaskInOut); // Combine with Threshold So We have some control of output
+
+           //Use MOG mask Not Thresholded OUtput - Improves Boundary Removal
+           //fgMOGMask.copyTo(fgMaskInOut);
+
             //Combine Static Mask and Remove Stationary Learned Pixels From Mask If Option Is Set
             if (gTrackerState.bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)//Although bgMask Init To zero, it may appear empty here!
                   cv::bitwise_and(fgStaticMaskIn,fgMaskInOut,fgMaskInOut); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
@@ -573,6 +575,9 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     cv::findContours( fgEdgeMask, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,
                       cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
+
+
+
     ///Draw Only the largest contours that should belong to fish
     /// \todo Other Match Shapes Could be used here
     /// \todo Use WaterShed - Let MOG mask Be FG label and then watershed
@@ -641,6 +646,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         zftblob kp(centroid.x,centroid.y,area,(int)(boundEllipse.angle+90)%360);
 
 
+
+
         /// \todo Here I could Use Shape Similarity Filtering - Through the CurveCSS header
 
         //Find Tail Point- As the one with the sharpest Angle
@@ -680,13 +687,17 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             ptFishblobs.push_back(kp);
 
 
+
+
             /// \todo Conditionally add this Contour to output if it matches template.
             vFilteredFishbodycontours.push_back(curve);
 
             ///  COMBINE - DRAW CONTOURS
             ///\bug drawContours produces freezing sometimes
             //Draw New Smoothed One - the idx should be the last one in the vector
-            cv::drawContours( outFishMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(255,255,255), 3,cv::FILLED); //
+            //cv::drawContours( outFishMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(255,255,255), 3,cv::FILLED); //
+
+            cv::drawContours(outFishMask, fishbodycontours, kk, Scalar(255,255,255),1, cv::LINE_8,fishbodyhierarchy,2);
 
             //DEBUG - Show imgs
             if (!imgFishAnterior_NetNorm.empty()){

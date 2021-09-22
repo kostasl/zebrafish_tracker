@@ -374,7 +374,7 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 
 
        // Removed If MOG Is not being Used Currently - Remember to Enable usage in enhanceMask if needed//
-       if ((gTrackerState.bStaticAccumulatedBGMaskRemove && gTrackerState.gbUpdateBGModel) || (gTrackerState.bStaticAccumulatedBGMaskRemove && gTrackerState.gbUpdateBGModelOnAllVids) )
+       if ((gTrackerState.bUseBGModelling && gTrackerState.gbUpdateBGModel) || (gTrackerState.bUseBGModelling && gTrackerState.gbUpdateBGModelOnAllVids) )
        {
            //If BG Model Returns >1 frames
             if (getBGModelFromVideo(bgStaticMask, window_main,invideoname,gTrackerState.outfilename,gTrackerState.MOGhistory))
