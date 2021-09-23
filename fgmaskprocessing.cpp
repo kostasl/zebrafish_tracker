@@ -686,9 +686,6 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         {
             ptFishblobs.push_back(kp);
 
-
-
-
             /// \todo Conditionally add this Contour to output if it matches template.
             vFilteredFishbodycontours.push_back(curve);
 

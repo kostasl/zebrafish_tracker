@@ -185,7 +185,7 @@ cv::Mat sparseBinarize(cv::Mat& imgRegion,float targetdensity)
 
 /// \brief Two step classificiation of region : First, it uses Neural
 /// Net to scan region around provided blog and provide a detection score as a mask (returns max score value)
-/// If blob passes the FishNet classification threshold , template matching is the applied to the same region
+/// If blob passes the FishNet classification threshold , the blobs centre position is changed to the point of max classification score.
 /// \todo could do image Pyramids to scan Across Scales
 /// @param regTag an Id for debugging purposes
 /// @outframeAnterior_Norm returns image of isolated head centered at best detection point according to NN
@@ -241,13 +241,13 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
   /// SliDing Window Scanning
   int iSlidePx_H_step = 2;
-  int iSlidePx_H_begin = ptRotCenter.x- 10;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = iSlidePx_H_begin+10;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - 10;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = iSlidePx_H_begin+20;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
   int iSlidePx_V_step = 2;
-  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)+10); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = iSlidePx_V_begin + 10;//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-10); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = iSlidePx_V_begin + 20;//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
@@ -284,33 +284,35 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     /// Find Max Match Position In Non-Norm pic (original orientation)
     double minL1,maxL1;
     cv::Point ptmin,ptmax;
-    //cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(9,9),15,15);
+    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(9,9),15,15);
     cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
     // Rotate Max Point Back to Original Orientation
-    //cv::Mat MrotInv = cv::getRotationMatrix2D( ptRotCenter, -fishblob.angle,1.0); //Rotate Upwards
+    //cv::Mat MrotInv = cv::getRotationMatrix2D( ptRotCenter, -fishblob.angle,1.0); //Rotate Upwarte Upwards
     //cv::warpAffine(maskRegionScore,outmaskRegionScore,MrotInv,szFishAnteriorNorm);
     cv::Point ptmax_orig = rotateAboutPoint(ptmax,cv::Point2f(maskRegionScore_Norm.cols/2,maskRegionScore_Norm.rows/2),
-                                            (fishblob.angle)*(CV_PI/180.0) ); //-fishblob.angle
+                                            (fishblob.angle)*(CV_PI/180.0) ); //-fishblob.angle   angle
     // End Of FishNet Detection //
 
 
     //Update Blob Location And add Classifier Score
     fishblob.response = maxL1; //Save Recognition Score
-    //fishblob.pt = ptmax_orig+fishRotAnteriorBox.boundingRect().tl(); //Shift Blob Position To Max Recognition Point
+    fishblob.pt = ptmax_orig+fishRotAnteriorBox.boundingRect().tl(); //Shift Blob Position To Max  To Max Recognition Point
 
     // DEBUG IMG //
     //cv::circle(imgFishAnterior,ptmax_orig,4,CV_RGB(250,200,210),2);
     //cv::imshow(string("Fish Region Body ") + regTag,imgFishAnterior);
     // DEBUG IMG //
-    cv::circle(imgFishAnterior_Norm,ptmax,4,CV_RGB(250,200,210),2);
+    cv::circle(imgFishAnterior_Norm,ptmax,3,CV_RGB(200,200,210),2);
+    cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(0,0,0),2);
+
     //cv::imshow(string("Fish Region Body Norm ") + regTag,imgFishAnterior_Norm);
     // DEBUG IMG //
     cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, 0, 1, cv::NORM_MINMAX);
-    //cv::imshow(string("Score Mask Body Norm") + regTag,maskRegionScore_Norm);
+    //cv::imshow(string("Score Mask Body Norm") + regTag,maskRegionScore_Norm);                                   gionScore_Norm);
 
-    /// Find Max Score Coords In Normed FishAnterior / Around Best Match Region (Using Normed Region)
+    /// Find Max Score Coords In Normed FishAnterior / Around Best Match Region (Using Normed Regiest Match Region (Using Normed Region)
 
-    cv::Point ptTopLeftTemplate(max(0,ptmax.x-gTrackerState.gszTemplateImg.width/2),
+    cv::Point ptTopLeftTemplate(max(0,ptmax.x-gTrackerState.gszTemplateImg.width/2),      //   TemplateImg.width/2),
                                 max(0,ptmax.y-gTrackerState.gszTemplateImg.height/2) );
     // Stick To Boundary for Template Size Window
     ptTopLeftTemplate.x =((ptTopLeftTemplate.x + gTrackerState.gszTemplateImg.width) >= maskRegionScore_Norm.cols)?maskRegionScore_Norm.cols-gTrackerState.gszTemplateImg.width:ptTopLeftTemplate.x;
