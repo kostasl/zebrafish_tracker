@@ -120,6 +120,12 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     // [ 0 0 0 0 1 0 ]
     KF.measurementMatrix = cv::Mat::zeros(measSize, stateSize, type);
     cv::setIdentity(KF.measurementMatrix);
+
+    mMeasurement.at<float>(0) = this->ptRotCentre.x;
+    mMeasurement.at<float>(1) = this->ptRotCentre.y;
+    mMeasurement.at<float>(4) = this->bearingAngle;
+    mMeasurement.at<float>(6) = 10.0f;//this->leftEye.getEyeAngle();
+    mMeasurement.at<float>(7) = -10.0f;//this->rightEye.getEyeAngle();
     //KF.measurementMatrix.at<float>(0) = 1.0f;
     //KF.measurementMatrix.at<float>(7) = 1.0f;
     //KF.measurementMatrix.at<float>(16) = 1.0f;
@@ -140,8 +146,8 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     //KF.processNoiseCov.at<float>(14) = 1e-1f;
     //KF.processNoiseCov.at<float>(21) = 1e-1f;
     KF.processNoiseCov.at<float>(5,5) = 1e-3f; //Angular V
-    //KF.processNoiseCov.at<float>(6,6) = 1.0f; //Left Eye
-    //KF.processNoiseCov.at<float>(7,7) = 1.0f; //Right Eye
+    KF.processNoiseCov.at<float>(6,6) = 1.0f; //Left Eye
+    KF.processNoiseCov.at<float>(7,7) = 1.0f; //Right Eye
     //KF.processNoiseCov.at<float>(35) = 1e-1f;
 
 //    // Measures Noise Covariance Matrix R - Set Low so Filter Follows Measurement more closely
@@ -153,8 +159,8 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     KF.measurementNoiseCov.at<float>(4,5) = 1e-6f; //Angular V-V_speed
     KF.measurementNoiseCov.at<float>(4,4) = 1e-2f; //Angle
     KF.measurementNoiseCov.at<float>(5,5) = 1e-2f; //Angle V
-    //KF.measurementNoiseCov.at<float>(7,7) = 5.0f; //Angular V
-
+    KF.measurementNoiseCov.at<float>(6,6) = 1e-2f; //Left Eye
+    KF.measurementNoiseCov.at<float>(7,7) = 1e-2f; //Right Eye
 
     cv::setIdentity(KF.errorCovPost, Scalar::all(1e-1f)); // default is 0, for smoothing try 0.1
 
@@ -465,13 +471,13 @@ double fishModel::distancePointToSpline(cv::Point2f ptsrc,t_fishspline& pspline)
 
 /// \brief Uses detected ellipsoids to set fish's eye model state / using an incremental update
 ///\return total Score for fit
-int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
+int fishModel::updateEyeMeasurement(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
 {
     int retPerfScore = 0;
     double fleftEyeTheta = 0.0f;
-    int ileftEyeSamples = 0;
+    //int ileftEyeSamples = 0;
     double frightEyeTheta = 0.0f;
-    int irightEyeSamples = 0;
+    //int irightEyeSamples = 0;
 
 
     // If we are stuck on same frame then estimate the unbiased empirical mean angle for each eye
@@ -502,23 +508,23 @@ int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
 //    }
 
     //Get Mean sample angles
-    if (ileftEyeSamples >0)
-    {
-        fleftEyeTheta   = fleftEyeTheta/(float)ileftEyeSamples;
-        this->leftEye.fitscore = this->leftEye.fitscore/(float)ileftEyeSamples;
-    }else
-    {
-        this->nFailedEyeDetectionCount++;
-    }
+//    if (ileftEyeSamples >0)
+//    {
+//        fleftEyeTheta   = fleftEyeTheta/(float)ileftEyeSamples;
+//        this->leftEye.fitscore = this->leftEye.fitscore/(float)ileftEyeSamples;
+//    }else
+//    {
+//        this->nFailedEyeDetectionCount++;
+//    }
 
-    if (irightEyeSamples >0)
-    {
-       frightEyeTheta  = frightEyeTheta/(float)irightEyeSamples;
-        this->rightEye.fitscore = this->rightEye.fitscore/(float)irightEyeSamples;
-    }else
-    {
-        this->nFailedEyeDetectionCount++;
-    }
+//    if (irightEyeSamples >0)
+//    {
+//       frightEyeTheta  = frightEyeTheta/(float)irightEyeSamples;
+//        this->rightEye.fitscore = this->rightEye.fitscore/(float)irightEyeSamples;
+//    }else
+//    {
+//        this->nFailedEyeDetectionCount++;
+//    }
 
 
     tDetectedEllipsoid mleftEye(vLeftEll);
@@ -530,24 +536,27 @@ int fishModel::updateEyeState(tEllipsoids& vLeftEll,tEllipsoids& vRightEll)
     if (std::isnan(fleftEyeTheta) )
         this->nFailedEyeDetectionCount++;
     else
+    {
         this->leftEyeTheta  = this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
+        this->leftEye = mleftEye; //Measurement
+    }
 
     if (std::isnan(frightEyeTheta) )
         this->nFailedEyeDetectionCount++;
-    else
+    else{
         this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
+        this->rightEye = mrightEye;
+    }
 
 
-    this->leftEye = mleftEye;
-    this->rightEye = mrightEye;
 
-    if (this->leftEye.fitscore > 20 && this->rightEye.fitscore > 20)
+    if (mleftEye.fitscore > 0 && mrightEye.fitscore > 0)
     {
        this->nFailedEyeDetectionCount = 0; // Reset Error Count
        retPerfScore = this->leftEye.fitscore + this->rightEye.fitscore;
     }else //penalize
     {
-       retPerfScore =  (this->leftEye.fitscore + this->rightEye.fitscore)- 400;
+       retPerfScore =  (mleftEye.fitscore + mrightEye.fitscore)- 400;
     }
 
     //Reset Step size to default
@@ -644,11 +653,16 @@ bool fishModel::stepPredict(unsigned int nFrame)
         KF.transitionMatrix.at<float>(4,5) = 1.0; //Angular Diff Feeds into Angle
 
         mState = KF.predict();
-        //cout << "Sm:" << mState << endl;
+        if (std::isnan(mState.at<float>(4)))
+        {
+            cerr << "[KalmanERROR] Sm:" << mState << endl;
+            KF.init(stateSize, measSize, contrSize, type); //Re Init
+            return(false);
+        }
 
         this->bearingAngle   = mState.at<float>(4); // Angle;
         this->bearingRads   =  this->bearingAngle*CV_PI/180.0;
-        assert(!std::isnan(this->bearingRads));
+        assert(!std::isnan(this->bearingAngle));
         this->ptRotCentre    = cv::Point2f(mState.at<float>(0), mState.at<float>(1)); //bcentre;
         this->leftEyeTheta   = mState.at<float>(6); // Eye Angle Left;
         this->rightEyeTheta   = mState.at<float>(7); // Eye Angle Right;
@@ -674,8 +688,11 @@ bool fishModel::stepPredict(unsigned int nFrame)
 bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
 {
 
+    assert(!std::isnan(Angle));
+
+    //Compare displacements to Last Measurements Not To Predicted Position In BearingAngle
     double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
-    double angleDisplacement = abs(geAngleDiff(this->bearingAngle,Angle));
+    double angleDisplacement = abs(geAngleDiff(this->zfishBlob.angle,Angle));
     double dT = (double)(nFrame-nLastUpdateFrame);///((double)gTrackerState.gfVidfps+1.0)
     //Set to 1 frame minimum time step
 
@@ -687,16 +704,16 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
     mMeasurement.at<float>(0) = bcentre.x;
     mMeasurement.at<float>(1) = bcentre.y;
     mMeasurement.at<float>(4) = Angle;
-    mMeasurement.at<float>(6) = this->leftEyeTheta;
-    mMeasurement.at<float>(7) = this->rightEyeTheta;
+    mMeasurement.at<float>(6) = this->leftEye.getEyeAngle();
+    mMeasurement.at<float>(7) = this->rightEye.getEyeAngle();
 
     if (dT > 0){
+        stepDisplacement = stepDisplacement/dT;
+        angleDisplacement = angleDisplacement/dT;
         //Add Speed as measured Blob speed (Do not involve Filter Predictions in Measured Speed)
         mMeasurement.at<float>(2) = (bcentre.x-zfishBlob.pt.x)/dT;
         mMeasurement.at<float>(3) = (bcentre.y-zfishBlob.pt.y)/dT; //Y speed;
-        mMeasurement.at<float>(5) = (Angle-zfishBlob.angle)/dT; //Ang Speed
-        stepDisplacement = stepDisplacement/dT;
-        angleDisplacement = angleDisplacement/dT;
+        mMeasurement.at<float>(5) = angleDisplacement; //(geAngleDiff(zfishBlob.angle,Angle)); //Ang Speed
     }else
         mMeasurement.at<float>(2) = mMeasurement.at<float>(3) = mMeasurement.at<float>(4) = 0;
     // >>>> Matrix A -  Note: set dT at each processing step :
@@ -712,16 +729,21 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 //        angleDisplacement > gTrackerState.gAngleChangeLimitPerFrame){
 //        inactiveFrames++;
 //    }else{ //Measurement valid - C0nsume
-        mCorrected = KF.correct(mMeasurement); // Kalman Correction
-        inactiveFrames  = 0;
+     mCorrected = KF.correct(mMeasurement); // Kalman Correction
+     //Catch KALMAN error and skip update
+     if (std::isnan(mCorrected.at<float>(0,0)))
+         return(false);
+
+     inactiveFrames  = 0;
  //   }
 
 
     this->zTrack.id     = ID;
     this->matchScore  = templatematchScore;
     this->bearingAngle   = mCorrected.at<float>(4); // Angle;
+    assert(!std::isnan(this->bearingAngle));
     this->bearingRads   =  this->bearingAngle*CV_PI/180.0;
-    assert(!std::isnan(this->bearingRads));
+
     this->ptRotCentre    = cv::Point2f(mCorrected.at<float>(0), mCorrected.at<float>(1)); //bcentre;
 
 

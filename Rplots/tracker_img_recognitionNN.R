@@ -402,7 +402,7 @@ sPathTestingSamplesNonFish="../img/nonfish/"
 
 
 #load(file="fishNetL3.RData")
-#load(file=paste0("fishNetL",7,"-B.RData"))
+#load(file=paste0("fishNetL",5,"-B.RData"))
 
 img_list_train_fish =  cbind(files=list.files(path=sPathTrainingSamples,pattern="*pgm",full.names = T),F=1,NF=0)
 img_list_train_fishB =  cbind(files=list.files(path=sPathTrainingSamplesB,pattern="*pgm",full.names = T),F=1,NF=0) 

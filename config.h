@@ -144,7 +144,7 @@ class trackerState
       double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
 
       const double dLearningRate                = 1.0/(MOGhistory); //Learning Rate During Initial BG Modelling - Learn Slow So 1st Playbacl Frame doesnt look new anymore
-      const double dLearningRateNominal         = 0.001; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
+      const double dLearningRateNominal         = 0.0001; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
       double dactiveMOGLearningRate             = dLearningRateNominal;
       //Processing Loop delay
       uint cFrameDelayms                        = 1;
@@ -163,9 +163,8 @@ class trackerState
       const int gFishTailSpineSegmentCount      = ZTF_TAILSPINECOUNT;
       const int gcFishContourSize               = ZTF_FISHCONTOURSIZE;
       const int gMaxFitIterations               = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
-      const int giHeadIsolationMaskVOffset      = 24; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
 
-      int gcMaxFishModelInactiveFrames          = 10; //Number of frames inactive until track is deleted
+      int gcMaxFishModelInactiveFrames          = gfVidfps/2; //Number of frames inactive until track is deleted
       int gcMaxFoodModelInactiveFrames          = gfVidfps/5; //Number of frames inactive (Not Matched to a Blob) until track is deleted
       int gcMinFoodModelActiveFrames            = gfVidfps/20; //Min Number of consecutive frames it needs to be active  otherwise its deleted
       float gMaxClusterRadiusFoodToBlob           = 3; //Per Sec / This changes depending on FPS (setFPS)
@@ -277,22 +276,22 @@ class trackerState
       int gi_ThresholdMatching    = 10; /// Minimum Score to accept that a contour has been found
 
       /// Eye Tracking Params
-
       int gi_CannyThres           = 150;
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
       int gi_maxEllipseMajor      = 31; /// thres  for Eye Ellipse Detection methods
       int gi_minEllipseMajor      = 10; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
       int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
-      int giEyeIsolationMaskRadius    = 9; ///Mask circle between eyes
-      int iEyeMaskSepWidth            = 9; //5 px width vertical line separates the eyes for segmentation
-      int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int gthresEyeSeg                    = -17; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
-      int gthresEyeSegL                   = 2;
 
+      int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
+      int gthresEyeSeg                    = -23; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
+      int gthresEyeSegL                   = 2;
       int gFishTailSpineSegmentLength     = 9;
 
 
+      int giHeadIsolationMaskVOffset     = 30; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
+      int giEyeIsolationMaskRadius       = 30; ///Mask circle between eyes
+      int iEyeMaskSepWidth               = 20; //5 px width vertical line separates the eyes for segmentation
 
 
       /// Fishnet Classifier params //

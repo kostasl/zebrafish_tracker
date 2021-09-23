@@ -143,6 +143,8 @@ private slots:
 
     void on_spinBoxFishnetClassifierthres_valueChanged(double arg1);
 
+    void on_spinBoxEyeMaskH_valueChanged(int arg1);
+
 private:
     void reportUserMeasurement(cv::Point ptMouse);
 

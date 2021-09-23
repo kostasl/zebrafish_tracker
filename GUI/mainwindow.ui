@@ -228,14 +228,14 @@
           <number>1</number>
          </property>
          <property name="value">
-          <number>-17</number>
+          <number>-30</number>
          </property>
         </widget>
         <widget class="QSpinBox" name="spinBoxMinEllipse">
          <property name="geometry">
           <rect>
            <x>50</x>
-           <y>410</y>
+           <y>440</y>
            <width>61</width>
            <height>26</height>
           </rect>
@@ -250,14 +250,14 @@
           <enum>QAbstractSpinBox::PlusMinus</enum>
          </property>
          <property name="maximum">
-          <number>200000</number>
+          <number>100</number>
          </property>
         </widget>
         <widget class="QSpinBox" name="spinBoxMaxEllipse">
          <property name="geometry">
           <rect>
            <x>170</x>
-           <y>410</y>
+           <y>440</y>
            <width>61</width>
            <height>26</height>
           </rect>
@@ -272,7 +272,7 @@
           <number>5</number>
          </property>
          <property name="maximum">
-          <number>60</number>
+          <number>100</number>
          </property>
         </widget>
         <widget class="QDoubleSpinBox" name="doubleSpinBoxSpineSegSize">
@@ -328,7 +328,7 @@
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>390</y>
+           <y>420</y>
            <width>201</width>
            <height>20</height>
           </rect>
@@ -344,7 +344,7 @@
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>410</y>
+           <y>440</y>
            <width>51</width>
            <height>21</height>
           </rect>
@@ -356,8 +356,8 @@
         <widget class="QLabel" name="label_5">
          <property name="geometry">
           <rect>
-           <x>130</x>
-           <y>410</y>
+           <x>120</x>
+           <y>440</y>
            <width>41</width>
            <height>21</height>
           </rect>
@@ -620,7 +620,7 @@
          <property name="geometry">
           <rect>
            <x>-10</x>
-           <y>360</y>
+           <y>390</y>
            <width>191</width>
            <height>23</height>
           </rect>
@@ -660,7 +660,7 @@
           <number>1</number>
          </property>
          <property name="value">
-          <number>9</number>
+          <number>20</number>
          </property>
         </widget>
         <widget class="QLabel" name="label_MaskWidth">
@@ -903,6 +903,47 @@
          </property>
          <property name="value">
           <double>0.600000000000000</double>
+         </property>
+        </widget>
+        <widget class="QSpinBox" name="spinBoxEyeMaskH">
+         <property name="geometry">
+          <rect>
+           <x>100</x>
+           <y>360</y>
+           <width>61</width>
+           <height>26</height>
+          </rect>
+         </property>
+         <property name="toolTip">
+          <string>Eye Segmentation Threshold Tuner</string>
+         </property>
+         <property name="buttonSymbols">
+          <enum>QAbstractSpinBox::PlusMinus</enum>
+         </property>
+         <property name="minimum">
+          <number>0</number>
+         </property>
+         <property name="maximum">
+          <number>50</number>
+         </property>
+         <property name="singleStep">
+          <number>1</number>
+         </property>
+         <property name="value">
+          <number>30</number>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_MaskWidth_2">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>350</y>
+           <width>101</width>
+           <height>51</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Mask Height</string>
          </property>
         </widget>
        </widget>

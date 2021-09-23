@@ -1100,7 +1100,6 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
          //Check if Any Values Exist - And Get Fish-Blob Pair
         assert(matBlobModelDistance.rows > ptmin.y && matBlobModelDistance.cols > ptmin.x);
 
-
         pfish   = vpfishmodel[ptmin.x];
 
         if (!pfish)
@@ -1176,7 +1175,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
            qfishrank.push(fish); //Add To Priority Queue
 
            std::stringstream strmsg;
-           //strmsg << " New fishmodel: " << fish->ID << " with Template Score :" << fish->matchScore << " fNet:" << fish->zfishBlob.response;
+           strmsg << " New fishmodel: " << fish->ID << "/" << vfishmodels.size() << " with Template Score :" << fish->matchScore << " fNet:" << fish->zfishBlob.response;
            //std::clog << nFrame << strmsg.str() << std::endl;
            pwindow_main->LogEvent(QString::fromStdString(strmsg.str()));
            gTrackerState.dactiveMOGLearningRate = gTrackerState.dLearningRateNominal;
@@ -2834,7 +2833,6 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            tEllipsoids vellLeft;
            tEllipsoids vellRight;
 
-
            imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(maskedfishImg_gray,fish->bodyRotBound); //fishRotAnteriorBox
            // Check empty in case of an Error In extraction - due to boundary conditions
            if (imgFishAnterior_Norm.empty())
@@ -2891,19 +2889,19 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                   //gTrackerState.bStoreThisTemplate = true; //Save FishLike Templates
 
 
-                  /// \TODO MOVE THIS
-                  /// Store Norm Image as Template - If Flag Is set
-                  if (gTrackerState.bStoreThisTemplate)
-                  {   std::stringstream ssMsg;
-                      //addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
-                      //Try This New Template On the Next Search
-                      gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
-                      fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
-                      window_main.saveTemplateImage(imgFishAnterior_Norm);
-                      ssMsg << "Fish Template saved to disk - (No Cache update) #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
-                      window_main.LogEvent(QString::fromStdString(ssMsg.str() ));
-                      gTrackerState.bStoreThisTemplate = false;
-                  }
+              /// \TODO MOVE THIS
+              /// Store Norm Image as Template - If Flag Is set
+              if (gTrackerState.bStoreThisTemplate)
+              {   std::stringstream ssMsg;
+                  //addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+                  //Try This New Template On the Next Search
+                  gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
+                  fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
+                  window_main.saveTemplateImage(imgFishAnterior_Norm);
+                  ssMsg << "Fish Template saved to disk - (No Cache update) #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
+                  window_main.LogEvent(QString::fromStdString(ssMsg.str() ));
+                  gTrackerState.bStoreThisTemplate = false;
+              }
 
 
               //Copy Detected Ellipse Frame To The Output Frame
@@ -2920,7 +2918,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               /// Auto Eye Threshold Adjustment And Learning ///
               /// Pass detected Ellipses to Update the fish model's Eye State //
               //  Make Fit score count very little
-              double fitScoreReward = 0.001*fish->updateEyeState(vellLeft,vellRight)+ gTrackerState.gUserReward;
+              double fitScoreReward = 0.001*fish->updateEyeMeasurement(vellLeft,vellRight) + gTrackerState.gUserReward;
               gTrackerState.gUserReward = 0.0; //Reset User Provided Rewards
               //qDebug() << "R:" << fitScoreReward;
               tEyeDetectorState current_eyeState = pRLEye->getCurrentState();

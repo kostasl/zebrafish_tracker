@@ -354,7 +354,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
     const int minEllipseMajor   = gTrackerState.gi_minEllipseMajor;
     const int maxEllipseMajor   = gTrackerState.gi_maxEllipseMajor;
     const int minMinorEllipse   = gTrackerState.gi_minEllipseMinor;
-    int thresMinVotes     = gTrackerState.gi_VotesEllipseThres;
+    int thresMinVotes           = gTrackerState.gi_VotesEllipseThres;
 
     const int accLength = vedgePoints_all.size();
     int accumulator[accLength]; //The Score Holding (Histogram ) Array - Each index is a Minor Axis Length
@@ -392,7 +392,14 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
 
         // Use only points on the same curve //
         tEllipsoidEdges vedgePoints_pair;
-        getPointsAlongEdge(imgEdgeIn,ptxy1,vedgePoints_pair); //
+        //for (int i=0; i<5;i++){
+            getPointsAlongEdge(imgEdgeIn,ptxy1,vedgePoints_pair);
+        //    if (vedgePoints_pair.size() > 0)
+        //        break;
+        //}
+
+        if (vedgePoints_pair.size() == 0)
+            cv::imshow("Failed Img",imgEdgeIn);
 
         std::uniform_int_distribution<> distr(1, std::max(1,(int)vedgePoints_pair.size()-1) ); // define the range
 
@@ -890,19 +897,26 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     ///Store Left Eye (Optional :Draw Detected Ellipsoid)
     //Make Mean Ellipsoid from List of Ellipses
     tDetectedEllipsoid lEllMean(qEllipsoids,gTrackerState.gi_MaxEllipseSamples);
-    if (qEllipsoids.size() > 0)
+    if (lEllMean.fitscore > 0)
     {
         ret++;
         vLellipses.push_back(lEllMean);
-        drawExtendedMajorAxis(img_colour,lEllMean,CV_RGB(250,0,0));
+        drawExtendedMajorAxis(img_colour,lEllMean,CV_RGB(200,200,0));
     }
+    else
+        qDebug() << " L Eye failed to fit ellipsoid";
+
     ///// End oF LEft Eye Trace ///
 
 
      /// Start Right Eye / Empty Others / Add Opecv Default ellipse fit
      //Empty
      while (qEllipsoids.size() > 0)
+     {
+         tDetectedEllipsoid ellipsoid = qEllipsoids.top();
+         //drawExtendedMajorAxis(img_colour,ellipsoid,CV_RGB(250,0,0)); //Draw all the samples
          qEllipsoids.pop(); //Empty All Other Candidates
+     }
 
     /// Cover Left half of the image
     //outHeadFrameMonitor = imgEdge_local.clone();
@@ -917,28 +931,26 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     imgEdge_local_Orig.copyTo(imgEdge_local); //Restore
     //Initialize One Ellipse That is the mean of all detected ellipsoids
     tDetectedEllipsoid rEllMean(qEllipsoids,gTrackerState.gi_MaxEllipseSamples);
-    if (qEllipsoids.size() > 0)
+    if (rEllMean.fitscore > 0)
     {
         ret++;
         vRellipses.push_back(rEllMean);
         drawExtendedMajorAxis(img_colour,rEllMean,CV_RGB(250,50,50));
-    }
+    }else
+       qDebug() << " R Eye failed to fit ellipsoid";
 
 
     /// Done Fitting / Now check results //
-//    qDebug() << "F Exp[L:R]: " << fLAngleEstimate << ":" << fRAngleEstimate << " V:" << (fLAngleEstimate-fRAngleEstimate) ;
+    //if (lEllMean.fitscore > 0 )
+     //qDebug() << "F Exp[L:R]: " << lEllMean.getEyeAngle() << " (" << (lEllMean.fitscore) << ")" << ":" << rEllMean.getEyeAngle() << " (" << (lEllMean.fitscore) << ") V:" << (lEllMean.getEyeAngle()-rEllMean.getEyeAngle()) ;
+
+
+
 //    qDebug() << "O Exp[L:R]: " << lEllMean.getEyeAngle()  << ":" << rEllMean.getEyeAngle() << " V:" << (lEllMean.getEyeAngle()-rEllMean.getEyeAngle()) ;
     //int mjAxis2 = std::max(rEllMean.rectEllipse.size.width, rEllMean.rectEllipse.size.height);
 
   ///////// End of Checks //////////
 
-   /// Debug //
-   //cv::bitwise_or(imgEdge,imgEdge_dbg,imgEdge_dbg);
-   // cv::imshow("Fish Edges ",imgEdge_dbg);
-   // cv::imshow("Fish Edges h",imgEdge);
-   //cv::imshow("Debug EllipseFit",imgDebug);
-   //cv::imshow("Fish Threshold ",imgIn_thres);
-   //cv::imshow("Fish CONTOUR ",img_contour);
 /// Show Mask Outlines TO USER ///
     /// Show Eye Points to User ///
     /// Show Masks with nominal width//

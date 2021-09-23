@@ -1,6 +1,8 @@
-/// \brief This class will contain the learning and heurestic required to detect fish and manage the update of their respective model instances
-/// classifier is trained in tracker_img_recognitionNN.R script using a collection of fish and non-fish images
-/// at size of a template img
+/// \brief Class utilizing trained neural network that detects fish anterior at size of a template img and
+/// corrects the position the blob centre to so as to assist correct eye detection.
+/// The NN classifier is trained in tracker_img_recognitionNN.R script using a collection of fish and non-fish images and saved as Matrices
+/// exported as YAML in fishNet.yml. These are loaded as OpenCV matrices and is used to classify candidate fish blobs.
+///
 ///
 ///
 
@@ -90,7 +92,8 @@ cv::Mat fishdetector::getNormedBoundedImg(cv::Mat& frame, cv::RotatedRect fishRo
     /// Size Of Norm Head Image
     cv::Rect fishBoundingRect = fishRotAnteriorBox.boundingRect();
     // fishBoundingRect.width  +=2; fishBoundingRect.height +=2;
-    cv::Size szFishAnteriorNorm = fishBoundingRect.size();//
+    cv::Size szFishAnteriorNorm = cv::Size(max (fishBoundingRect.size().width,fishBoundingRect.size().height),
+                                           max (fishBoundingRect.size().width,fishBoundingRect.size().height));//
 
     /// Extract Region and rotate to orient template region vertically
 

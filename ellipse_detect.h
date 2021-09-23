@@ -41,7 +41,7 @@ typedef struct tDetectedEllipsoid{
         nsamples = 0; //Samples included in Estimate
         tDetectedEllipsoid ellipsoid;
         tEllipsoids vellipses;
-
+        fitscore = 0;
         while (rankedEllipsoids.size() >  max(0,iRSamples-nMaxSamples))
         {
             ellipsoid = rankedEllipsoids.top();
@@ -92,6 +92,7 @@ typedef struct tDetectedEllipsoid{
         for (int i=0;i<vEll.size();i++)
         {
             tDetectedEllipsoid rEll = vEll[i];
+            //nsamples += rEll.nsamples;
             if (rEll.ptAxisMj1.y > rEll.ptAxisMj2.y)
             { //ptAxisMj1 is lower than ptAxisMj2
                 ptAxisMj1.y +=  rEll.ptAxisMj1.y ;
@@ -188,7 +189,7 @@ typedef struct tDetectedEllipsoid{
 //             fEyeTheta      = rectEllipse.angle-90;
 //        if (fEyeTheta < -30)
 //             fEyeTheta      = rectEllipse.angle+90;
-    return (rectEllipse.angle);
+        return (rectEllipse.angle);
     }
 
 

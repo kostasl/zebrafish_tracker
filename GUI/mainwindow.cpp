@@ -112,7 +112,7 @@ void MainWindow::createSpinBoxes()
 
     this->ui->spinBoxFrame->installEventFilter(this);
     this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
-    this->ui->spinBoxEyeThres->setRange(-500,500); //-Ve Values Allow for lowering Avg Threshold
+    //this->ui->spinBoxEyeThres->setRange(-100,100); //-Set On GUI form -Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setValue(gTrackerState.gthresEyeSeg);
 
     this->ui->spinBoxFoodThresMax->setValue(gTrackerState.g_SegFoodThesMax);
@@ -128,12 +128,12 @@ void MainWindow::createSpinBoxes()
 
 
     this->ui->spinBoxMinEllipse->installEventFilter(this);
-    this->ui->spinBoxMinEllipse->setRange(5,22);
+    //this->ui->spinBoxMinEllipse->setRange(5,22); //Set in Form Properties
     this->ui->spinBoxMinEllipse->setValue(gTrackerState.gi_minEllipseMajor);
 
 
     this->ui->spinBoxMaxEllipse->installEventFilter(this);
-    //this->ui->spinBoxMaxEllipse->setRange(10,70);
+    //this->ui->spinBoxMaxEllipse->setRange(10,70);//Set in Form Properties
     this->ui->spinBoxMaxEllipse->setValue(gTrackerState.gi_maxEllipseMajor);
 
 
@@ -1315,5 +1315,11 @@ void MainWindow::on_spinBoxFishNetSparseness_valueChanged(int arg1)
 void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(double arg1)
 {
      gTrackerState.fishnet_L2_classifier = arg1;
+}
+
+
+void MainWindow::on_spinBoxEyeMaskH_valueChanged(int arg1)
+{
+    gTrackerState.giHeadIsolationMaskVOffset = arg1;
 }
 
