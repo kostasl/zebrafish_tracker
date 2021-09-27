@@ -256,7 +256,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMaskInOut,cv::Mat& fgFrameOut,double dLearningRate)
 {
  const int max_thresh = 255;
- cv::Mat fgMOGMask;
+
   cv::Mat threshold_output;
 
  ////  Obtain FG IMage: Substract MOG Extracted BG Image //
@@ -285,7 +285,7 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
              {
                  try{
                         pMOG2->apply(dframe_gray,dframe_mask,gTrackerState.dLearningRate);
-                    dframe_mask.download(fgMOGMask);
+                    dframe_mask.download(gTrackerState.mMOGMask);
                  }catch(...)
                  {
                      pwindow_main->LogEvent("[Error] CUDA MOG2 failed");
@@ -300,7 +300,7 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
              if (gTrackerState.bUseBGModelling)
              {
                try{
-                   pMOG2->apply(frame_gray,fgMOGMask,gTrackerState.dLearningRate);
+                   pMOG2->apply(frame_gray,gTrackerState.mMOGMask,gTrackerState.dLearningRate);
                }catch(...)
                {
                    std::clog << "MOG2 apply failed, probably multiple threads using OCL, switching OFF" << std::endl;
@@ -318,7 +318,7 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
       if (gTrackerState.bUseBGModelling)
       {
         try{
-            pMOG2->apply(frameImg_gray,fgMOGMask,dLearningRate);
+            pMOG2->apply(frameImg_gray,gTrackerState.mMOGMask,dLearningRate);
             //
         }catch(...)
         {
@@ -338,7 +338,7 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
       {
             //No Static Mask - But Combine With threshold So MOG Ghosts Are Erased
            ///TODO make into and mask , and isolate threshold mask around fish
-           cv::bitwise_and(fgMOGMask,threshold_output,fgMaskInOut); // Combine with Threshold So We have some control of output
+           cv::bitwise_and(gTrackerState.mMOGMask,threshold_output,fgMaskInOut); // Combine with Threshold So We have some control of output
 
            //Use MOG mask Not Thresholded OUtput - Improves Boundary Removal
            //fgMOGMask.copyTo(fgMaskInOut);
@@ -357,8 +357,8 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
       // Show Masks for Debuging purposes
       if (gTrackerState.bshowMask && !fgStaticMaskIn.empty())
         cv::imshow("StaticMask",fgStaticMaskIn);
-      if (gTrackerState.bshowMask && !fgMOGMask.empty())
-        cv::imshow("MOGMask",fgMOGMask);
+      if (gTrackerState.bshowMask && !gTrackerState.mMOGMask.empty())
+        cv::imshow("MOGMask",gTrackerState.mMOGMask);
      if (gTrackerState.bshowMask && !threshold_output.empty())
         cv::imshow("Threshold Out",threshold_output);
 
@@ -529,9 +529,11 @@ void getPreyMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFoodMask)
 
     /// Create Thresholded Image Mask from FG image ///
     cv::threshold( frameImg, outFoodMask, gTrackerState.g_SegFoodThesMin, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+
+    /// TODO: Change this As it Gets stuck With Excluding
     if (gTrackerState.bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So Remove those Stationary Pixels
         /// \note frameImg may already have FG mask applied to it
-        bitwise_and(outFoodMask,fgMask,outFoodMask);
+        bitwise_and(outFoodMask,gTrackerState.mMOGMask,outFoodMask);
     ///Removed because DEnse prey conditions Result in Large Blobs
     //Shrink Dilate prey so as to improve tracking and remove Noise
     cv::morphologyEx(outFoodMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //

@@ -230,8 +230,8 @@ int main(int argc, char *argv[])
     pwindow_main->nFrame = 1;
     pwindow_main->LogEvent(QString::number(iLoadedTemplates) + QString("# Templates Loaded "));
 
-    //Run Classifier Test //
-    fishdetector::test();
+    /// Run Classifier Test ///
+    //fishdetector::test();
 
    /// Start Tracking of Video Files ///
    try{
@@ -2825,7 +2825,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
           cv::Size szHeadImg(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),
                              max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)*0.75);
 //          cv::Point ptTopLeftHead(ptTopLeftTemplate.x,0);//(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
-          cv::Rect rectFishHeadBound = cv::Rect(cv::Point(0,0),szHeadImg);
+          cv::Rect rectFishHeadBound = cv::Rect(cv::Point(max(0,imgFishAnterior_Norm.cols/2-szHeadImg.width/2),
+                                                          max(0,imgFishAnterior_Norm.rows-szHeadImg.height)),szHeadImg);
 
 
           ///Make Normalized Fish View
@@ -2874,6 +2875,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               ///
               int ret = 0;
               std::stringstream ss;
+              /// Adaptive gTrackerState.giHeadIsolationMaskVOffset =  //Move Horizontal Body Mask Vectically so it sits at body-eye boundary
               ret = detectEyeEllipses(imgFishHead,vellLeft,vellRight,imgFishHeadSeg,imgFishHeadProcessed);
               // Check if at both Eyes have been detected
               if ((ret < 2 | gTrackerState.gUserReward < 0) )

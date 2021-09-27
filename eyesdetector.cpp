@@ -178,7 +178,6 @@ baseIdxRow = RangeValThres_min;
               qDebug() << "Failed to open RLEyeDetector Data file:" << e;
       }
 
-
   }
 
 }

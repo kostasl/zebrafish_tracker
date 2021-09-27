@@ -257,6 +257,8 @@ class trackerState
       bool bUseOpenCL                           = true;
       bool bUseHistEqualization                 = true; //To enhance to contrast in Eye Ellipse detection
       bool bUseEllipseEdgeFittingMethod         = true; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
+      bool bAdaptEyeMaskVOffset                 = true; // Check in fishDetector.cpp
+
       /// \todo Make this path relative or embed resource
       //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
       std::string strTemplateImg = ":/img/fishbody_Ltmp"; ///Load From Resource
@@ -269,7 +271,7 @@ class trackerState
 
       /// Segmentation / threshold  Params
       int g_FGSegthresh             = 40; //Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
-      int g_SegFoodThesMin        = g_FGSegthresh+5; //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
+      int g_SegFoodThesMin        = max(0,g_FGSegthresh-15); //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
       int g_SegFoodThesMax        = g_SegFoodThesMin+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
       //int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
       //int g_BGthresh              = 5; //BG threshold segmentation
@@ -279,7 +281,7 @@ class trackerState
       int gi_CannyThres           = 150;
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
       int gi_maxEllipseMajor      = 31; /// thres  for Eye Ellipse Detection methods
-      int gi_minEllipseMajor      = 10; ///thres for Eye Ellipse Detection methods (These Values Tested Worked Best)
+      int gi_minEllipseMajor      = 10; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
       int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
 
@@ -290,13 +292,13 @@ class trackerState
 
 
       int giHeadIsolationMaskVOffset     = 30; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
-      int giEyeIsolationMaskRadius       = 30; ///Mask circle between eyes
+      int giEyeIsolationMaskRadius       = 12; ///Mask circle between eyes
       int iEyeMaskSepWidth               = 20; //5 px width vertical line separates the eyes for segmentation
 
 
       /// Fishnet Classifier params //
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_L2_classifier  = 0.6f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_L2_classifier  = 0.1f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
       float fishnet_inputSparseness = 0.1f; //Ratio of Active Pixels in Binarized input Image
 
       ///Fish Features Detection Params
@@ -345,6 +347,10 @@ class trackerState
       cv::Point ptROI1,ptROI2,ptROI3,ptROI4;
       fishdetector fishnet;
 
+
+      cv::Mat mMOGMask;
+      cv::Mat mfgFishMask;
+      cv::Mat mfgPreyMask;
     /// overload size operator / return full state object size
      size_t size() const _GLIBCXX_NOEXCEPT
     { return 1; //mStateValue.size()*mStateValue[1].size()*mStateValue[1][1].size();

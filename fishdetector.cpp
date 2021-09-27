@@ -308,6 +308,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     cv::circle(imgFishAnterior_Norm,ptmax,3,CV_RGB(200,200,210),2);
     cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(0,0,0),2);
 
+
     //cv::imshow(string("Fish Region Body Norm ") + regTag,imgFishAnterior_Norm);
     // DEBUG IMG //
     cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, 0, 1, cv::NORM_MINMAX);
@@ -343,6 +344,10 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     imgFishAnterior_Norm_tmplcrop       = imgFishAnterior_Norm(rectFishTemplateBound);
     imgFishAnterior_Norm_tmplcrop.copyTo(outframeAnterior_Norm);
     maskRegionScore_Norm(rectFishTemplateBound).copyTo(outmaskRegionScore);
+
+    /// Set Mark Point For Eye Detection ///
+    //if (gTrackerState.bAdaptEyeMaskVOffset)
+    //    gTrackerState.giHeadIsolationMaskVOffset = min(maxpt.y,imgFishAnterior_Norm.rows);//ptmax.y
 
 
 
