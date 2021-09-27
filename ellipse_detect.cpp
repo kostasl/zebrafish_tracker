@@ -845,7 +845,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
     ///COVER Left Eye - Find RIGHT EYE //
     imgEyeCover = imgEyeDiscover.clone();
-    cv::Rect rLeftMask(0,0,imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
+    cv::Rect rLeftMask(0,0,imgEyeDiscover.cols/2,imgEyeDiscover.rows);
     cv::rectangle(imgEyeCover,rLeftMask,cv::Scalar(0),-1);
     cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax); //Find Centre of RIght Eye
     ptREyeMid = ptMax;
@@ -861,20 +861,20 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
     /// Equalize Histogram to Enhance Contrast
     if (gTrackerState.bUseHistEqualization)
-        cv::equalizeHist(imgUpsampled_gray, imgUpsampled_gray);
+        cv::equalizeHist(imgEyeDiscover, imgEyeDiscover);
 
     //Make GUI Head Img
     cv::cvtColor( imgUpsampled_gray,img_colour, cv::COLOR_GRAY2RGB);
 
 
     /// Estimate Eye Segmentation threshold from sample points in Image
-    std::vector<int> viThresEyeSeg = getEyeSegThreshold(imgUpsampled_gray,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
+    std::vector<int> viThresEyeSeg = getEyeSegThreshold(imgEyeDiscover,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
       // Do Multiple Thresholding Of Masked Image to Obtain Segmented Eyes //
     cv::Mat imgIn_thres2;
     cv::Mat imgIn_thres3,imgFishHead_Lapl2,imgFishHead_Lapl3;
-    cv::threshold(imgUpsampled_gray, imgIn_thres,viThresEyeSeg[0],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
-    cv::threshold(imgUpsampled_gray, imgIn_thres2,viThresEyeSeg[1],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold(imgEyeDiscover, imgIn_thres,viThresEyeSeg[0],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    cv::threshold(imgEyeDiscover, imgIn_thres2,viThresEyeSeg[1],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
 
     //Try Laplacian CV_8U
     //cv::GaussianBlur(imgIn_thres,imgIn_thres,cv::Size(3,3),3,3);
@@ -886,7 +886,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
     if (viThresEyeSeg.size() == 3)
     {
-        cv::threshold(imgUpsampled_gray, imgIn_thres3,viThresEyeSeg[2],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+        cv::threshold(imgEyeDiscover, imgIn_thres3,viThresEyeSeg[2],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
         cv::Laplacian(imgIn_thres3,imgFishHead_Lapl3,imgIn_thres.type(),1);
         imgEdge_local = imgEdge_local + imgFishHead_Lapl3;
     }
