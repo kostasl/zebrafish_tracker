@@ -533,13 +533,24 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
             //processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
 
             // Check Blobs With Template And Update Fish Model
-            UpdateFishModels(fgFishImgMasked, vfishmodels, vfishblobs_pt, nFrame, outframe);
+
+
             if (vfishmodels.size() > 0)
-                /// Isolate Head, Get Eye models, and Get and draw Spine model
+            {
+                /// Isolate Head Measure* Eye Position For each fish and pass measurement to Model make Spine model and draw it
                 detectZfishFeatures(window_main, fgFishImgMasked, outframe,
                                     frameHead,outframeHeadEyeDetected,
                                     fgFishImgMasked, fishbodycontours,
                                     fishbodyhierarchy); //Creates & Updates Fish Models
+
+                gTrackerState.rect_pasteregion.width  = outframeHeadEyeDetected.cols;
+                gTrackerState.rect_pasteregion.height = outframeHeadEyeDetected.rows;
+            }
+
+            UpdateFishModels(fgFishImgMasked, vfishmodels, vfishblobs_pt, nFrame, outframe);
+
+
+
 
             //If A fish Is Detected Then Draw Its tracks
             fishModels::iterator ft = vfishmodels.begin();
@@ -548,8 +559,16 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
                 fishModel* pfish = ft->second;
                 assert(pfish);
                 zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN, gTrackerState.trackFntScale+0.2 );
+                //Draw KFiltered Axis
+                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->leftEye,CV_RGB(200,250,200));
+                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->rightEye,CV_RGB(200,250,200));
+
                 ++ft;
             }
+
+            if (!outframeHeadEyeDetected.empty())
+                outframeHeadEyeDetected.copyTo(outframe(gTrackerState.rect_pasteregion) ) ;
+
         }
 
         nLarva = vfishmodels.size();
@@ -2742,12 +2761,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
     cv::Size szTempIcon(std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows),std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows));
    // cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
 
-    cv::Rect pasteRegion = gTrackerState.rect_pasteregion;
-
 //    ///Detect Head Feature //
-//    std::cout << "Match template on #fish:" << vfishmodels.size() << std::endl;
     for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
-    //for (int z=0;z<vfishmodels.size();z++) //  fishModel* fish = vfishmodels[z];
     {
           fishModel* fish = (*it).second;
 
@@ -2910,8 +2925,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               if (imgFishHeadProcessed.u)
                   imgFishHeadProcessed.copyTo(outimgFishHeadProcessed);
 
-              pasteRegion.width = outimgFishHeadProcessed.cols;
-              pasteRegion.height = outimgFishHeadProcessed.rows;
+              cv::Rect pasteRegion = gTrackerState.rect_pasteregion;
 
               // Debug test //
               //if (gthresEyeSeg < 0)
@@ -2950,8 +2964,6 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                   colTxt = CV_RGB(200,50,0);
 
               {
-                  // \bug Paste region out of bounds
-                  outimgFishHeadProcessed.copyTo(fullImgOut(pasteRegion) ) ;
 
                   ss.str(""); //Empty String
                   ss << "L:" << fish->leftEyeTheta;
@@ -2974,6 +2986,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                     //fish->idxTemplateRow = iLastKnownGoodTemplateRow = (rand() % static_cast<int>(gnumberOfTemplatesInCache - 0 + 1));//Start From RANDOM rOW On Next Search
                     //pwindow_main->LogEvent(QString("[warning] Too Many Eye detection Failures - Change Template Randomly to :" + QString::number(iLastKnownGoodTemplateRow)));
               }
+
 
               /// END OF EYE DETECTION //
 
@@ -3027,6 +3040,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                 cv::imshow("BlurredFish",maskedfishFeature_blur);
 #endif
               }
+
              /// END OF Fit Spine ////
               //Eye Detection Ret > 0
                 //Shift Paste Region For Next info info

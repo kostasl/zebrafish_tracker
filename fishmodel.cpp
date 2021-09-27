@@ -485,47 +485,6 @@ int fishModel::updateEyeMeasurement(tEllipsoids& vLeftEll,tEllipsoids& vRightEll
     if (uiFrameIterations > 1)
         stepUpdate = 1.0/std::min(200.0, (double)uiFrameIterations);
 
-//    //tDetectedEllipsoid
-//    // Go through All detected ellipsoids,
-//    for (int i=0; i< vLeftEll.size(); i++)
-//    {
-//        // select ones are for left/right eye
-//        tDetectedEllipsoid Eye = vLeftEll[i];
-//        if (Eye.cLabel == 'L') //Left eye
-//        {
-//            fleftEyeTheta += Eye.getEyeAngle();
-//            ileftEyeSamples +=1;
-//        }
-//    // and obtain mean angle for left/right eye from set of detected ellipsoids.
-//    }
-
-//    for (int i=0; i< vRightEll.size(); i++)
-//    {
-//        tDetectedEllipsoid REye = vRightEll[i];
-//        frightEyeTheta += REye.getEyeAngle();
-//        irightEyeSamples +=1;
-//        this->leftEye.fitscore += REye.fitscore;
-//    }
-
-    //Get Mean sample angles
-//    if (ileftEyeSamples >0)
-//    {
-//        fleftEyeTheta   = fleftEyeTheta/(float)ileftEyeSamples;
-//        this->leftEye.fitscore = this->leftEye.fitscore/(float)ileftEyeSamples;
-//    }else
-//    {
-//        this->nFailedEyeDetectionCount++;
-//    }
-
-//    if (irightEyeSamples >0)
-//    {
-//       frightEyeTheta  = frightEyeTheta/(float)irightEyeSamples;
-//        this->rightEye.fitscore = this->rightEye.fitscore/(float)irightEyeSamples;
-//    }else
-//    {
-//        this->nFailedEyeDetectionCount++;
-//    }
-
 
     tDetectedEllipsoid mleftEye(vLeftEll);
     tDetectedEllipsoid mrightEye(vRightEll);
@@ -564,6 +523,47 @@ int fishModel::updateEyeMeasurement(tEllipsoids& vLeftEll,tEllipsoids& vRightEll
 
  return (retPerfScore);
 
+
+ //    //tDetectedEllipsoid
+ //    // Go through All detected ellipsoids,
+ //    for (int i=0; i< vLeftEll.size(); i++)
+ //    {
+ //        // select ones are for left/right eye
+ //        tDetectedEllipsoid Eye = vLeftEll[i];
+ //        if (Eye.cLabel == 'L') //Left eye
+ //        {
+ //            fleftEyeTheta += Eye.getEyeAngle();
+ //            ileftEyeSamples +=1;
+ //        }
+ //    // and obtain mean angle for left/right eye from set of detected ellipsoids.
+ //    }
+
+ //    for (int i=0; i< vRightEll.size(); i++)
+ //    {
+ //        tDetectedEllipsoid REye = vRightEll[i];
+ //        frightEyeTheta += REye.getEyeAngle();
+ //        irightEyeSamples +=1;
+ //        this->leftEye.fitscore += REye.fitscore;
+ //    }
+
+     //Get Mean sample angles
+ //    if (ileftEyeSamples >0)
+ //    {
+ //        fleftEyeTheta   = fleftEyeTheta/(float)ileftEyeSamples;
+ //        this->leftEye.fitscore = this->leftEye.fitscore/(float)ileftEyeSamples;
+ //    }else
+ //    {
+ //        this->nFailedEyeDetectionCount++;
+ //    }
+
+ //    if (irightEyeSamples >0)
+ //    {
+ //       frightEyeTheta  = frightEyeTheta/(float)irightEyeSamples;
+ //        this->rightEye.fitscore = this->rightEye.fitscore/(float)irightEyeSamples;
+ //    }else
+ //    {
+ //        this->nFailedEyeDetectionCount++;
+ //    }
 
 
 
@@ -749,6 +749,13 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 
     this->leftEyeTheta   = mCorrected.at<float>(6); // Eye Angle Left;
     this->rightEyeTheta   = mCorrected.at<float>(7); // Eye Angle Right;
+
+    //Update The Eye Ellipsoids
+    this->leftEye.rectEllipse.angle = this->leftEyeTheta;
+    this->rightEye.rectEllipse.angle = this->rightEyeTheta;
+
+    this->leftEye = tDetectedEllipsoid(this->leftEye.rectEllipse,this->leftEye.fitscore);
+    this->rightEye = tDetectedEllipsoid(this->rightEye.rectEllipse,this->rightEye.fitscore);
 
     //Blob Position Is not FIltered
     this->zfishBlob      = *fblob;

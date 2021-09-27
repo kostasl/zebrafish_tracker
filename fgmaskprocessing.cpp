@@ -746,7 +746,7 @@ void enhanceMasks(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,
     //frameImg_gray = frameImg.clone();//frameImg.clone();
 
     // Check this Again / What is it doing?
-    getPreyMask(frameImg_gray_masked,fgMask,outFoodMask);
+    getPreyMask(frameImg,fgMask,outFoodMask);
     vFilteredFishbodycontours = getFishMask(frameImg_gray_masked,fgMask,outFishMask,ptFishblobs);
 
     //Write The fish contour Mask on Food Mask To erase isolated fish Pixels by Using Smoothed Contour
