@@ -165,7 +165,7 @@ private:
   const int stateSize = 9;
   const int measSize = 9;
   const int contrSize = 0;
-  unsigned int type = CV_32F;
+  unsigned int type = CV_32FC1;
   bool bPredictedPosition = false; //When True A measurement Has now yet been added since Last prediction
   KalmanFilter KF;
 

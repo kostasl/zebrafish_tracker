@@ -1130,7 +1130,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 ||
                 minL1 < gTrackerState.gDisplacementLimitPerFrame)
         {
-           //if (!gTrackerState.bPaused)
+           if (!gTrackerState.bPaused)
                 pfish->updateState(fishblob,fishblob->response,
                                    fishblob->angle,
                                    fishblob->pt,nFrame,
@@ -1186,7 +1186,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
            fish->ID = ++gTrackerState.gi_MaxFishID;
            fish->idxTemplateRow = 0;
            fish->idxTemplateCol = 0;
-
+           fish->stepPredict(nFrame);
            fish->updateState(fishblob,maxMatchScore,bestAngle,ptSearch,nFrame,
                              gTrackerState.gFishTailSpineSegmentLength,0,0);
 
