@@ -474,34 +474,35 @@ void trackerState::loadFromQrc(QString qrc,cv::Mat& imRes,int flag )
 }
 
 
-float getAngleDiff(float anglefrom,float angleTo)
+float getAngleDiff(float angleFrom,float angleTo)
 {
-    //Convert to -180 - +180
-    //int sign = 1;
-
-    //if (angleTo > anglefrom)
-//    anglefrom = (anglefrom > 180)?(anglefrom-360):anglefrom;
-//    angleTo = (angleTo >= 180)?(angleTo-360):angleTo;
-
-//    int angle_D = angleTo-anglefrom;
     //Check Angle distance in both directions
 //    int angle_D  = min((angleTo-anglefrom)%360,(angleTo+360-anglefrom)%360);
 
-//    if (abs(angle_D > 180))
-//    {
-//        angle_D = angle_D
-//    }
-
     //Angle diff
-    float angle_D,angle_Da,angle_Db;// min( (int)abs(anglefrom-angleTo+360.0f)%360, (int)abs(angleTo-anglefrom+360.0f)%360 );
-    angle_Da = (int)(anglefrom-angleTo+360.0f)%360;
-    angle_Db = (int)(angleTo-anglefrom+360.0f)%360;
+    float angle_D;// min( (int)abs(anglefrom-angleTo+360.0f)%360, (int)abs(angleTo-anglefrom+360.0f)%360 );
 
-    if (abs(angle_Da) >  abs(angle_Db))
-        angle_D = angle_Db;
+    if (angleTo < 0) //Invert -ve angles
+        angleTo = (360-(int)angleTo%360);
     else
-        angle_D = angle_Da;
+        angleTo = (int)angleTo%360;
 
+    if (angleFrom < 0) //Invert -ve angles
+        angleFrom = (360-(int)angleFrom%360);
+    else
+        angleFrom = (int)angleFrom%360;
+
+    if ( ((angleFrom - angleTo) > 180) || ((angleTo - angleFrom) > 180) )
+    {
+
+        if (angleTo > angleFrom)
+            angle_D = -(int)(angleFrom-angleTo+360)%360;
+        else
+            angle_D = (int)(angleTo-angleFrom+360.0f)%360;
+
+
+    }else
+        angle_D  = angleTo - angleFrom;
 
     return(angle_D);
 }
@@ -528,4 +529,16 @@ QString type2str(int type) {
   r += (chans+'0');
 
   return r;
+}
+
+
+void testAngleDiff()
+{
+    qDebug() << "Test Angle Diff Function";
+
+    for (int a=179;a<760;a++)
+    {
+        qDebug() << "0->" << a << "=" << getAngleDiff(0,a);
+    }
+    qDebug() << " Test Angle Diff Done - Check Results";
 }

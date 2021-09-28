@@ -151,9 +151,9 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     //KF.processNoiseCov.at<float>(21) = 1e-1f;
     KF.processNoiseCov.at<float>(4,4) = 1e-2f; //Angle
     KF.processNoiseCov.at<float>(5,5) = 1e-2f; //Angular V
-    //KF.processNoiseCov.at<float>(4,5) = 1e-5f; //Angular V to Angle
+    KF.processNoiseCov.at<float>(4,5) = 1e-4f; //Angular V to Angle
     //KF.processNoiseCov.at<float>(6,6) = 1e-3f; //Angular Accell
-    //KF.processNoiseCov.at<float>(5,6) = 1e-9f; //Angular V
+    KF.processNoiseCov.at<float>(5,6) = 1e-4f; //Angular V
 
     KF.processNoiseCov.at<float>(7,7) = 1e-4f; //Left Eye
     KF.processNoiseCov.at<float>(8,8) = 1e-4f; //Right Eye
@@ -169,8 +169,8 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 
     KF.measurementNoiseCov.at<float>(4,4) = 1e-2f; //Angle
     KF.measurementNoiseCov.at<float>(5,5) = 1e-2f; //Angle V
-    KF.measurementNoiseCov.at<float>(4,5) = 0;//1e-1f; //1e-1f; //Angular V-V_speed
-    KF.measurementNoiseCov.at<float>(5,6) = 1e-1f;//1e-1f; //Angular Accelleration-
+    KF.measurementNoiseCov.at<float>(4,5) = 1e-2f; //1e-1f; //Angular V-V_speed
+    KF.measurementNoiseCov.at<float>(5,6) = 1e-2f;//1e-1f; //Angular Accelleration-
 
     KF.measurementNoiseCov.at<float>(7,7) = 1e-1f; //Left Eye
     KF.measurementNoiseCov.at<float>(8,8) = 1e-1f; //Right Eye
@@ -179,6 +179,7 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 
 
     KF.statePost = mState;
+    KF.statePre = mState;
 
 }
 
@@ -662,10 +663,8 @@ bool fishModel::stepPredict(unsigned int nFrame)
     { //Add  Speed Contributions
         KF.transitionMatrix.at<float>(0,2) = 1.0;
         KF.transitionMatrix.at<float>(1,3) = 1.0;
-        KF.transitionMatrix.at<float>(4,5) = 0.0f;//1e-9f;// 0.01; //Angular Diff Feeds into Angle
-        KF.transitionMatrix.at<float>(5,4) = 0.0f;//1e-9f;// 0.01; //Angular Diff Feeds into Angle
-        KF.transitionMatrix.at<float>(5,6) = 0.0f; //1e-9f;//0.01; //Angular Speed Diff Feeds into Angular Speed
-        KF.transitionMatrix.at<float>(6,5) = 0.0f; //1e-9f;//0.01; //Angular Speed Diff Feeds into Angular Speed
+        KF.transitionMatrix.at<float>(4,5) = 1.0f;//1e-9f;// 0.01; //Angular Diff Feeds into Angle
+        KF.transitionMatrix.at<float>(5,6) = 1.0f; //1e-9f;//0.01; //Angular Speed Diff Feeds into Angular Speed
 
         mState = KF.predict();
         if (std::isnan(mState.at<float>(4)))
@@ -712,7 +711,7 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,float Angle
     double angleDisplacementA = getAngleDiff(this->bearingAngle,Angle);
     double angleDisplacementB = getAngleDiff((int)(this->bearingAngle+180)%360,Angle);
     //Choose the Displacement Closer to Current Angle (Fix Blob Noisy angle inversions)
-    angleDisplacement =(abs(angleDisplacementA) < abs(angleDisplacementB))?angleDisplacementA:angleDisplacementB;
+    angleDisplacement = (abs(angleDisplacementA) < abs(angleDisplacementB))?angleDisplacementA:angleDisplacementB;
     //Angle = (abs(angleDisplacementA) < abs(angleDisplacementB))?Angle:(int)(Angle+180.0f)%360;
 
 //    if (angleDisplacement > 100 && !bNewModel) //Reject Large Change - Blob Angle Flipped
@@ -725,15 +724,16 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,float Angle
     //Set to 1 frame minimum time step
     KF.transitionMatrix.at<float>(0,2) = dT;
     KF.transitionMatrix.at<float>(1,3) = dT;
-    KF.transitionMatrix.at<float>(4,5) = 0;; //Angular Diff Feeds into Angle
-    KF.transitionMatrix.at<float>(5,4) = 0;//dT;
-    KF.transitionMatrix.at<float>(5,6) = 0;//dT;//dT; //Angular V Diff Feeds into Angle V
-    KF.transitionMatrix.at<float>(6,5) = 0;//dT;//dT; //Angular V Diff Feeds into Angle V
+    KF.transitionMatrix.at<float>(4,5) = dT; //Angular Diff Feeds into Angle
+    KF.transitionMatrix.at<float>(5,6) = dT;//dT;//dT; //Angular V Diff Feeds into Angle V
+    //KF.transitionMatrix.at<float>(5,4) = 0;//dT;
+
 
     mMeasurement.at<float>(0) = bcentre.x;
     mMeasurement.at<float>(1) = bcentre.y;
+    //mMeasurement.at<float>(2) = mMeasurement.at<float>(3) = 0.0f; //No Speed
     mMeasurement.at<float>(4) = Angle;//this->bearingAngle + angleDisplacement;
-    mMeasurement.at<float>(5) = mMeasurement.at<float>(6) = 0.0f;
+   // mMeasurement.at<float>(5) = mMeasurement.at<float>(6) = 0.0f;
     mMeasurement.at<float>(7) = this->leftEye.getEyeAngle();
     mMeasurement.at<float>(8) = this->rightEye.getEyeAngle();
 
@@ -743,10 +743,11 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,float Angle
         //Add Speed as measured Blob speed (Do not involve Filter Predictions in Measured Speed)
         mMeasurement.at<float>(2) = (bcentre.x-zfishBlob.pt.x)/dT;
         mMeasurement.at<float>(3) = (bcentre.y-zfishBlob.pt.y)/dT; //Y speed;
-        mMeasurement.at<float>(5) = -angleDisplacement; //min(1.0f,max(-1.0f,(float)(angleDisplacement)/1.0f)); //(geAngleDiff(zfishBlob.angle,Angle)); //Ang Speed
-        mMeasurement.at<float>(6) = (float)(mState.at<float>(5) - (angleDisplacement))/2.0f; // min(0.1f,max(-0.1f,(float)(mState.at<float>(5) - (angleDisplacement))/2.0f)); //Ang Accelleration
-    }else
-        mMeasurement.at<float>(2) = mMeasurement.at<float>(3) = mMeasurement.at<float>(4) = 0;
+        mMeasurement.at<float>(5) = angleDisplacement/20.0f;//Angle - this->bearingAngle; //angleDisplacement; //min(1.0f,max(-1.0f,(float)(angleDisplacement)/1.0f)); //(geAngleDiff(zfishBlob.angle,Angle)); //Ang Speed
+        //mMeasurement.at<float>(6) = 0;//(floqat)(mState.at<float>(5) - (angleDisplacement))/2.0f; // min(0.1f,max(-0.1f,(float)(mState.at<float>(5) - (angleDisplacement))/2.0f)); //Ang Accelleration
+    }
+    //else
+    //    mMeasurement.at<float>(2) = mMeasurement.at<float>(3) = mMeasurement.at<float>(5) = mMeasurement.at<float>(6) =0;
     // >>>> Matrix A -  Note: set dT at each processing step :
 
     /// Kalman Update - Measurements From Blob //

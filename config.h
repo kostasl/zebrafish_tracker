@@ -404,7 +404,9 @@ int initDetectionTemplates();
 
 
 float getAngleDiff(float anglefrom,float angleTo);
+void testAngleDiff();
 
 QString type2str(int type); //Opencv Mat type to string
+
 
 #endif // CONFIG_H

@@ -230,8 +230,9 @@ int main(int argc, char *argv[])
     pwindow_main->nFrame = 1;
     pwindow_main->LogEvent(QString::number(iLoadedTemplates) + QString("# Templates Loaded "));
 
-    /// Run Classifier Test ///
+    /// Run Unit Tests ///
     //fishdetector::test();
+    testAngleDiff();
 
    /// Start Tracking of Video Files ///
    try{
@@ -1129,7 +1130,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 ||
                 minL1 < gTrackerState.gDisplacementLimitPerFrame)
         {
-           if (!gTrackerState.bPaused)
+           //if (!gTrackerState.bPaused)
                 pfish->updateState(fishblob,fishblob->response,
                                    fishblob->angle,
                                    fishblob->pt,nFrame,
