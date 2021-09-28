@@ -75,7 +75,7 @@ public:
 
   //void updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int TemplRow, int TemplCol);
   bool stepPredict(unsigned int nFrame); //Kalman Filter Predict - Call on every frame
-  bool updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol);
+  bool updateState(zftblob* fblob,double templatematchScore,float Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol);
   int updateEyeMeasurement(tEllipsoids& vLell,tEllipsoids& vRell);
   ///\note The lowest point in a rectangle is 0th vertex, and 1st, 2nd, 3rd vertices follow clockwise.
   /// Height is distance between 0th & 1st  (or 2nd & 3rd) vertices. And width is distance between 1st  & 2nd (or 0th & 3rd) vertices.
@@ -101,7 +101,7 @@ public:
 
 
   void drawSpine(cv::Mat& outFrame);
-  void drawAnteriorBox(cv::Mat& frameScene);
+  void drawAnteriorBox(cv::Mat& frameScene,cv::Scalar colour);
   void drawBodyTemplateBounds(cv::Mat& outframe);
   friend std::ostream& operator<<(std::ostream& out, const fishModel& h);
   friend QTextStream& operator<<(QTextStream& out, const fishModel& h);
@@ -114,7 +114,7 @@ public:
 
   std::vector<cv::Point> contour;
   std::vector<cv::Point> coreHull; /// core Body shape- no tail
-  std::vector<cv::Point> coreTriangle; /// Core Body triangle Approximation
+  //std::vector<cv::Point> coreTriangle; /// Core Body triangle Approximation
 
   // Detection Scores //
   bool bNewModel = true;
@@ -162,8 +162,8 @@ public:
   double stepUpdate; //Eye Angle incremental update rate
 
 private:
-  const int stateSize = 8;
-  const int measSize = 8;
+  const int stateSize = 9;
+  const int measSize = 9;
   const int contrSize = 0;
   unsigned int type = CV_32F;
   bool bPredictedPosition = false; //When True A measurement Has now yet been added since Last prediction

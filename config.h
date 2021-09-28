@@ -403,7 +403,7 @@ void initBGSubstraction();
 int initDetectionTemplates();
 
 
-int geAngleDiff(int anglefrom,int angleTo);
+float getAngleDiff(float anglefrom,float angleTo);
 
 QString type2str(int type); //Opencv Mat type to string
 

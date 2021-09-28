@@ -474,12 +474,12 @@ void trackerState::loadFromQrc(QString qrc,cv::Mat& imRes,int flag )
 }
 
 
-int geAngleDiff(int anglefrom,int angleTo)
+float getAngleDiff(float anglefrom,float angleTo)
 {
     //Convert to -180 - +180
     //int sign = 1;
 
-    //if (angleTo)
+    //if (angleTo > anglefrom)
 //    anglefrom = (anglefrom > 180)?(anglefrom-360):anglefrom;
 //    angleTo = (angleTo >= 180)?(angleTo-360):angleTo;
 
@@ -493,7 +493,15 @@ int geAngleDiff(int anglefrom,int angleTo)
 //    }
 
     //Angle diff
-    int angle_D = min( (anglefrom-angleTo+360)%360, (angleTo-anglefrom+360)%360 );
+    float angle_D,angle_Da,angle_Db;// min( (int)abs(anglefrom-angleTo+360.0f)%360, (int)abs(angleTo-anglefrom+360.0f)%360 );
+    angle_Da = (int)(anglefrom-angleTo+360.0f)%360;
+    angle_Db = (int)(angleTo-anglefrom+360.0f)%360;
+
+    if (abs(angle_Da) >  abs(angle_Db))
+        angle_D = angle_Db;
+    else
+        angle_D = angle_Da;
+
 
     return(angle_D);
 }

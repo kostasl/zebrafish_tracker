@@ -27,9 +27,9 @@ fishModel::fishModel()
 
         inactiveFrames              = 0;
         matchScore               = 0;
-        coreTriangle.push_back(cv::Point());
-        coreTriangle.push_back(cv::Point());
-        coreTriangle.push_back(cv::Point());
+        //coreTriangle.push_back(cv::Point());
+        //coreTriangle.push_back(cv::Point());
+        //coreTriangle.push_back(cv::Point());
 
         this->mouthPoint.x = 0;
         this->mouthPoint.y = 0;
@@ -98,8 +98,10 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     mState.at<float>(3) = 0; //speed Y
     mState.at<float>(4) = bestTemplateOrientation;// (Deg)
     mState.at<float>(5) = 0; //Speed V Angle (Deg)
-    mState.at<float>(6) = 10;// Left Eye
-    mState.at<float>(7) = -10; //Right Eye
+    mState.at<float>(6) = 0; //Accel V Angle (Deg)
+
+    mState.at<float>(7) = 10;// Left Eye
+    mState.at<float>(8) = -10; //Right Eye
 
 
 
@@ -124,8 +126,10 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     mMeasurement.at<float>(0) = this->ptRotCentre.x;
     mMeasurement.at<float>(1) = this->ptRotCentre.y;
     mMeasurement.at<float>(4) = this->bearingAngle;
-    mMeasurement.at<float>(6) = 10.0f;//this->leftEye.getEyeAngle();
-    mMeasurement.at<float>(7) = -10.0f;//this->rightEye.getEyeAngle();
+    mMeasurement.at<float>(5) = 0.0f; mMeasurement.at<float>(6) = 0.0f; //V Angle Speed + Accell
+
+    mMeasurement.at<float>(7) = 10.0f;//this->leftEye.getEyeAngle();
+    mMeasurement.at<float>(8) = -10.0f;//this->rightEye.getEyeAngle();
     //KF.measurementMatrix.at<float>(0) = 1.0f;
     //KF.measurementMatrix.at<float>(7) = 1.0f;
     //KF.measurementMatrix.at<float>(16) = 1.0f;
@@ -140,30 +144,38 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 //        // [ 0    0   0     0     0    Ea_v0  0]
           // [ 0    0   0     0     0    0   lE 0]
           // [ 0    0   0     0     0    0   0  rE]
-    cv::setIdentity(KF.processNoiseCov, cv::Scalar(1e-3)); // default is 1, for smoothing try 0.0001
+    cv::setIdentity(KF.processNoiseCov, cv::Scalar(3e-3)); // default is 1, for smoothing try 0.0001
     //KF.processNoiseCov.at<float>(0,0) = 1e-1;
     //KF.processNoiseCov.at<float>(7) = 1e-1;
     //KF.processNoiseCov.at<float>(14) = 1e-1f;
     //KF.processNoiseCov.at<float>(21) = 1e-1f;
-    KF.processNoiseCov.at<float>(5,5) = 1e-3f; //Angular V
-    KF.processNoiseCov.at<float>(6,6) = 1.0f; //Left Eye
-    KF.processNoiseCov.at<float>(7,7) = 1.0f; //Right Eye
+    KF.processNoiseCov.at<float>(4,4) = 1e-2f; //Angle
+    KF.processNoiseCov.at<float>(5,5) = 1e-2f; //Angular V
+    //KF.processNoiseCov.at<float>(4,5) = 1e-5f; //Angular V to Angle
+    //KF.processNoiseCov.at<float>(6,6) = 1e-3f; //Angular Accell
+    //KF.processNoiseCov.at<float>(5,6) = 1e-9f; //Angular V
+
+    KF.processNoiseCov.at<float>(7,7) = 1e-4f; //Left Eye
+    KF.processNoiseCov.at<float>(8,8) = 1e-4f; //Right Eye
     //KF.processNoiseCov.at<float>(35) = 1e-1f;
 
-//    // Measures Noise Covariance Matrix R - Set Low so Filter Follows Measurement more closely
-    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-3)); // default is 1, increasing should smooth but I get erratic behaviour
+//    // Measures Noise Covariance Matrix R - Set high/low so Filter Follows Measurement more closely
+    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-1)); // default is 1, increasing should smooth but I get erratic behaviour
 
-    //KF.measurementNoiseCov.at<float>(2,2) = 0.1f; // X speed
-    KF.measurementNoiseCov.at<float>(0,3) = 1e-5f; //X Speed - X
-    KF.measurementNoiseCov.at<float>(2,4) = 1e-5f; //Y Speed - Y
-    KF.measurementNoiseCov.at<float>(4,5) = 1e-6f; //Angular V-V_speed
+    //KF.measurementNoiseCov.at<float>(1,2) = 1e-2f; // Y speed X pos
+    //KF.measurementNoiseCov.at<float>(0,3) = 1e-2f; //X Speed - X
+    //KF.measurementNoiseCov.at<float>(2,4) = 1e-5f; //Y Speed - Y
+
+
     KF.measurementNoiseCov.at<float>(4,4) = 1e-2f; //Angle
     KF.measurementNoiseCov.at<float>(5,5) = 1e-2f; //Angle V
-    KF.measurementNoiseCov.at<float>(6,6) = 1e-2f; //Left Eye
-    KF.measurementNoiseCov.at<float>(7,7) = 1e-2f; //Right Eye
+    KF.measurementNoiseCov.at<float>(4,5) = 0;//1e-1f; //1e-1f; //Angular V-V_speed
+    KF.measurementNoiseCov.at<float>(5,6) = 1e-1f;//1e-1f; //Angular Accelleration-
 
-    cv::setIdentity(KF.errorCovPost, Scalar::all(1e-1f)); // default is 0, for smoothing try 0.1
+    KF.measurementNoiseCov.at<float>(7,7) = 1e-1f; //Left Eye
+    KF.measurementNoiseCov.at<float>(8,8) = 1e-1f; //Right Eye
 
+    cv::setIdentity(KF.errorCovPost, Scalar::all(1e-2f)); // default is 0, for smoothing try 0.1
 
 
     KF.statePost = mState;
@@ -622,13 +634,13 @@ int fishModel::updateEyeMeasurement(tEllipsoids& vLeftEll,tEllipsoids& vRightEll
 }
 
 
-void fishModel::drawAnteriorBox(cv::Mat& frameScene)
+void fishModel::drawAnteriorBox(cv::Mat& frameScene, cv::Scalar colour=CV_RGB(00,00,255))
 {
     ///Draw a Red Rotated Frame around Detected Body
     cv::Point2f boundBoxPnts[4];
     bodyRotBound.points(boundBoxPnts);
      for (int j=0; j<4;j++) //Rectangle Body
-       cv::line(frameScene,boundBoxPnts[j],boundBoxPnts[(j+1)%4] ,CV_RGB(00,00,255),1,cv::LINE_8);
+       cv::line(frameScene,boundBoxPnts[j],boundBoxPnts[(j+1)%4],colour,1,cv::LINE_8);
 }
 
 ///
@@ -650,7 +662,10 @@ bool fishModel::stepPredict(unsigned int nFrame)
     { //Add  Speed Contributions
         KF.transitionMatrix.at<float>(0,2) = 1.0;
         KF.transitionMatrix.at<float>(1,3) = 1.0;
-        KF.transitionMatrix.at<float>(4,5) = 1.0; //Angular Diff Feeds into Angle
+        KF.transitionMatrix.at<float>(4,5) = 0.0f;//1e-9f;// 0.01; //Angular Diff Feeds into Angle
+        KF.transitionMatrix.at<float>(5,4) = 0.0f;//1e-9f;// 0.01; //Angular Diff Feeds into Angle
+        KF.transitionMatrix.at<float>(5,6) = 0.0f; //1e-9f;//0.01; //Angular Speed Diff Feeds into Angular Speed
+        KF.transitionMatrix.at<float>(6,5) = 0.0f; //1e-9f;//0.01; //Angular Speed Diff Feeds into Angular Speed
 
         mState = KF.predict();
         if (std::isnan(mState.at<float>(4)))
@@ -660,12 +675,12 @@ bool fishModel::stepPredict(unsigned int nFrame)
             return(false);
         }
 
-        this->bearingAngle   = mState.at<float>(4); // Angle;
+        this->bearingAngle   = (int)mState.at<float>(4)%360; // Angle;
         this->bearingRads   =  this->bearingAngle*CV_PI/180.0;
         assert(!std::isnan(this->bearingAngle));
         this->ptRotCentre    = cv::Point2f(mState.at<float>(0), mState.at<float>(1)); //bcentre;
-        this->leftEyeTheta   = mState.at<float>(6); // Eye Angle Left;
-        this->rightEyeTheta   = mState.at<float>(7); // Eye Angle Right;
+        this->leftEyeTheta   = mState.at<float>(7); // Eye Angle Left;
+        this->rightEyeTheta   = mState.at<float>(8); // Eye Angle Right;
 
 
         bPredictedPosition = true;
@@ -685,27 +700,42 @@ bool fishModel::stepPredict(unsigned int nFrame)
 /// \param Angle
 /// \param bcentre
 ///
-bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
+bool fishModel::updateState(zftblob* fblob,double templatematchScore,float Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
 {
 
     assert(!std::isnan(Angle));
 
     //Compare displacements to Last Measurements Not To Predicted Position In BearingAngle
-    double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
-    double angleDisplacement = abs(geAngleDiff(this->zfishBlob.angle,Angle));
-    double dT = (double)(nFrame-nLastUpdateFrame);///((double)gTrackerState.gfVidfps+1.0)
-    //Set to 1 frame minimum time step
+    // Note Blob Angles can flip 180 between frames so we need to take the closest to the current orientation
 
+    double angleDisplacement;
+    double angleDisplacementA = getAngleDiff(this->bearingAngle,Angle);
+    double angleDisplacementB = getAngleDiff((int)(this->bearingAngle+180)%360,Angle);
+    //Choose the Displacement Closer to Current Angle (Fix Blob Noisy angle inversions)
+    angleDisplacement =(abs(angleDisplacementA) < abs(angleDisplacementB))?angleDisplacementA:angleDisplacementB;
+    //Angle = (abs(angleDisplacementA) < abs(angleDisplacementB))?Angle:(int)(Angle+180.0f)%360;
+
+//    if (angleDisplacement > 100 && !bNewModel) //Reject Large Change - Blob Angle Flipped
+//        return (false);
+
+    double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
+    double dT = (double)(nFrame-nLastUpdateFrame);///((double)gTrackerState.gfVidfps+1.0)
+
+
+    //Set to 1 frame minimum time step
     KF.transitionMatrix.at<float>(0,2) = dT;
     KF.transitionMatrix.at<float>(1,3) = dT;
-    KF.transitionMatrix.at<float>(4,5) = dT; //Angular Diff Feeds into Angle
-
+    KF.transitionMatrix.at<float>(4,5) = 0;; //Angular Diff Feeds into Angle
+    KF.transitionMatrix.at<float>(5,4) = 0;//dT;
+    KF.transitionMatrix.at<float>(5,6) = 0;//dT;//dT; //Angular V Diff Feeds into Angle V
+    KF.transitionMatrix.at<float>(6,5) = 0;//dT;//dT; //Angular V Diff Feeds into Angle V
 
     mMeasurement.at<float>(0) = bcentre.x;
     mMeasurement.at<float>(1) = bcentre.y;
-    mMeasurement.at<float>(4) = Angle;
-    mMeasurement.at<float>(6) = this->leftEye.getEyeAngle();
-    mMeasurement.at<float>(7) = this->rightEye.getEyeAngle();
+    mMeasurement.at<float>(4) = Angle;//this->bearingAngle + angleDisplacement;
+    mMeasurement.at<float>(5) = mMeasurement.at<float>(6) = 0.0f;
+    mMeasurement.at<float>(7) = this->leftEye.getEyeAngle();
+    mMeasurement.at<float>(8) = this->rightEye.getEyeAngle();
 
     if (dT > 0){
         stepDisplacement = stepDisplacement/dT;
@@ -713,7 +743,8 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
         //Add Speed as measured Blob speed (Do not involve Filter Predictions in Measured Speed)
         mMeasurement.at<float>(2) = (bcentre.x-zfishBlob.pt.x)/dT;
         mMeasurement.at<float>(3) = (bcentre.y-zfishBlob.pt.y)/dT; //Y speed;
-        mMeasurement.at<float>(5) = angleDisplacement; //(geAngleDiff(zfishBlob.angle,Angle)); //Ang Speed
+        mMeasurement.at<float>(5) = -angleDisplacement; //min(1.0f,max(-1.0f,(float)(angleDisplacement)/1.0f)); //(geAngleDiff(zfishBlob.angle,Angle)); //Ang Speed
+        mMeasurement.at<float>(6) = (float)(mState.at<float>(5) - (angleDisplacement))/2.0f; // min(0.1f,max(-0.1f,(float)(mState.at<float>(5) - (angleDisplacement))/2.0f)); //Ang Accelleration
     }else
         mMeasurement.at<float>(2) = mMeasurement.at<float>(3) = mMeasurement.at<float>(4) = 0;
     // >>>> Matrix A -  Note: set dT at each processing step :
@@ -730,7 +761,9 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,int Angle, 
 //        inactiveFrames++;
 //    }else{ //Measurement valid - C0nsume
      mCorrected = KF.correct(mMeasurement); // Kalman Correction
+     mCorrected.copyTo(mState);
      //Catch KALMAN error and skip update
+
      if (std::isnan(mCorrected.at<float>(0,0)))
          return(false);
 
@@ -1056,7 +1089,7 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
     cv::circle(outframe,this->bodyRotBound.center,5,colour,1);
 
     ///Draw a Red Rotated Frame around Detected Body
-    drawAnteriorBox(outframe);
+    drawAnteriorBox(outframe,colour);
 
     cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br()+cv::Point(-10,15),CV_FONT_NORMAL,0.4,colour,1);
 

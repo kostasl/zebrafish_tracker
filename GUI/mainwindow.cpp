@@ -713,7 +713,7 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
                 fish->ptRotCentre         = ptMouse;
                 fish->bodyRotBound.angle = gTrackerState.iFishAngleOffset;
 
-                fish->drawAnteriorBox(frameScene);
+                fish->drawAnteriorBox(frameScene,CV_RGB(0,80,200));
 
                 //showCVimg(frameScene);
             }
