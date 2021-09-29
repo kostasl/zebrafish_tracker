@@ -955,8 +955,8 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         vLellipses.push_back(lEllMean);
         drawExtendedMajorAxis(img_colour,lEllMean,CV_RGB(200,200,0));
     }
-    else
-        qDebug() << " L Eye failed to fit ellipsoid";
+    //else
+        //qDebug() << " L Eye failed to fit ellipsoid";
 
     ///// End oF LEft Eye Trace ///
 
@@ -988,26 +988,19 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         ret++;
         vRellipses.push_back(rEllMean);
         drawExtendedMajorAxis(img_colour,rEllMean,CV_RGB(250,50,50));
-    }else
-       qDebug() << " R Eye failed to fit ellipsoid";
+    }
+    //else
+    //   qDebug() << " R Eye failed to fit ellipsoid";
 
 
     /// Done Fitting / Now check results //
     //if (lEllMean.fitscore > 0 )
      //qDebug() << "F Exp[L:R]: " << lEllMean.getEyeAngle() << " (" << (lEllMean.fitscore) << ")" << ":" << rEllMean.getEyeAngle() << " (" << (lEllMean.fitscore) << ") V:" << (lEllMean.getEyeAngle()-rEllMean.getEyeAngle()) ;
 
-
-
-//    qDebug() << "O Exp[L:R]: " << lEllMean.getEyeAngle()  << ":" << rEllMean.getEyeAngle() << " V:" << (lEllMean.getEyeAngle()-rEllMean.getEyeAngle()) ;
-    //int mjAxis2 = std::max(rEllMean.rectEllipse.size.width, rEllMean.rectEllipse.size.height);
-
   ///////// End of Checks //////////
 
 
    /// Show Eye Anchor Points
-   ///
-    //img_colour.at<cv::Vec3b>(ptLEyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptLEyeMid)[1] = 0;img_colour.at<cv::Vec3b>(ptLEyeMid)[2] = 205; //Blue
-    //img_colour.at<cv::Vec3b>(ptREyeMid)[0] = 0; img_colour.at<cv::Vec3b>(ptREyeMid)[1] = 0;img_colour.at<cv::Vec3b>(ptREyeMid)[2] = 205; //Blue
     cv::circle(img_colour,ptREyeMid,2,CV_RGB(0,0,255),1);
     cv::circle(img_colour,ptLEyeMid,2,CV_RGB(0,0,255),1);
 

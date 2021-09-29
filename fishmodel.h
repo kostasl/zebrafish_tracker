@@ -129,7 +129,7 @@ public:
   double leftEyeTheta; /// Theta is In Degrees
   double rightEyeTheta;/// Theta is In Degrees
   double bearingRads; /// Rads
-  float bearingAngle; /// Theta is In Degrees
+  float bearingAngle,Delta_bearingAngle; /// Theta is In Degrees / and Change In Theta since last frame
 
   int inactiveFrames; //Count Of Number Of Frames That this model Has not Been Matched To Any Fish
   int idxTemplateRow; //The Location Of the Matching Template In The Template Cache

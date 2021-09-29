@@ -395,6 +395,7 @@ hist(colSums(mat_W[[1]]),main="Number of inputs per KC")
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 sPathTrainingSamples="../img/trainset/fish"
 sPathTrainingSamplesB="../img/trainset/fish_B"
+sPathTrainingSamples_small="../img/trainset/fish_camA"
 sPathTrainingNonSamples="../img/trainset/nonfish/"
 sPathTrainingNonSamplesB="../img/trainset/nonfish_B/"
 sPathTestingSamplesFish="../img/fish/"
@@ -405,7 +406,8 @@ sPathTestingSamplesNonFish="../img/nonfish/"
 #load(file=paste0("fishNetL",5,"-B.RData"))
 
 img_list_train_fish =  cbind(files=list.files(path=sPathTrainingSamples,pattern="*pgm",full.names = T),F=1,NF=0)
-img_list_train_fishB =  cbind(files=list.files(path=sPathTrainingSamplesB,pattern="*pgm",full.names = T),F=1,NF=0) 
+img_list_train_fishB =  cbind(files=list.files(path=sPathTrainingSamplesB,pattern="*pgm",full.names = T),F=1,NF=0)
+img_list_train_fish_camA =  cbind(files=list.files(path=sPathTrainingSamples_small,pattern="*pgm",full.names = T),F=1,NF=0) 
 img_list_test_fish = cbind(files=list.files(path=sPathTestingSamplesFish,pattern="*pgm",full.names = T),F=1,NF=0)
 img_list_train_nonfish =   cbind(files=list.files(path=sPathTrainingNonSamples,pattern="*pgm",full.names = T),F=0,NF=1)
 img_list_train_nonfishB =   cbind(files=list.files(path=sPathTrainingNonSamplesB,pattern="*pgm",full.names = T),F=0,NF=1)
@@ -421,6 +423,7 @@ img_list_debug_nf <-  cbind(files=list.files(path="../img/debug/nonfish/",patter
 
 img_list_all <- rbind.data.frame(img_list_train_fish,
                                  img_list_train_fishB,
+                                 img_list_train_fish_camA,
                                  img_list_test_fish,
                                  img_list_train_nonfish,
                                  img_list_train_nonfishB,
@@ -431,6 +434,7 @@ img_list_all <- rbind.data.frame(img_list_train_fish,
 
 img_list_train <- rbind.data.frame(img_list_train_fish,
                                    img_list_train_fishB,
+                                   img_list_train_fish_camA,
                                    img_list_train_nonfish,
                                    img_list_train_nonfishB, stringsAsFactors = FALSE) #
 #img_list_train <- rbind.data.frame(img_list_train_ones,img_list_train_X)
