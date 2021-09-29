@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
         "{duration d | 0  | Number of frames to Track for starting from start frame}"
         "{logtofile l |    | Filename to save clog stream to }"
         "{ModelBG b | 1  | Initiate BG modelling by running over scattered video frames to obtain Foreground mask}"
-        "{BGThreshold bgthres | 40  | Absolute grey value used to segment BG (g_Segthresh)}"
+        "{BGThreshold bgthres | 10  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
