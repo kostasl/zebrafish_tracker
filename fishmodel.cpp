@@ -149,6 +149,7 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
           // [ 0    0   0     0     0    0   lE 0]
           // [ 0    0   0     0     0    0   0  rE]
     cv::setIdentity(KF.processNoiseCov, cv::Scalar(6e-3)); // default is 1, for smoothing try 0.0001
+    //Maybe Noise Suppression too high at 1e-3 , introduces lag in position
     KF.processNoiseCov.at<float>(0,0) = 1e-3;
     KF.processNoiseCov.at<float>(1,1) = 1e-3;
 

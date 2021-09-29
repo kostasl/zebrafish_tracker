@@ -369,8 +369,15 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
     if (parser.has("PolygonROI"))
          bMakeCustomROIRegion = (parser.get<int>("PolygonROI") == 1)?true:false;
 
-      if (parser.has("BGThreshold"))
-           g_FGSegthresh = parser.get<int>("BGThreshold");
+    if (parser.has("BGThreshold"))
+         g_FGSegthresh = parser.get<int>("BGThreshold");
+
+    if (parser.has("HeadMaskW"))
+         iEyeMaskSepWidth = parser.get<int>("HeadMaskW");
+
+    if (parser.has("HeadMaskH"))
+         g_FGSegthresh = parser.get<int>("HeadMaskH");
+
 
     if (parser.has("FilterPixelNoise"))
     {
