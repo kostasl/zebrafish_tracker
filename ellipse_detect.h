@@ -72,7 +72,10 @@ typedef struct tDetectedEllipsoid{
         ptAxisMj2.y = ptAxisMj2.y / (float)nsamples;
         ptAxisMj2.x = ptAxisMj2.x / (float)nsamples;
 
-        fitscore = fitscore/ (float)nsamples;
+        if (nsamples > 0)
+            fitscore = fitscore/ (float)nsamples;
+        else
+            fitscore = 0;
 
         cv::Point2f mjAxisLine = ptAxisMj2-ptAxisMj1;
         /// \todo set the other bounding rect points accordingly
@@ -172,7 +175,7 @@ typedef struct tDetectedEllipsoid{
 
     cv::RotatedRect rectEllipse;
     int fitscore;
-    int nsamples;
+    int nsamples = 0;
     cv::Point2f  ptAxisMj1;
     cv::Point2f  ptAxisMj2;
     float stdDev;
@@ -216,7 +219,7 @@ typedef std::vector<tEllipsoidEdge> tEllipsoidEdges;
 
 //int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,tEllipsoids& vellipses);
 //int detectEllipses(cv::Mat& imgIn,cv::Mat& imgOut,int angleDeg,tEllipsoids& vellipses);
-int detectEllipse(tEllipsoidEdges& vedgePoints_all, tRankQueueEllipsoids& qEllipsoids);
+int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueueEllipsoids& qEllipsoids);
 ///
 /// \brief detectEllipses Search For Ellipsoids around the position of the eyes in the fish head isolated image
 int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRellipses,cv::Mat& outHeadFrameMonitor,cv::Mat& outHeadFrameProc);
@@ -231,7 +234,7 @@ void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint);
 void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint);/// Fills A list with  point coords where pixels (edges image) are above a threshold (non-zero)
 void getPointsAlongEdge(cv::Mat imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint);
 void getConnectedEdgePoints(cv::Mat& imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint);
-
+void getBestEllipsoidFits(cv::Mat& imgRegion,tRankQueueEllipsoids& qEllipsoids);
 
 void show_histogram(std::string const& name, cv::Mat1b const& image);
 /// Draws LInes On Upsampled Head Image showing the major axis of ellipses
