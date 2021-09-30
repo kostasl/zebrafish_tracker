@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
 
     /// Run Unit Tests ///
     //fishdetector::test();
-    testAngleDiff();
+    //testAngleDiff();
 
    /// Start Tracking of Video Files ///
    try{
@@ -433,7 +433,6 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 
 
 /// \brief
-///
 void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStaticMask, unsigned int nFrame,
                   cv::Mat& outframe, cv::Mat& outframeHeadEyeDetected, cv::Mat& frameHead)
 {
@@ -452,7 +451,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
 
     unsigned int nLarva         =  0;
     unsigned int nFood          =  0;
-    double dblRatioPxChanged    =  0.0;
+    //double dblRatioPxChanged    =  0.0;
 
     QString frameNumberString;
     frameNumberString = QString::number(nFrame);
@@ -1093,8 +1092,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             fishblob = &(*it);
 
             cv::Point ptbcentre = fishblob->pt; //Start As First Guess - This is updated When TemplMatching
-
-            double dBlobToModelDist = cv::norm(pfish->ptRotCentre - fishblob->pt);
+            // For safety against KF track errors use fish Blob position vs Detected Blob position
+            double dBlobToModelDist = cv::norm(pfish->zfishBlob.pt - fishblob->pt);
             //Save Blob-Model Distance - row,col
             matBlobModelDistance.at<float>(bidx,fidx) = dBlobToModelDist;
 
@@ -2486,7 +2485,7 @@ int saveTracks(fishModels& vfish,foodModels& vfood,QFile& fishdata,QString frame
         if (gTrackerState.bTrackFood && vfish.size() == 0 && (frameNumber.toUInt()%gTrackerState.gFoodReportInterval == 0 || frameNumber.toUInt()==1))
         {
             //make Null Fish
-            fishModel* pNullfish = new fishModel();
+            fishModel* pNullfish   = new fishModel();
             pNullfish->ID          = 0;
             pNullfish->resetSpine();
 

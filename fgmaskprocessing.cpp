@@ -699,11 +699,11 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             cv::drawContours(outFishMask, fishbodycontours, kk, Scalar(255,255,255),1, cv::LINE_8,fishbodyhierarchy,2);
 
             //DEBUG - Show imgs
-            if (!imgFishAnterior_NetNorm.empty()){
-                cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
-                cv::normalize(mask_fnetScore, mask_fnetScore, 0, 1, cv::NORM_MINMAX);
-                cv::imshow((QString("FishNet ScoreRegion (Norm)") + QString::number(iHitCount)).toStdString(), mask_fnetScore);
-            }
+//            if (!imgFishAnterior_NetNorm.empty()){
+//                cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
+//                cv::normalize(mask_fnetScore, mask_fnetScore, 0, 1, cv::NORM_MINMAX);
+//                cv::imshow((QString("FishNet ScoreRegion (Norm)") + QString::number(iHitCount)).toStdString(), mask_fnetScore);
+//            }
         }
 
 

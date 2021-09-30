@@ -189,7 +189,10 @@ typedef struct tDetectedEllipsoid{
 //             fEyeTheta      = rectEllipse.angle-90;
 //        if (fEyeTheta < -30)
 //             fEyeTheta      = rectEllipse.angle+90;
-        return (rectEllipse.angle);
+        if (!isnan(rectEllipse.angle) )
+            return (rectEllipse.angle);
+        else
+            return (-1.0f);
     }
 
 

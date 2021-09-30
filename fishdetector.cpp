@@ -243,14 +243,14 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 
   /// SliDing Window Scanning
-  int iSlidePx_H_step = 2;
-  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - 10;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = iSlidePx_H_begin+20;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidePx_H_step = 4;
+  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - 12;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = iSlidePx_H_begin+22;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
-  int iSlidePx_V_step = 2;
-  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-10); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = iSlidePx_V_begin + 20;//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
+  int iSlidePx_V_step = 4;
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-12); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = iSlidePx_V_begin + 22;//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions

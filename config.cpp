@@ -376,7 +376,7 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
          iEyeMaskSepWidth = parser.get<int>("HeadMaskW");
 
     if (parser.has("HeadMaskH"))
-         g_FGSegthresh = parser.get<int>("HeadMaskH");
+         giHeadIsolationMaskVOffset = parser.get<int>("HeadMaskH");
 
 
     if (parser.has("FilterPixelNoise"))

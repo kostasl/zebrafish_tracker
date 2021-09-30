@@ -357,7 +357,7 @@ Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fir
 INPUT_SPARSENESS = 0.25
 
 
-batchSize = 132 # Number of Training IMages for Each Learning Episode (which will define error graident )
+batchSize = 222 # Number of Training IMages for Each Learning Episode (which will define error graident )
 Nbatches = 1500 ## Number of random batchs (of size batchSize) to repeat training over
 trainingN = 100 ## Training Cycles For Each Batch
 
@@ -403,7 +403,7 @@ sPathTestingSamplesNonFish="../img/nonfish/"
 
 
 #load(file="fishNetL3.RData")
-#load(file=paste0("fishNetL",5,"-B.RData"))
+load(file=paste0("fishNetL",5,"-B.RData"))
 
 img_list_train_fish =  cbind(files=list.files(path=sPathTrainingSamples,pattern="*pgm",full.names = T),F=1,NF=0)
 img_list_train_fishB =  cbind(files=list.files(path=sPathTrainingSamplesB,pattern="*pgm",full.names = T),F=1,NF=0)

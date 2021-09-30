@@ -28,10 +28,10 @@ extern trackerState gTrackerState;
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
 typedef struct
 {
-    float x;
-    float y; ///Position of Joint In Global Coordinates
-    float angleRad;/// In Rads
-    float spineSegLength;/// In pixels Float
+    float x = 0.0f;
+    float y = 0.0f; ///Position of Joint In Global Coordinates
+    float angleRad = 0.0f;/// In Rads
+    float spineSegLength = 0.0f;/// In pixels Float
 } splineKnotf;
 
 typedef std::vector<splineKnotf> t_fishspline;
@@ -126,10 +126,11 @@ public:
   unsigned int nLastUpdateFrame = 0; ///<-Holds the frame Number of the last State Update
   uint uiFrameIterations; ///Counts number of iterations this fishModel (tracker) has been calc the same frame. - Used to improve estimates with time
 
-  double leftEyeTheta; /// Theta is In Degrees
-  double rightEyeTheta;/// Theta is In Degrees
-  double bearingRads; /// Rads
-  float bearingAngle,Delta_bearingAngle; /// Theta is In Degrees / and Change In Theta since last frame
+  double leftEyeTheta   = 0.0f; /// Theta is In Degrees
+  double rightEyeTheta  = 0.0f;/// Theta is In Degrees
+  double bearingRads  = 0.0f; /// Rads
+  float bearingAngle  = 0.0f;
+  float Delta_bearingAngle  = 0.0f; /// Theta is In Degrees / and Change In Theta since last frame
 
   int inactiveFrames; //Count Of Number Of Frames That this model Has not Been Matched To Any Fish
   int idxTemplateRow; //The Location Of the Matching Template In The Template Cache
@@ -169,10 +170,10 @@ private:
   bool bPredictedPosition = false; //When True A measurement Has now yet been added since Last prediction
   KalmanFilter KF;
 
-  Mat mState;  // [x,y,v_x,v_y,angle,angle_v]
+  cv::Mat mState;  // [x,y,v_x,v_y,angle,angle_v]
   cv::Mat mCorrected; // Kalman Output After Corrected Predition given Measurment
-  Mat mMeasurement; // [z_x, z_y, angle]
-  Mat mProcessNoise; // [E_x,E_y, E_v_x,E_v_y ,E_angle,Eangle_v] //(2, 1, CV_32F);
+  cv::Mat mMeasurement; // [z_x, z_y, angle]
+  cv::Mat mProcessNoise; // [E_x,E_y, E_v_x,E_v_y ,E_angle,Eangle_v] //(2, 1, CV_32F);
 
 
   //std::vect mmor<double> splineTheta; ///Angles of fitted Spine Points

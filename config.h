@@ -144,7 +144,7 @@ class trackerState
       double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
 
       const double dLearningRate                = 1.0/(MOGhistory); //Learning Rate During Initial BG Modelling - Learn Slow So 1st Playbacl Frame doesnt look new anymore
-      const double dLearningRateNominal         = 0.0001; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
+      const double dLearningRateNominal         = 0.00001; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
       double dactiveMOGLearningRate             = dLearningRateNominal;
       //Processing Loop delay
       uint cFrameDelayms                        = 1;
@@ -247,10 +247,10 @@ class trackerState
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
       bool bFitSpineToTail                      = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
-      bool bUseContourToFitSpine                = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
+      bool bUseContourToFitSpine                = false; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
       bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
-      bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the FG Fish Image -
+      bool bUseMaskedFishForSpineDetect         = false; /// When True, The Spine Is fit to the Masked FG Fish Image -
       bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
       bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
       bool bUseGPU                              = false;
