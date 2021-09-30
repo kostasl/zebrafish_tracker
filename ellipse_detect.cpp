@@ -364,7 +364,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, std::prio
     qDebug() << "e:" << vedgePoints_all.size();
 
 
-    unsigned long accLength  = vedgePoints_all.size();
+    unsigned long accLength  = max(100,(int)vedgePoints_all.size());
 
     if (accLength < 3)
         return 0;
