@@ -134,21 +134,25 @@ void getEdgePoints(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgepoint)
 }
 
 /// Check if point is active(bright) and add it to list of edge points if it is and invalidate edge point (make it black)
-inline bool addPointEdge(cv::Mat& imgEdgeIn,cv::Point pt,tEllipsoidEdges& vedgepoint)
+bool addPointEdge(cv::Mat& imgEdgeIn,cv::Point pt,tEllipsoidEdges& vedgepoint)
 {
     const float pxThres = 100.0; //threshold is non-zero
     bool ret_pointWasEdge =false;
-    assert(imgEdgeIn.cols > pt.x &&  imgEdgeIn.rows > pt.y);
+
+    //qDebug() << "addPointEdge:" <<  pt.x << "/" << imgEdgeIn.cols << ", " << pt.y << "/" << imgEdgeIn.rows;
+    assert(pt.x < (imgEdgeIn.cols) &&  pt.y < (imgEdgeIn.rows) );
     assert(pt.x >= 0 &&  pt.y >= 0);
 
     //Check if Pixel Brightness is high enough to be an ON pixel
-       if ( imgEdgeIn.at<uchar>(pt) >  pxThres)
-         {
-                   vedgepoint.push_back(tEllipsoidEdge(pt));
-                   //Turn pixel off
-                    imgEdgeIn.at<uchar>(pt) = 0;
-                    ret_pointWasEdge = true;
-          }
+    if ( imgEdgeIn.at<uchar>(pt) >  pxThres)
+    {
+               vedgepoint.push_back(tEllipsoidEdge(pt));
+               //Turn pixel off
+                imgEdgeIn.at<uchar>(pt) = 0;
+                ret_pointWasEdge = true;
+      }
+
+  return (ret_pointWasEdge);
 }
 
 /// Fills A list with  point coords where pixels (edges image) are above a threshold (non-zero)
@@ -156,43 +160,46 @@ inline bool addPointEdge(cv::Mat& imgEdgeIn,cv::Point pt,tEllipsoidEdges& vedgep
 ///
 void getNeighbourEdgePoints(cv::Mat& imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint)
 {
-    if (imgEdgeIn.empty() || imgEdgeIn.rows*imgEdgeIn.cols < 1)
+    bool ret;
+    if (imgEdgeIn.empty() || imgEdgeIn.rows*imgEdgeIn.cols < 4)
         return;
 
-    //Add original start point
-   addPointEdge(imgEdgeIn,cv::Point(startpt.x,startpt.y),vedgepoint);
+
+   //Add original start point
+   addPointEdge(imgEdgeIn,startpt,vedgepoint);
+   // qDebug() << "addPointEdge Done" ;
 
    //Check All neighbour points at distance d
-   if (startpt.x >0 && startpt.x < (imgEdgeIn.cols-1) &&
+   if (startpt.x > 0 && startpt.x < (imgEdgeIn.cols-1) &&
        startpt.y > 0 && startpt.y < (imgEdgeIn.rows-1)) //Left
    {
-        addPointEdge(imgEdgeIn,cv::Point(startpt.x-1,startpt.y),vedgepoint);
+        ret = addPointEdge(imgEdgeIn,cv::Point(startpt.x-1,startpt.y),vedgepoint);
 
         if (startpt.y > 0 && (imgEdgeIn.rows > 0)) //Left Top Corner
-             addPointEdge(imgEdgeIn,cv::Point(startpt.x-1,startpt.y-1),vedgepoint);
+            ret =  addPointEdge(imgEdgeIn,cv::Point(startpt.x-1,startpt.y-1),vedgepoint);
 
-        if (startpt.y < (imgEdgeIn.rows-1)) //Left Bottom Corner
-             addPointEdge(imgEdgeIn,cv::Point(startpt.x-1,startpt.y+1),vedgepoint);
+        if (startpt.y < (imgEdgeIn.rows-2)) //Left Bottom Corner
+             ret = addPointEdge(imgEdgeIn,cv::Point(startpt.x-1,startpt.y+1),vedgepoint);
    }
 
-   if (startpt.y < (imgEdgeIn.rows-1) && startpt.y > 0 &&
+   if (startpt.y < (imgEdgeIn.rows-2) && startpt.y > 0 &&
        startpt.x < (imgEdgeIn.cols-1) && startpt.x > 0)//Bottom
-        addPointEdge(imgEdgeIn,cv::Point(startpt.x,startpt.y+1), vedgepoint);
+        ret = addPointEdge(imgEdgeIn,cv::Point(startpt.x,startpt.y+1), vedgepoint);
 
-   if (startpt.y > 0 && startpt.y < (imgEdgeIn.rows-1) &&
+   if (startpt.y > 1 && startpt.y < (imgEdgeIn.rows-1) &&
        startpt.x < (imgEdgeIn.cols-1) && startpt.x > 0) // Top
-        addPointEdge(imgEdgeIn,cv::Point(startpt.x,startpt.y-1),vedgepoint);
+        ret = addPointEdge(imgEdgeIn,cv::Point(startpt.x,startpt.y-1),vedgepoint);
 
-   if (startpt.x < (imgEdgeIn.cols-1) && startpt.x > 0 &&
+   if (startpt.x < (imgEdgeIn.cols-2) && startpt.x > 0 &&
        startpt.y > 0 && startpt.y < (imgEdgeIn.rows-1)) //Left
    {
-        addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y),vedgepoint);
+        ret = addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y),vedgepoint);
 
         if (startpt.y > 0) //Right TOp Corner
-             addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y-1),vedgepoint);
+             ret = addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y-1),vedgepoint);
 
-        if (startpt.y < (imgEdgeIn.rows-1)) //Right Bottom Corner
-             addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y+1),vedgepoint);
+        if (startpt.y < (imgEdgeIn.rows-2)) //Right Bottom Corner
+             ret = addPointEdge(imgEdgeIn,cv::Point(startpt.x+1,startpt.y+1),vedgepoint);
 
    }
 
@@ -207,6 +214,7 @@ void getConnectedEdgePoints(cv::Mat& imgEdgeIn,cv::Point2f startpt,tEllipsoidEdg
 
      //Get list of its Neighbours and remove them from Image
      tEllipsoidEdges vNeighbours;
+
      getNeighbourEdgePoints(imgEdgeIn,startpt,vNeighbours);
      //Add neighbours to list of connected edges
      vedgepoint.insert(vedgepoint.end(), vNeighbours.begin(),vNeighbours.end() );
@@ -214,6 +222,7 @@ void getConnectedEdgePoints(cv::Mat& imgEdgeIn,cv::Point2f startpt,tEllipsoidEdg
      for (tEllipsoidEdges::iterator it = vNeighbours.begin();it != vNeighbours.end();++it )
      {
         cv::Point2f pt_n = (*it).ptEdge;
+
         getConnectedEdgePoints(imgEdgeIn,pt_n,vedgepoint);
      }
 
@@ -354,6 +363,7 @@ float drawExtendedMajorAxis(cv::Mat& outHeadFrameMonitor,tDetectedEllipsoid& ell
 /// \return
 ///
 /// \todo check image bounds
+/// \bug cRASHES IN RELEASE MODE
 int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueueEllipsoids& qEllipsoids)
 {
     const int minEllipseMajor   = gTrackerState.gi_minEllipseMajor;
@@ -378,7 +388,6 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
     }
 
 
-
     std::vector<tEllipsoidEdges::iterator> vedgePoints_trial; //Containts edge points of specific ellipsoid trial
     vedgePoints_trial.reserve(10);
 
@@ -386,10 +395,10 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
    std::mt19937 eng(rd()); // seed the generator
 
 
-    /// Begin Ellipsoid Detection ///
-    memset(paccumulator,0,sizeof(int)*(accLength)); //Reset Accumulator MAtrix
-    std::clog << "== Start === "  << std::endl;
-    ///Loop through All Edge points (3)
+//    /// Begin Ellipsoid Detection ///
+      memset(paccumulator,0,sizeof(int)*(accLength)); //Reset Accumulator MAtrix
+//    std::clog << "== Start === "  << std::endl;
+//    ///Loop through All Edge points (3)
     for (tEllipsoidEdges::iterator it1 = vedgePoints_all.begin();it1 != vedgePoints_all.end();++it1)
     {
         cv::Point2f ptxy1 = (*it1).ptEdge;
@@ -400,6 +409,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
 
         cv::Point2f ptxy2;
         ///(4)
+        //qDebug() << "Step 4";
 
     /// Random Pair Formation //
         //Copy List Of Edges over and Randomize
@@ -408,11 +418,12 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
         // Use only points on the same curve //
         tEllipsoidEdges vedgePoints_pair;
         //for (int i=0; i<5;i++){
+        //qDebug() << "GET Points On Edge " << ptxy1.x << ", " << ptxy1.y;
             getPointsAlongEdge(imgEdgeIn,ptxy1,vedgePoints_pair);
         //    if (vedgePoints_pair.size() > 0)
         //        break;
         //}
-
+        //qDebug() << "Got Points On Edge ";
         //if (vedgePoints_pair.size() == 0)
         //    cv::imshow("Failed Img",imgEdgeIn);
 
@@ -424,6 +435,8 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
             it2 += distr(eng); //valgrind Suspect of mem corruption
             ptxy2 = (*it2).ptEdge; //ValGrind: Invalid Read of size 4 -reported
             it2 = vedgePoints_pair.erase(it2);
+//            qDebug() << "detectEllipse vedgePoints_pair to obtain random pt pair";
+//            qDebug() << "End Random Pair 6";
     ////End of Random Pair //
 //        for (tEllipsoidEdges::iterator it2 = vedgePoints_all.begin();it2 != vedgePoints_all.end(); ++it2 ) {
 //            ptxy2 = (*it2).ptEdge;
@@ -447,6 +460,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
             double alpha = atan2(ptxy2.y - ptxy1.y,ptxy2.x - ptxy1.x);//atan [(y 2 – y 1 )/(x 2 – x 1 )] //--(4) α the orientation of the ellipse
 
             ///Step (6) - 3rd Pixel;
+            //qDebug() << "Step 6";
             vedgePoints_trial.clear();
             /// Bug: mem hit in iterator :__normal_iterator
             for (tEllipsoidEdges::iterator it3 = vedgePoints_all.begin();it3 != vedgePoints_all.end(); ++it3 )
@@ -478,6 +492,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
                 double bb = aa*dd*(1.0-coscostau)/(aa - dd * coscostau + 0.00001); //(5)
                 int b = (int)std::round((sqrt(bb)));
                 ///Step 8
+                //qDebug() << "Step 8";
                 if (b > 1)
                 {
 
@@ -520,6 +535,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
             ///Step 9 Loop Until All Pixels 3rd are computed for this pair of pixels
             }
 
+            //qDebug() << "Step 10";
             ///Step 10 //Find Max In accumulator array. The related length is the possible length of minor axis for assumed ellipse.
             double dvotesMax;
             int idx  = getMax(paccumulator,accLength,dvotesMax);
@@ -581,8 +597,6 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
                  //std::cout << "mxVot:" << HighestVotes << std::endl;
             }
 
-
-
         //it2 = vedgePoints.erase(it2);
         //
           //  it2->x = 0; it2->y = 0; //Delete Point
@@ -599,7 +613,7 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
         //it1->x = 0; it1->y = 0; //Delete Point
     } //Loop through all  point as 1st point pair (Prob: pairs can be repeated)
 
-//    qDebug() << "detectEllipse Delete paccumulator:" << paccumulator;
+////    qDebug() << "detectEllipse Delete paccumulator:" << paccumulator;
 
     delete [] paccumulator;
 
