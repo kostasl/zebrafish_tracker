@@ -403,7 +403,7 @@ sPathTestingSamplesNonFish="../img/nonfish/"
 
 
 #load(file="fishNetL3.RData")
-load(file=paste0("fishNetL",5,"-B.RData"))
+#load(file=paste0("fishNetL",5,"-B.RData"))
 
 img_list_train_fish =  cbind(files=list.files(path=sPathTrainingSamples,pattern="*pgm",full.names = T),F=1,NF=0)
 img_list_train_fishB =  cbind(files=list.files(path=sPathTrainingSamplesB,pattern="*pgm",full.names = T),F=1,NF=0)
@@ -496,7 +496,7 @@ for (b in 1:Nbatches)
   points(length(vTrainingError),tail(vTrainingError,1),ylim=c(0.00001,1),type="p",log="y") #ylim=c(0,1)xlim=c(0,trainingN*Nbatches)
 } ## Different Batch Suffles  
 
-save.image(file=paste0("fishNetL",N_Layers,"-B.RData"))
+save.image(file=paste0("fishNetL",N_Layers,"-C.RData"))
 
 plot(c) #ylim=c(0,1)
 

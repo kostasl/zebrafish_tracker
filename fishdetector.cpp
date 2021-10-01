@@ -86,7 +86,7 @@ fishdetector::fishdetector()
 
 /// \brief Utility function takes img contained in rotated rect and returns the contained image region
 /// rotated up-right (orthonormal ) - Used to obtain templates to train classifier
-cv::Mat fishdetector::getNormedBoundedImg(cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox)
+cv::Mat fishdetector::getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox)
 {
     cv::Mat imgFishAnterior, imgFishAnterior_Norm;
     /// Size Of Norm Head Image
@@ -126,7 +126,7 @@ cv::Mat fishdetector::getNormedBoundedImg(cv::Mat& frame, cv::RotatedRect fishRo
 }
 
 /// Extracts a template sized image region contained in rotatedRect and returns the image Vert orientated - Normalized Template IMg
-cv::Mat fishdetector::getNormedTemplateImg(cv::Mat& frame, cv::RotatedRect& fishRotAnteriorBox)
+cv::Mat fishdetector::getNormedTemplateImg(const cv::Mat& frame, cv::RotatedRect& fishRotAnteriorBox)
 {
     cv::Size szFishAnteriorNorm = fishRotAnteriorBox.boundingRect().size();
     cv::Mat imgFishAnterior_Norm;

@@ -1033,54 +1033,18 @@ bool operator<(const fishModel& a, const fishModel& b)
   return a.matchScore > b.matchScore; //Max Heap
 }
 
+/// \brief Calculate distance of each blob to each fish model -used to obtain best blob-fish model match at each frame
+/// \param outvpfishmodel list of fish pointers in order of use, so they can be retrieved by order array idx
+cv::Mat getBlobFishModelDistanceMatrix(fishModels& vfishmodels,zftblobs& fishblobs,std::vector<fishModel*>& outvpfishmodel)
+{
+    cv::Mat matBlobModelDistance((int)fishblobs.size(), (int)vfishmodels.size(), CV_32FC1, cv::Scalar(10000, 10000, 10000));
 
-
-
-
-
-
-///
-/// \brief UpdateFishModels starting from Blob Info do the processing steps to update FishModels for this frame,
-/// \param maskedImg_gray
-/// \param vfishmodels
-/// \param fishblobs
-/// \param nFrame
-/// \param frameOut
-///\todo
-///
-void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame,cv::Mat& frameOut){
-
-    qfishModels qfishrank;
-    cv::Mat imgFishAnterior_NetNorm,mask_fnetScore;
+    fishModels::iterator ft;
     fishModel* pfish = NULL;
     zftblob* fishblob = NULL;
     uint bidx = 0;
     uint fidx = 0;
-
-    fishModels::iterator ft;
-    bool bModelForBlobFound = false;
-    // Make Matrix TO Hold Blob To Model Distance
-    cv::Mat matBlobModelDistance((int)fishblobs.size(), (int)vfishmodels.size(), CV_32FC1, cv::Scalar(10000, 10000, 10000));
-
-    std::vector<fishModel*> vpfishmodel;
-    zftblobs fishblobs_all = fishblobs;
-
-    /// Call step-Update All fish models to Predict next step
-    for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
-    {
-         pfish = ft->second;
-         if (!gTrackerState.bPaused)
-            pfish->stepPredict(nFrame);
-
-         ///    Write Angle / Show Box   ///
-         if (gTrackerState.bDraggingTemplateCentre) //Overwrite with user defined angle
-             pfish->bodyRotBound.angle = gTrackerState.iFishAngleOffset;
-
-         pfish->drawBodyTemplateBounds(frameOut); //Predicted Position /
-    }
-
     /// MAKE BLOB-FISHMODEL DISTANCE MAtrix - //
-    fidx = 0;
     for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
     {
          pfish = ft->second;
@@ -1100,11 +1064,56 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             bidx++;
           } // For Each Fish Blob //
 
-        vpfishmodel.push_back(pfish); //Add to pointer list - for retrieval by idx
+        outvpfishmodel.push_back(pfish); //Add to pointer list - for retrieval by idx
         fidx++;
     } // For Each Fish Model// //////
 
-    bModelForBlobFound = false;
+return(matBlobModelDistance);
+
+}
+
+
+
+///
+/// \brief UpdateFishModels starting from Blob Info do the processing steps to update FishModels for this frame,
+/// \param maskedImg_gray
+/// \param vfishmodels
+/// \param fishblobs
+/// \param nFrame
+/// \param frameOut
+///\todo
+///
+void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftblobs& fishblobs,unsigned int nFrame,cv::Mat& frameOut){
+
+    qfishModels qfishrank;
+    cv::Mat imgFishAnterior_NetNorm,mask_fnetScore;
+    fishModel* pfish = NULL;
+    zftblob* fishblob = NULL;
+
+
+    fishModels::iterator ft;
+    bool bModelForBlobFound = false;
+    // Make Matrix TO Hold Blob To Model Distance
+
+
+    std::vector<fishModel*> vpfishmodel;
+    zftblobs fishblobs_all = fishblobs;
+
+    /// Call step-Update All fish models to Predict next step
+    for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+    {
+         pfish = ft->second;
+         if (!gTrackerState.bPaused)
+            pfish->stepPredict(nFrame);
+
+         ///    Write Angle / Show Box   ///
+         if (gTrackerState.bDraggingTemplateCentre) //Overwrite with user defined angle
+             pfish->bodyRotBound.angle = gTrackerState.iFishAngleOffset;
+
+         pfish->drawBodyTemplateBounds(frameOut); //Predicted Position /
+    }
+
+    cv::Mat matBlobModelDistance = getBlobFishModelDistanceMatrix(vfishmodels,fishblobs,vpfishmodel);
 
     /// Find the Best Blob-Fish Pairs ///
     double minL1 = 0.0;
@@ -1115,8 +1124,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
     // Find Global Min Fish-Blob distances - update Fish Model and remove consumed Blob from list -
     // loop until distances too large
-    while (minL1 < gTrackerState.gDisplacementLimitPerFrame &&
-           ptmin.x > -1)
+    while (minL1 < gTrackerState.gDisplacementLimitPerFrame && ptmin.x > -1)
     {
          //Check if Any Values Exist - And Get Fish-Blob Pair
         assert(matBlobModelDistance.rows > ptmin.y && matBlobModelDistance.cols > ptmin.x);
@@ -1155,7 +1163,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
         // Fetch next Min Distance Pair
         cv::minMaxLoc(matBlobModelDistance,&minL1,&maxL1,&ptmin,&ptmax);
-    } //While
+    } // While
     ///
 
     fishblobs.shrink_to_fit();
@@ -1582,6 +1590,65 @@ int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,
 //
 return retCount;
 }
+
+
+
+
+/// Process Optic Flow of defined food model positions
+/// Uses Lukas Kanard Method to get the estimated new position of Prey Particles
+///
+int processFishOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,fishModels& vfishmodels,zftblobs& vPreyKeypoints_next )
+{
+    int retCount = 0;
+   std::vector<cv::Point2f> vpts_current;
+   std::vector<cv::Point2f> vpts_next;
+
+
+   zftblobs vPreyKeypoints_current;
+   zftblobs vPreyKeypoints_ret;
+   std::vector<uchar> voutStatus;
+   // L1 distance between patches around the original and a moved point, divided by number of pixels in a window, is used as a error measure.
+   std::vector<float>    voutError;
+
+   fishModel* pfish = NULL;
+   fishModels::iterator ft;
+
+    //Fill POint Vector From foodmodel vector
+   for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+   {
+       pfish = ft->second;
+       cv::KeyPoint kptFish(pfish->zTrack.centroid,pfish->zfishBlob.size);
+       vPreyKeypoints_current.push_back(kptFish  );
+   }
+
+    cv::KeyPoint::convert(vPreyKeypoints_current,vpts_current);
+
+    //Calc Optic Flow for each food item
+    if (vpts_current.size() > 0 && !frame_grey_prev.empty())
+        cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vpts_current,vpts_next,voutStatus,voutError,cv::Size(31,31),2);
+
+    cv::KeyPoint::convert(vpts_next,vPreyKeypoints_next);
+
+    //update food item Location
+        //Loop through points
+    for (int i=0;i<(int)vPreyKeypoints_ret.size();i++)
+    {
+        if (!voutStatus.at(i))
+            continue; //ignore bad point
+        vPreyKeypoints_next.push_back(vPreyKeypoints_ret.at(i)); //fwd the good ones
+//        // find respective food model, update state
+//        vfoodmodels[i]->zTrack.centroid = vPreyKeypoints_next.at(i);
+//        vfoodmodels[i]->zfoodblob.pt = vPreyKeypoints_next.at(i);
+//        vfoodmodels[i]->updateState(&vfoodmodels[i]->zfoodblob,0,
+//                                    vPreyKeypoints_next.at(i),
+//                                    nFrame,vfoodmodels[i]->blobMatchScore,
+//                                    vfoodmodels[i]->blobRadius);
+//        retCount++;
+    } //Check if Error
+//
+return retCount;
+}
+
 
 
 ///
@@ -2851,7 +2918,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            tEllipsoids vellLeft;
            tEllipsoids vellRight;
 
-           imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(maskedfishImg_gray,fish->bodyRotBound); //fishRotAnteriorBox
+           imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(fullImgIn,fish->bodyRotBound); //fishRotAnteriorBox
            // Check empty in case of an Error In extraction - due to boundary conditions
            if (imgFishAnterior_Norm.empty())
            {

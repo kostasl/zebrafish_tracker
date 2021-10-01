@@ -62,7 +62,7 @@ extern cv::Ptr<cv::BackgroundSubtractorMOG2> pMOG2; //MOG2 Background subtractor
 
 extern MainWindow* pwindow_main;
 
-
+extern fishModels vfishmodels;
 
 
 
@@ -175,7 +175,6 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
             } //If Failed to Grab frame
             else
             {//Frame Grabbed - Process It
-
 
                 assert(!frame.empty());
                 //Get Frame Position From Vid Sam
@@ -554,14 +553,21 @@ double ptangle_deg(const Point& v1, const Point& v2)
 
 
 /// \brief handles the processing of Fish Item Mask such that larval detection can be improved.
+///  uses optic flow info to detect if blob belongs to a fishmodel so as to classify it correctly
 std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Mat& fgMask, cv::Mat& outFishMask, zftblobs& ptFishblobs)
 {
     cv::Mat mask_fnetScore,imgFishAnterior_NetNorm; //For FishNet Detect
     cv::Mat fgEdgeMask;
     std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
+    zftblobs vFishKeypoints_next;
     cv::Point ptHead,ptHead2,ptTail; //Traced Points for Tail and Head
     //Make Empty Canvas to Draw Fish Mask
     outFishMask = cv::Mat::zeros(frameImg.rows,frameImg.cols,CV_8UC1);
+
+    //Shring-Grow -Erase Thin Border Lines
+    //cv::morphologyEx(fgMask,fgMask, cv::MORPH_ERODE, kernelOpenfish,cv::Point(-1,-1),2);
+    cv::morphologyEx(fgMask,fgMask, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
+    cv::morphologyEx(fgMask,fgMask, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),3);
 
     //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
     cv::morphologyEx(fgMask,fgEdgeMask, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
@@ -574,10 +580,22 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     //Then Use ThresholdImage TO Trace More detailed Contours
     //cv::dilate(threshold_output_COMB,threshold_output_COMB_fish,kernelOpenfish,cv::Point(-1,-1),4);
     assert(!fgEdgeMask.empty());
+    cv::imshow("FishMAsk Edge",fgEdgeMask);
+
+    // UnMask Regions Around Existing Fish
+    fishModels::iterator ft;
+    for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+    {
+        fishModel* pfish = ft->second;
+        //circle(outFishMask,pfish->bodyRotBound.center,50,CV_RGB(255,255,255),CV_FILLED);
+        drawContours(fgEdgeMask,pfish->contour,0,CV_RGB(255,255,255),CV_FILLED);
+    }
+
     cv::findContours( fgEdgeMask, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,
                       cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
-
+    // Obtain Optic Flow of fish positions from previous frame - Score Contours as fish based on whether they contain a fish keypoint that moved into the vicinity //
+    processFishOpticFlow(fgEdgeMask,gframeLast, vfishmodels, vFishKeypoints_next);
 
 
     ///Draw Only the largest contours that should belong to fish
@@ -614,8 +632,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
 
         //If Contained In ROI
-        if (!pointIsInROI(centroid,gTrackerState.gszTemplateImg.width)) //
-            continue;
+        //if (!pointIsInROI(centroid,gTrackerState.gszTemplateImg.width)) //
+         //   continue;
 
         curve = fishbodycontours[kk];
 
@@ -641,11 +659,31 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         //Check If Elongated Object  - Use Width Height Ratio
         cv::RotatedRect boundEllipse = cv::fitEllipse(curve);
         cv::ellipse(outFishMask,boundEllipse,CV_RGB(255,255,255),1,cv::LINE_8);
-        if (boundEllipse.size.width/boundEllipse.size.height < 2.5 &&
-                boundEllipse.size.height/boundEllipse.size.width < 2.5)
-            continue;
 
         zftblob kp(centroid.x,centroid.y,area,(int)(boundEllipse.angle+90)%360);
+
+
+        //Check if Blob belongs to moving fish - Draw Reveal Mask
+        bool bFishBlobFlowed = false;
+        for (int k=0; k < vFishKeypoints_next.size();k++)
+        {
+            if (boundEllipse.boundingRect().contains(vFishKeypoints_next[k].pt ))
+            {
+                circle(outFishMask,vFishKeypoints_next[k].pt,20,CV_RGB(255,255,255),CV_FILLED);
+                bFishBlobFlowed = true;
+            }
+        }
+
+
+//        if (boundEllipse.size.width/boundEllipse.size.height < 2.5 &&
+//                boundEllipse.size.height/boundEllipse.size.width < 2.5 &&
+//                !bFishBlobFlowed)
+//        {
+//            if (bFishBlobFlowed)
+//                qDebug() << "Bounded Shape/Flow Filt.";
+
+//            continue;
+//        }
 
 
 
@@ -675,10 +713,18 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
         kp.pt = ptSearch;
 
-        /// Classify Keypoint for fish //
+
+        //cv::Mat frameMasked;
+        //frameImg.copyTo(frameMasked, fgMask);cv::imshow("FishMAsk frameMasked",frameMasked);
+        //// Classify Keypoint for fish //
         float fR =  gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
                                                           mask_fnetScore, QString::number(iHitCount).toStdString());
 
+
+
+        if (bFishBlobFlowed)
+            kp.response +=1.0f;
+        kp.response +=0.05f;
 
         QString strfRecScore = QString::number(kp.response,'g',3);
         iHitCount++;
@@ -704,7 +750,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 //                cv::normalize(mask_fnetScore, mask_fnetScore, 0, 1, cv::NORM_MINMAX);
 //                cv::imshow((QString("FishNet ScoreRegion (Norm)") + QString::number(iHitCount)).toStdString(), mask_fnetScore);
 //            }
-        }
+        }else
+            qDebug() << "Classif. Failed ";
 
 
          //Add Trailing Expansion to the mask- In Case End bit of tail is not showing (ptTail-ptHead)/30+
@@ -747,7 +794,7 @@ void enhanceMasks(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,
 
     // Check this Again / What is it doing?
     getPreyMask(frameImg,fgMask,outFoodMask);
-    vFilteredFishbodycontours = getFishMask(frameImg_gray_masked,fgMask,outFishMask,ptFishblobs);
+    vFilteredFishbodycontours = getFishMask(frameImg,fgMask,outFishMask,ptFishblobs);
 
     //Write The fish contour Mask on Food Mask To erase isolated fish Pixels by Using Smoothed Contour
     // Can invert Fish Mask And Apply on to Food Mask

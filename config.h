@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 
-#define ZTF_FISHCONTOURSIZE          120//40
+#define ZTF_FISHCONTOURSIZE          60//40
 #define ZTF_TAILFITMAXITERATIONS     200 //For Spine To Contour Tail Fitting
 #define ZTF_TAILSPINECOUNT          8
 #define EYE_SEG_SAMPLE_POINTS_COUNT 20
@@ -155,7 +155,7 @@ class trackerState
       const double dMeanBlobArea                  = 100; //Initial Value that will get updated
       const double dVarBlobArea                   = 20;
       const unsigned int gc_fishLength            = 100; //px Length Of Fish
-      const unsigned int thresh_fishblobarea      = 250; //Min area above which to Filter The fish blobs
+      const unsigned int thresh_fishblobarea      = 100; //Min area above which to Filter The fish blobs
       const unsigned int thresh_maxfishblobarea     = 3650; //Min area above which to Filter The fish blobs
       const unsigned int gthres_maxfoodblobarea     = thresh_fishblobarea/3;
 
@@ -245,7 +245,7 @@ class trackerState
       bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
-      bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
+      bool bApplyFishMaskBeforeFeatureDetection = false; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
       bool bFitSpineToTail                      = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bUseContourToFitSpine                = false; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
