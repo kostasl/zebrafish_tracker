@@ -1069,7 +1069,7 @@ bool fishModel::isValid()
     //templateScore >= gTrackerState.gTemplateMatchThreshold // inactiveFrames < 2
 
     return(this->zfishBlob.response >= gTrackerState.fishnet_L2_classifier &&
-           inactiveFrames == 0 &&  !pointIsInROI(ptRotCentre, bodyRotBound.size.width) ||
+           inactiveFrames == 0 &&  pointIsInROI(ptRotCentre, bodyRotBound.size.width) ||
            binFocus );
 
 
