@@ -595,7 +595,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
                       cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
     // Obtain Optic Flow of fish positions from previous frame - Score Contours as fish based on whether they contain a fish keypoint that moved into the vicinity //
-    processFishOpticFlow(fgEdgeMask,gframeLast, vfishmodels, vFishKeypoints_next);
+   // processFishOpticFlow(fgEdgeMask,gframeLast, vfishmodels, vFishKeypoints_next);
 
 
     ///Draw Only the largest contours that should belong to fish
@@ -632,8 +632,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
 
         //If Contained In ROI
-        //if (!pointIsInROI(centroid,gTrackerState.gszTemplateImg.width)) //
-         //   continue;
+        if (!pointIsInROI(centroid,gTrackerState.gszTemplateImg.width)) //
+            continue;
 
         curve = fishbodycontours[kk];
 
@@ -720,11 +720,9 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         float fR =  gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
                                                           mask_fnetScore, QString::number(iHitCount).toStdString());
 
-
-
         if (bFishBlobFlowed)
             kp.response +=1.0f;
-        kp.response +=0.05f;
+
 
         QString strfRecScore = QString::number(kp.response,'g',3);
         iHitCount++;
@@ -744,12 +742,16 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
             cv::drawContours(outFishMask, fishbodycontours, kk, Scalar(255,255,255),1, cv::LINE_8,fishbodyhierarchy,2);
 
-            //DEBUG - Show imgs
-//            if (!imgFishAnterior_NetNorm.empty()){
-//                cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
-//                cv::normalize(mask_fnetScore, mask_fnetScore, 0, 1, cv::NORM_MINMAX);
-//                cv::imshow((QString("FishNet ScoreRegion (Norm)") + QString::number(iHitCount)).toStdString(), mask_fnetScore);
-//            }
+
+
+            /// DEBUG - Show imgs
+            if (!imgFishAnterior_NetNorm.empty()){
+                cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
+                cv::normalize(mask_fnetScore, mask_fnetScore, 0, 1, cv::NORM_MINMAX);
+                cv::imshow((QString("FishNet ScoreRegion (Norm)") + QString::number(iHitCount)).toStdString(), mask_fnetScore);
+            }
+
+
         }else
             qDebug() << "Classif. Failed ";
 

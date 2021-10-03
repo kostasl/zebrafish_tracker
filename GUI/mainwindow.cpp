@@ -971,6 +971,7 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
             if (fish->bodyRotBound.boundingRect().contains(ptMouse)) //Clicked On Fish Box
             {
                 fish->binFocus = true; //Set focus on Clicked Item
+                fish->bUserDrag = true; //Set focus on Clicked Item
                 gTrackerState.bDraggingTemplateCentre = true;
                 gTrackerState.iFishAngleOffset = fish->bodyRotBound.angle;
 

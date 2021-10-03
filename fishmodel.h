@@ -116,9 +116,12 @@ public:
   std::vector<cv::Point> coreHull; /// core Body shape- no tail
   //std::vector<cv::Point> coreTriangle; /// Core Body triangle Approximation
 
-  // Detection Scores //
+  // State Flags
   bool bNewModel = true;
   bool binFocus = false;
+  bool bUserDrag = false;
+
+  // Detection Scores //
   double lastTailFitError; ///Holds Error Value Per Spine Point as Measured by Spine Fitting to Contour
   double matchScore; ///Fishdetection Score - How well the detected model fish looks/matches the convolution of a fish template
 ///

@@ -155,32 +155,32 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
           // [ 0    0   0     0     0    0   0  rE]
     cv::setIdentity(KF.processNoiseCov, cv::Scalar(6e-3)); // default is 1, for smoothing try 0.0001
     //Maybe Noise Suppression too high at 1e-3 , introduces lag in position
-    KF.processNoiseCov.at<float>(0,0) = 1e-2;
-    KF.processNoiseCov.at<float>(1,1) = 1e-2;
-    KF.processNoiseCov.at<float>(2,2) = 1e-3;
-    KF.processNoiseCov.at<float>(3,3) = 1e-3;
-    KF.processNoiseCov.at<float>(4,4) = 1e-2f; //Angle Change between frames
-    KF.processNoiseCov.at<float>(5,5) = 1e-3f; //Angular Accell (V of Diff)
-    KF.processNoiseCov.at<float>(4,5) = 1e-4f; //Angular Diff to Angle Accell
-    KF.processNoiseCov.at<float>(6,6) = 0.0f; //Not Used
-    KF.processNoiseCov.at<float>(7,7) = 1e-5f; //Left Eye
-    KF.processNoiseCov.at<float>(8,8) = 1e-5f; //Right Eye
-    //KF.processNoiseCov.at<float>(35) = 1e-1f;
+//    KF.processNoiseCov.at<float>(0,0) = 1e-2;
+//    KF.processNoiseCov.at<float>(1,1) = 1e-2;
+//    KF.processNoiseCov.at<float>(2,2) = 1e-3;
+//    KF.processNoiseCov.at<float>(3,3) = 1e-3;
+//    KF.processNoiseCov.at<float>(4,4) = 1e-4f; //Angle Change between frames
+//    KF.processNoiseCov.at<float>(5,5) = 1e-4f; //Angular Accell (V of Diff)
+//    KF.processNoiseCov.at<float>(4,5) = 1e-4f; //Angular Diff to Angle Accell
+//    KF.processNoiseCov.at<float>(6,6) = 0.0f; //Not Used
+//    KF.processNoiseCov.at<float>(7,7) = 1e-5f; //Left Eye
+//    KF.processNoiseCov.at<float>(8,8) = 1e-5f; //Right Eye
+//    //KF.processNoiseCov.at<float>(35) = 1e-1f;
 
 //    // Measures Noise Covariance Matrix R - Set high/low so Filter Follows Measurement more closely
-    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-1)); // default is 1, increasing should smooth but I get erratic behaviour
-    KF.measurementNoiseCov.at<float>(2,2) = 1e-2f; //Angular Diff (Speed)- per frame
-    KF.measurementNoiseCov.at<float>(3,3) = 1e-2f; //Angle Accell
+    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-1f)); // default is 1, increasing should smooth but I get erratic behaviour
+    //KF.measurementNoiseCov.at<float>(2,2) = 1e-3f; //Angular Diff (Speed)- per frame
+    //KF.measurementNoiseCov.at<float>(3,3) = 1e-3f; //Angle Accell
     //KF.measurementNoiseCov.at<float>(1,2) = 1e-2f; // Y speed X pos
     //KF.measurementNoiseCov.at<float>(0,3) = 1e-2f; //X Speed - X
     //KF.measurementNoiseCov.at<float>(2,4) = 1e-5f; //Y Speed - Y
-    KF.measurementNoiseCov.at<float>(4,4) = 1e-2f; //Angular Diff (Speed)- per frame
-    KF.measurementNoiseCov.at<float>(5,5) = 1e-2f; //Angle Accell
-    KF.measurementNoiseCov.at<float>(4,5) = 1e-3f; //1e-1f; //Angular V_speed - Accell Covar
+    //KF.measurementNoiseCov.at<float>(4,4) = 1e-2f; //Angular Diff (Speed)- per frame
+    //KF.measurementNoiseCov.at<float>(5,5) = 1e-2f; //Angle Accell
+    //KF.measurementNoiseCov.at<float>(4,5) = 1e-3f; //1e-1f; //Angular V_speed - Accell Covar
     //KF.measurementNoiseCov.at<float>(5,6) = 0;//1e-4f;//1e-1f; //Angular Accelleration-
 
-    KF.measurementNoiseCov.at<float>(7,7) = 1e-1f; //Left Eye
-    KF.measurementNoiseCov.at<float>(8,8) = 1e-1f; //Right Eye
+    //KF.measurementNoiseCov.at<float>(7,7) = 1e-1f; //Left Eye
+    //KF.measurementNoiseCov.at<float>(8,8) = 1e-1f; //Right Eye
 
     KF.statePre = mState;
     KF.statePost = mState.clone();
@@ -730,15 +730,19 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,float Angle
 
     double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
     float dT = (float)(nFrame-nLastUpdateFrame);///((double)gTrackerState.gfVidfps+1.0)
+
     if (bNewModel)
         dT = 0;
+
+    if (!gTrackerState.bDraggingTemplateCentre)
+        bUserDrag = false;
 
     //qDebug() << "Fish-Update M.";
     ///\note mod angles cannot be KF tracked as transitions 0->360 are non linear - instead I track the change in angle and integrate
     //Set to 1 frame minimum time step
     KF.transitionMatrix.at<float>(0,2) = dT;
     KF.transitionMatrix.at<float>(1,3) = dT;
-    KF.transitionMatrix.at<float>(4,5) = 0.0f; //  Angle Accell Feeds into Angle V
+    KF.transitionMatrix.at<float>(4,5) = dT;//0.0f; //  Angle Accell Feeds into Angle V
     KF.transitionMatrix.at<float>(5,6) = 0.0f;//dT;//dT; //Angular V Diff Feeds into Angle V
     //KF.transitionMatrix.at<float>(5,4) = 0;//dT;
 
@@ -1065,7 +1069,8 @@ bool fishModel::isValid()
     //templateScore >= gTrackerState.gTemplateMatchThreshold // inactiveFrames < 2
 
     return(this->zfishBlob.response >= gTrackerState.fishnet_L2_classifier &&
-           inactiveFrames == 0 || binFocus);
+           inactiveFrames == 0 &&  !pointIsInROI(ptRotCentre, bodyRotBound.size.width) ||
+           binFocus );
 
 
 }

@@ -37,9 +37,9 @@
  ///   * Detection of stopped Larva or loss of features from BG Substraction - via mask correction
  ///   * Filter blobs and maintain separate lists for each class (food/fish)
  ///   * track blobs of different class (food/fish) separatelly so tracks do not interfere
-  ///  * Second method of Ellipsoid fitting, using a fast algorithm on edge points
-  ///  * Changes template Match region, wide for new blobs, narrow for known fish - Can track at 50fps (06/2018)
-  ///  * Combines blob tracking with optic flow at the point of food particle (using Lucas-Kanade) to improve track of prey motion near fish
+ ///  * Second method of Ellipsoid fitting, using a fast algorithm on edge points
+ ///  * Changes template Match region, wide for new blobs, narrow for known fish - Can track at 50fps (06/2018)
+ ///  * Combines blob tracking with optic flow at the point of food particle (using Lucas-Kanade) to improve track of prey motion near fish
  ///   * Tail spine is tracking with both, sequential intensity scanning and a variational approach on fitting smoothed fish contour angle and length (estimates fish's tail size)
  ///   * Detect tail and Head points of candidate fish contours: extend tail mask to improve tail spine fitting /Use head pt to inform template matching search region for speed optimizing of larva tracing.
 
@@ -48,7 +48,7 @@
  ///  * Added Record of Food Count at regular intervals on each video in case, so that even if no fish is being tracked ROI
  ///    the evolution of prey Count in time can be observed. saveTracks outputs a count of prey numbers at a regular interval 1sec, it shows up with fishID 0
  ///
-  ///
+ ///
  /// \bug MOG use under Multi-Processing gives a SegFault in OpenCL - Workaround: Added try block on MOG2, and then flag to switch off OpenCL.
  /// \note Cmd line arguments: /zebraprey~_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1
  ///                           --invideofile=/media/extStore/ExpData/zebrapreyCap/AnalysisSet/AutoSet450fps_18-01-18/AutoSet450fps_18-01-18_WTLiveFed4Roti_3591_009.mp4
@@ -521,13 +521,15 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
         /// Choose FG image prior to template matching
         /// \note this can fail badly if Mask is thick outline of larva/or a bad match hidding features
         if (gTrackerState.bApplyFishMaskBeforeFeatureDetection)
-            fgImgFrame.copyTo(fgFishImgMasked,fgMask); //fgMask / NOT fish Mask //Use Enhanced Mask
+            frame_gray.copyTo(fgFishImgMasked,fgMask); //fgMask / NOT fish Mask //Use Enhanced Mask
         else
-            fgImgFrame.copyTo(fgFishImgMasked);
+            frame_gray.copyTo(fgFishImgMasked);
 
         ///Update Fish Models Against Image and Tracks - Obtain Bearing Angle Using Template
         //Can Use Fish Masked - But Templates Dont Include The masking
         //UpdateFishModels(fgFishImgMasked,vfishmodels,ptFishblobs,nFrame,outframe);
+
+
         if (gTrackerState.bTrackFish)
         {
             //Can Use Fish Masked fgFishImgMasked - But Templates Dont Include The masking
@@ -539,6 +541,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
 
             if (vfishmodels.size() > 0)
             {
+                cv::imshow("deteczFishFeatures",fgFishImgMasked);
                 /// Isolate Head Measure* Eye Position For each fish and pass measurement to Model make Spine model and draw it
                 detectZfishFeatures(window_main, fgFishImgMasked, outframe,
                                     frameHead,outframeHeadEyeDetected,
@@ -1107,8 +1110,11 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             pfish->stepPredict(nFrame);
 
          ///    Write Angle / Show Box   ///
-         if (gTrackerState.bDraggingTemplateCentre) //Overwrite with user defined angle
+         if (gTrackerState.bDraggingTemplateCentre && pfish->bUserDrag) //Overwrite with user defined angle
+         {
              pfish->bodyRotBound.angle = gTrackerState.iFishAngleOffset;
+             pfish->bearingAngle = gTrackerState.iFishAngleOffset;
+         }
 
          pfish->drawBodyTemplateBounds(frameOut); //Predicted Position /
     }
@@ -1227,7 +1233,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
            if (!pointIsInROI(pfishBest->ptRotCentre, pfishBest->bodyRotBound.size.width)                     )
            {
                qfishrank.pop();
-               pfishBest = 0;
+               pfishBest = nullptr;
            }
   }//Search For Best Model
   // A fish model has been found / Evaluate
@@ -2926,6 +2932,19 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                return;
            }
 
+           /// \brief Store Norm Image as Template - If Flag Is set
+           if (gTrackerState.bStoreThisTemplate)
+           {   std::stringstream ssMsg;
+               //addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+               //Try This New Template On the Next Search
+               gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
+               //fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
+               pwindow_main->saveTemplateImage(imgFishAnterior_Norm);
+               ssMsg << "Fish Template saved to disk - (No Cache update) #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
+               pwindow_main->LogEvent(QString::fromStdString(ssMsg.str() ));
+               gTrackerState.bStoreThisTemplate = false;
+           }
+
 //           // Use the FG Image to extract Head Frame
 //              maskedfishImg_gray(rectfishAnteriorBound).copyTo(imgFishAnterior);
 ////              if (bUseEllipseEdgeFittingMethod)
@@ -2975,19 +2994,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                   //gTrackerState.bStoreThisTemplate = true; //Save FishLike Templates
 
 
-              /// \TODO MOVE THIS
-              /// Store Norm Image as Template - If Flag Is set
-              if (gTrackerState.bStoreThisTemplate)
-              {   std::stringstream ssMsg;
-                  //addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
-                  //Try This New Template On the Next Search
-                  gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
-                  fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
-                  window_main.saveTemplateImage(imgFishAnterior_Norm);
-                  ssMsg << "Fish Template saved to disk - (No Cache update) #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
-                  window_main.LogEvent(QString::fromStdString(ssMsg.str() ));
-                  gTrackerState.bStoreThisTemplate = false;
-              }
+
 
 
               //Copy Detected Ellipse Frame To The Output Frame

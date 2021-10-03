@@ -243,14 +243,14 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 
   /// SliDing Window Scanning
-  int iSlidePx_H_step = 4;
-  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - 12;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = iSlidePx_H_begin+22;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidePx_H_step = 1;
+  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - 2;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = iSlidePx_H_begin+2;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
-  int iSlidePx_V_step = 4;
-  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-12); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = iSlidePx_V_begin + 22;//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
+  int iSlidePx_V_step = 1;
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-5); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = iSlidePx_V_begin + 5;//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
@@ -305,11 +305,11 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     //cv::circle(imgFishAnterior,ptmax_orig,4,CV_RGB(250,200,210),2);
     //cv::imshow(string("Fish Region Body ") + regTag,imgFishAnterior);
     // DEBUG IMG //
-    cv::circle(imgFishAnterior_Norm,ptmax,3,CV_RGB(200,200,210),2);
-    cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(0,0,0),2);
+    //cv::circle(imgFishAnterior_Norm,ptmax,3,CV_RGB(200,200,210),2);
+    //cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(0,0,0),2);
 
 
-    //cv::imshow(string("Fish Region Body Norm ") + regTag,imgFishAnterior_Norm);
+    cv::imshow(string("Fish Region Body Norm ") + regTag,imgFishAnterior_Norm_bin);
     // DEBUG IMG //
     cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, 0, 1, cv::NORM_MINMAX);
     //cv::imshow(string("Score Mask Body Norm") + regTag,maskRegionScore_Norm);                                   gionScore_Norm);
