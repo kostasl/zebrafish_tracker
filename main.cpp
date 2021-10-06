@@ -541,9 +541,9 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
 
             if (vfishmodels.size() > 0)
             {
-                cv::imshow("deteczFishFeatures",fgFishImgMasked);
+                //cv::imshow("deteczFishFeatures",fgFishImgMasked);
                 /// Isolate Head Measure* Eye Position For each fish and pass measurement to Model make Spine model and draw it
-                detectZfishFeatures(window_main, fgFishImgMasked, outframe,
+                detectZfishFeatures(window_main, frame_gray, outframe,
                                     frameHead,outframeHeadEyeDetected,
                                     fgFishImgMasked, fishbodycontours,
                                     fishbodyhierarchy); //Creates & Updates Fish Models
@@ -1263,7 +1263,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
             //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
             if ( ( gTrackerState.bAllowOnlyOneTrackedItem
-                 || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames)) //Check If it Timed Out / Then Delete
+                 || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) &&
+                    !pfish->binFocus) //Check If it Timed Out / Then Delete
             {
                 std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->matchScore << " when Best is :"<< maxTemplateScore << std::endl;
                 ft = vfishmodels.erase(ft);
@@ -2343,7 +2344,7 @@ ltROI* ltGetFirstROIContainingPoint(ltROIlist& vRoi ,cv::Point pnt,float objectR
     for (ltROIlist::iterator it = vRoi.begin(); it != vRoi.end(); ++it)
     {
         iroi = &(*it);
-        if (iroi->contains(pnt,objectRadius))
+        if (iroi->contains(pnt, objectRadius))
                return(iroi) ; //Exit Loop And Return pointer to roi
     }
 
@@ -2740,8 +2741,8 @@ void drawAllROI(cv::Mat& frame)
          if (gTrackerState.bTracking)
          {
              cv::Point pt1;
-             pt1.x = iroi.centre.x;
-             pt1.y = iroi.centre.y;
+             pt1 = iroi.vPoints[0]; //centre();
+
              //pt2.x = pt1.x + iroi.radius;
              //pt2.y = pt1.y; //+ iroi.height;
              cv::circle(frame,pt1,3,cv::Scalar(255,0,0),1);
@@ -2924,7 +2925,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            tEllipsoids vellLeft;
            tEllipsoids vellRight;
 
-           imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(fullImgIn,fish->bodyRotBound); //fishRotAnteriorBox
+           imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(maskedfishImg_gray,fish->bodyRotBound); //fishRotAnteriorBox
            // Check empty in case of an Error In extraction - due to boundary conditions
            if (imgFishAnterior_Norm.empty())
            {
@@ -2935,11 +2936,13 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            /// \brief Store Norm Image as Template - If Flag Is set
            if (gTrackerState.bStoreThisTemplate)
            {   std::stringstream ssMsg;
+               //Obtain And Save Unmasked Image
+               cv::Mat imgFishAnterior_Templ = fishdetector::getNormedTemplateImg(fullImgIn,fish->bodyRotBound); //fishRotAnteriorBox
                //addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
                //Try This New Template On the Next Search
                gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
                //fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
-               pwindow_main->saveTemplateImage(imgFishAnterior_Norm);
+               pwindow_main->saveTemplateImage(imgFishAnterior_Templ);
                ssMsg << "Fish Template saved to disk - (No Cache update) #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
                pwindow_main->LogEvent(QString::fromStdString(ssMsg.str() ));
                gTrackerState.bStoreThisTemplate = false;

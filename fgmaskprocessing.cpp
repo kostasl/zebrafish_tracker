@@ -215,7 +215,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         int thres = cv::threshold(bgMask,bgMask,uiMaxVal*0.05,255,cv::THRESH_BINARY | cv::THRESH_OTSU); //All; Above 33% of Max are Stationary
         pwindow_main->LogEvent("Static Food Mask theshold at " + QString::number(thres));
 
-        if (gTrackerState.bStaticAccumulatedBGMaskRemove & gTrackerState.bshowMask)
+        if (gTrackerState.bStaticBGMaskRemove & gTrackerState.bshowMask)
            cv::imshow("Accumulated BG Model Thresholded",bgMask);
 
         cv::morphologyEx(bgMask,bgMask, cv::MORPH_CLOSE, kernelDilateMOGMask,cv::Point(-1,-1),1);
@@ -343,11 +343,11 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
            //fgMOGMask.copyTo(fgMaskInOut);
 
             //Combine Static Mask and Remove Stationary Learned Pixels From Mask If Option Is Set
-            if (gTrackerState.bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)//Although bgMask Init To zero, it may appear empty here!
+            if (gTrackerState.bStaticBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)//Although bgMask Init To zero, it may appear empty here!
                   cv::bitwise_and(fgStaticMaskIn,fgMaskInOut,fgMaskInOut); //Only On Non Stationary pixels - Ie Fish Dissapears At boundary
        }else{  // No MOG Mask Exists so simply Use thresh Only to Detect FG Fish Mask Detect
           //Returning The thresholded image is only required when No BGMask Exists
-         if (gTrackerState.bStaticAccumulatedBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)
+         if (gTrackerState.bStaticBGMaskRemove && !fgStaticMaskIn.empty() && fgStaticMaskIn.type() == CV_8U)
             cv::bitwise_and(fgStaticMaskIn,threshold_output,fgMaskInOut);
          else //No Static Mask here and no BG Model, so simply return the thresholded one
              threshold_output.copyTo(fgMaskInOut);
@@ -582,6 +582,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     assert(!fgEdgeMask.empty());
     cv::imshow("FishMAsk Edge",fgEdgeMask);
 
+    ptFishblobs.clear();
+
     // UnMask Regions Around Existing Fish
     fishModels::iterator ft;
     for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
@@ -632,7 +634,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
 
         //If Contained In ROI
-        if (!pointIsInROI(centroid,gTrackerState.gszTemplateImg.width)) //
+        if (!pointIsInROI(centroid,2)) //
             continue;
 
         curve = fishbodycontours[kk];
@@ -703,7 +705,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             gptTail = ptTail;
             //Move Search location Anteriorly - IMprove fishNet localization
             ptSearch  = ((cv::Point)kp.pt-gptHead)/2+gptHead;
-
+            kp.pt = ptSearch;
             //Correct Angle - 0 is Vertical Up
             kp.angle = (int)(cv::fastAtan2(ptHead.y-ptTail.y,ptHead.x-ptTail.x)+90)%360;
         }else
@@ -711,7 +713,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
         //Move fishNet Detection towards Anterior of Blob
         cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
-        kp.pt = ptSearch;
+
 
 
         //cv::Mat frameMasked;
@@ -728,7 +730,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         iHitCount++;
         //qDebug() << "(" << kp.pt.x << "," << kp.pt.y << ")" << "R:" << strfRecScore;
 
-        if (kp.response >= gTrackerState.fishnet_L2_classifier)
+        /// Add TO Filtered KP - IF keypoint is still within roi (moved by classifier) and Passes Classifier threshold
+        if (kp.response >= gTrackerState.fishnet_L2_classifier && pointIsInROI(kp.pt,2))
         {
             ptFishblobs.push_back(kp);
 
@@ -752,13 +755,14 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             }
 
 
-        }else
-            qDebug() << "Classif. Failed ";
+        }
+        //else
+        //    qDebug() << "Classif. Failed ";
 
 
          //Add Trailing Expansion to the mask- In Case End bit of tail is not showing (ptTail-ptHead)/30+
         cv::circle(outFishMask, ptTail,4,CV_RGB(255,255,255),cv::FILLED);
-        cv::putText(outFishMask,strfRecScore.toStdString(), kp.pt +cv::Point2f(10,-10), gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(255,255,250));
+        cv::putText(outFishMask,strfRecScore.toStdString(), ptSearch +cv::Point2f(10,-10), gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(255,255,250));
         //cv::circle(outFishMask, ptHead - (ptHead-centroid)/2,5,CV_RGB(255,255,255),cv::FILLED);
     } //For Each Fish Contour
 
@@ -857,8 +861,9 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
 
     pwindow_main->showVideoFrame(bgMask,nFrame);
     //Accumulate things that look like food / so we can isolate the stationary ones
-    cv::threshold( fgFrameImg, bgMaskThresholded, gTrackerState.g_FGSegthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
-    cv::accumulateWeighted(bgMaskThresholded,bgAcc,gTrackerState.dBGMaskAccumulateSpeed);
+    //cv::threshold( fgFrameImg, bgMaskThresholded, gTrackerState.g_FGStaticMaskSegthresh, 255, cv::THRESH_BINARY ); // Log Threshold Image + cv::THRESH_OTSU
+    cv::accumulateWeighted(bgMask,bgAcc,gTrackerState.dBGMaskAccumulateSpeed);
+    //cv::imshow("bAcc",bgAcc);
 
     return ret; //If False then tell calling function to stop updating
 }

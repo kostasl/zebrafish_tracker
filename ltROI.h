@@ -45,7 +45,6 @@ typedef struct tRoi
     RoiType mType;
     std::vector<cv::Point> vPoints;
 
-    cv::Point centre;
 
     cv::Scalar mColor = CV_RGB(255,5,5);
     unsigned int radius;
@@ -55,12 +54,12 @@ public:
 
     inline int x()
     {
-        return centre.x;
+        return centre().x;
     }
 
     inline int y()
     {
-        return centre.y;
+        return centre().y;
     }
 
     inline unsigned int width()
@@ -68,14 +67,25 @@ public:
         return radius;
     }
 
+    inline cv::Point centre() const
+    {
+            if (mType == RoiType::Circle)
+                return vPoints[0];
+            else{//Calc Centroid of Polygon
+                cv::Moments moments =  cv::moments(vPoints);
+                cv::Point centroid;
+                centroid.x = moments.m10/moments.m00;
+                centroid.y = moments.m01/moments.m00;
+            }
+
+    }
 
     //Construct A Circular ROI given 2 points
     tRoi(cv::Point a, cv::Point b)
     {
        mType = RoiType::Circle;
-       centre = a;
-       vPoints.push_back(centre);
-       radius = cv::norm(b - centre);
+       vPoints.push_back(a);
+       radius = cv::norm(b - a);
     }
 
     //Construct a polygon Roi Given A list of Points
@@ -85,10 +95,10 @@ public:
         vPoints = pvPoints; //local Copy of Points
 
         //Find the centre of this ROI
-        cv::Moments mm = cv::moments(vPoints);
+        //cv::Moments mm = cv::moments(vPoints);
 
-        centre.x = mm.m10/mm.m00;
-        centre.y = mm.m01/mm.m00;
+        //centre.x = mm.m10/mm.m00;
+        //centre.y = mm.m01/mm.m00;
 
 
     }
@@ -99,7 +109,8 @@ public:
     {
         if (mType == RoiType::Circle)
         {
-           cv::circle(frame,centre,radius,cv::Scalar(0,0,250),2);
+          // centre = vPoints[0]; //Sync Centre To Unique data point for this ROI
+           cv::circle(frame,centre(),radius,cv::Scalar(0,0,250),2);
         }
 
         if (mType == RoiType::Polygon)
@@ -122,7 +133,7 @@ public:
         if (mType == RoiType::Circle)
         {
            //cv::circle(frame,centre,radius,cv::Scalar(0,0,250),2);
-           cv::circle(frame,centre,radius,CV_RGB(255,255,255),-1);
+           cv::circle(frame,centre(),radius,CV_RGB(255,255,255),-1);
         }
 
         if (mType == RoiType::Polygon)
@@ -146,7 +157,7 @@ public:
    bool contains(cv::Point pt,double objSize = 1)
     {
         if (mType == RoiType::Circle)
-            return (cv::norm(pt - centre) <= (radius+objSize));
+            return (cv::norm(pt - vPoints[0]) <= (radius+objSize));
 
         if (mType == RoiType::Polygon) //Check Distance On OUtside Is greater Than Obj Size - Only when objSize Param Is > 1
             return (cv::pointPolygonTest(vPoints,pt,(objSize > 1)) > -objSize );
@@ -158,14 +169,15 @@ public:
     bool operator ==(const tRoi& c2)
     {
         if (c2.mType == RoiType::Circle)
-            return (centre == c2.centre && radius == c2.radius);
+            return (centre() == c2.centre() && radius == c2.radius);
     }
 
     // This method lets cereal know which data members to serialize
       template<class Archive>
       void serialize(Archive & archive)
       {
-        archive(CEREAL_NVP(centre)); // serialize things by passing them to the archive
+        archive(CEREAL_NVP(vPoints)); // serialize things by passing them to the archive
+        archive(CEREAL_NVP(radius)); // serialize things by passing them to the archive
       }
 
 

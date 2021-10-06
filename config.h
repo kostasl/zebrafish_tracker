@@ -241,7 +241,7 @@ class trackerState
       bool bDrawFoodBlob              = true; ///Draw circle around identified food blobs (prior to model matching)
       bool bOffLineTracking           = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
       bool bBlindSourceTracking       = false; /// Used for Data Labelling, so as to hide the data source/group/condition
-      bool bStaticAccumulatedBGMaskRemove       = false; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+      bool bStaticBGMaskRemove       = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
       bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
@@ -270,7 +270,8 @@ class trackerState
       uint iSpineContourFitFramePeriod         = 20; //Check that Tail Fitting Matches Contour Every X Frames
 
       /// Segmentation / threshold  Params
-      int g_FGSegthresh             = 10; //Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
+      int g_FGSegthresh             = 18;
+      int g_FGStaticMaskSegthresh   = g_FGSegthresh;//Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
       int g_SegFoodThesMin        = max(0,g_FGSegthresh-25); //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
       int g_SegFoodThesMax        = g_SegFoodThesMin+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
       //int g_SegInnerthreshMult    = 3; //Image Threshold for Inner FIsh Features //Deprecated
@@ -296,7 +297,7 @@ class trackerState
 
       /// Fishnet Classifier params //
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_L2_classifier  = 0.1f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_L2_classifier  = 0.00f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
       float fishnet_inputSparseness = 0.1f; //Ratio of Active Pixels in Binarized input Image
 
       ///Fish Features Detection Params
@@ -360,7 +361,7 @@ class trackerState
    {
      archive(gstrwinName,CEREAL_NVP(gstroutDirCSV),CEREAL_NVP(gstrinDirVid),gstrvidFilename,outfilename.toStdString(),
             userROI,bRecordToFile,bTrackFish,bSaveImages,bUseEllipseEdgeFittingMethod,
-            bTemplateSearchThroughRows,bApplyFishMaskBeforeFeatureDetection,bUseOpenCL,bUseGPU,bBlindSourceTracking,bStaticAccumulatedBGMaskRemove,
+            bTemplateSearchThroughRows,bApplyFishMaskBeforeFeatureDetection,bUseOpenCL,bUseGPU,bBlindSourceTracking,bStaticBGMaskRemove,
             gbUpdateBGModel,gbUpdateBGModelOnAllVids,bFitSpineToTail,bUseMaskedFishForSpineDetect,bUseHistEqualization,bRemovePixelNoise,bMeasure2pDistance,bAddPreyManually,
             bRenderToDisplay,bRenderWithAlpha,bOffLineTracking,bDrawFoodBlob,curveSmoothKernelSigma,curveSmoothKernelSize_M,
             bUseBGModelling,gbUpdateBGModel,gbUpdateBGModelOnAllVids,

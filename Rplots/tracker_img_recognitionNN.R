@@ -350,7 +350,8 @@ N_KC = round(n_top_px*5) ## Number of Kenyon Cells (Input layer High Dim Coding)
 #KC_THRES <- N_SYN_per_KC*0.25 ## Number of INput that need to be active for KC to fire/Activate
 #v_Layer_N2 <- c(n_top_px, N_KC, 2)
 ###THESE SETTINGS L=5 (500,300,100,20, 2) WORKED WITH eta=10e-4
-v_Layer_N <- c(n_top_px, 500,300,100,20, 2) ##number of Units per layer (assume fully connected with Normal Dist of Strength)
+#v_Layer_N <- c(n_top_px, 500,300,100,20, 2) ##number of Units per layer (assume fully connected with Normal Dist of Strength)
+v_Layer_N <- c(n_top_px, 750,500,300,200,100,20, 2) ##number of Units per layer (assume fully connected with Normal Dist of Strength)
 N_Layers <- length(v_Layer_N)-1
 #v_Layer_CON <- c(N_SYN_per_KC/n_top_px,)
 Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
@@ -552,7 +553,7 @@ for (l in 1:fishNet$NLayer)
 #fishNet <- list(LW1=Layer_Bias[[2]]
 #)
 ## EXPORT TO YAML FOR OPENCV - Custom/hacked exporter routine specific to OPENCV
-  filename <- "fishNet.yml"
+  filename <- paste0("fishNet_L",N_Layers,".yml")
   con <- file(filename, "w")
   message("Exporting to YAML-Wait for it , this may take a while...")
   write("%YAML:1.0",con) ##Header Is necessary For OPENCV 

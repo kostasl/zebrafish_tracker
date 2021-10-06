@@ -366,7 +366,7 @@ void MainWindow::showCVimg(cv::Mat& img)
 
     /// Draw / Overlay Info From This Window //
     if (ptDrag)
-        cv::circle(frameScene,*ptDrag,5,cv::Scalar(200,200,0),2);
+        cv::circle(frameScene,*ptDrag,7,cv::Scalar(200,200,0),2);
 
     /////
 
@@ -732,17 +732,21 @@ void MainWindow::mouseMoveEvent ( QGraphicsSceneMouseEvent* mouseEvent )
         ptDrag = 0;
 
     //Check If Around ROI Points
-    for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
+    //for (std::vector<ltROI>::iterator itR = gTrackerState.vRoi.begin(); itR != gTrackerState.vRoi.end(); ++itR)
+    for (int i=0;i<gTrackerState.vRoi.size();i++)
     {
-        ltROI* iroi = &(*it);
-        for (std::vector<cv::Point>::iterator it = iroi->vPoints.begin() ; it != iroi->vPoints.end(); ++it)
+        //ltROI* iroi = &(*itR);
+        ltROI* proi = &gTrackerState.vRoi[i];
+        for (std::vector<cv::Point>::iterator itRp = proi->vPoints.begin() ; itRp != proi->vPoints.end(); ++itRp)
         {
             //4 pixels Around the ROI Point / Get Moving Cursor
-            if (cv::norm(*it-ptMouse) < 4)
+            if (cv::norm(*itRp-ptMouse) < 7)
             {
                     // HighLight Point //
 //                    cv::circle(frameScene,*it,5,cv::Scalar(100,200,0),2);
-                    ptDrag = &(*it);
+                    ptDrag = &(*itRp);
+                    //itRp->x = ptMouse.x;
+                    //itRp->y = ptMouse.y;
                     setCursor(Qt::CrossCursor);
             }
         }
@@ -827,6 +831,7 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent* mouseEvent )
     QPointF ptImg = item->mapFromScene(ptSceneclick);
     cv::Point ptMouse(ptImg.x(),ptImg.y());
 
+    qDebug() << "Click Pos X:" << ptMouse.x << ", Y:" << ptMouse.y;
     //Already Dragging - Terminate And Save Template
     if (gTrackerState.bDraggingTemplateCentre)
     {
@@ -883,7 +888,7 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent* mouseEvent )
             //cv::Point  ptR = *it;
 
             //4 pixels Around the ROI Point / Get Moving Cursor
-            if (cv::norm(*it-ptMouse) < 4)
+            if (cv::norm(*it-ptMouse) < 6)
             {
                     //setCursor(Qt::PointingHandCursor);
                     setCursor(Qt::CrossCursor);
@@ -894,6 +899,9 @@ void MainWindow::mousePressEvent ( QGraphicsSceneMouseEvent* mouseEvent )
 
                         ptDrag->x = ptMouse.x;
                         ptDrag->y = ptMouse.y;
+
+                        it->x = ptMouse.x;
+                        it->y = ptMouse.y;
                         bDraggingRoiPoint = true;
                     }
             }

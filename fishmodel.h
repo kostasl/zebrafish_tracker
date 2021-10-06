@@ -118,7 +118,7 @@ public:
 
   // State Flags
   bool bNewModel = true;
-  bool binFocus = false;
+  bool binFocus = false; ///User Has selected - Clicked on This Model - Do not Allow Delete.
   bool bUserDrag = false;
 
   // Detection Scores //
