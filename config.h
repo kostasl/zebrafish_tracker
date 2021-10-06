@@ -241,7 +241,7 @@ class trackerState
       bool bDrawFoodBlob              = true; ///Draw circle around identified food blobs (prior to model matching)
       bool bOffLineTracking           = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
       bool bBlindSourceTracking       = false; /// Used for Data Labelling, so as to hide the data source/group/condition
-      bool bStaticBGMaskRemove       = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+      bool bStaticBGMaskRemove        = false; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
       bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video

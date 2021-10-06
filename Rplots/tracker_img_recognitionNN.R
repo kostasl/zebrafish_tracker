@@ -553,7 +553,8 @@ for (l in 1:fishNet$NLayer)
 #fishNet <- list(LW1=Layer_Bias[[2]]
 #)
 ## EXPORT TO YAML FOR OPENCV - Custom/hacked exporter routine specific to OPENCV
-  filename <- paste0("fishNet_L",N_Layers,".yml")
+  #filename <- paste0("fishNet_L",N_Layers,".yml")
+  filename <- paste0("fishNet.yml")
   con <- file(filename, "w")
   message("Exporting to YAML-Wait for it , this may take a while...")
   write("%YAML:1.0",con) ##Header Is necessary For OPENCV 
