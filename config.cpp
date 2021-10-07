@@ -452,7 +452,7 @@ void  trackerState::initROI(uint framewidth,uint frameheight)
       else //Make Default ROI Region
     {
         ptROI2.x = (framewidth)/2;
-        ptROI2.y = frameheight-24;//gTrackerState.gszTemplateImg.height/3;
+        ptROI2.y = frameheight-34;//gTrackerState.gszTemplateImg.height/3;
         //Add Global Roi - Center - Radius
         ltROI newROI(cv::Point(framewidth/2, (frameheight)/2-20),ptROI2);
         addROI(newROI);

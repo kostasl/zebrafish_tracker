@@ -124,6 +124,9 @@ makeInputMatrix <- function(img_list,inmat_W)
     
     imgT <- read.pnm(as.character(in_img) )
     mat_img <- getChannels(imgT)  ## Converted 0..1 real
+    ## Normalize ##
+    mat_img = mat_img/max(mat_img)
+    
     X <- as.vector(mat_img)
     ### Add Fixed input 1 - To operate As Adjustable Bias for each input   
     ##X[length(X)] <- 1 # c(as.vector(mat_img),1)
@@ -343,7 +346,7 @@ net_proc_images_batch <- function(mat_X,inmat_W,inLayer_Bias,mat_Y,learningRate 
 
 img_dim <- c(38,28)
 
-dInitialLearningRate    <- dLearningRate <- 0.0001
+dInitialLearningRate    <- dLearningRate <- 1e-05
 n_top_px <- img_dim[2]*img_dim[1]
 N_KC = round(n_top_px*5) ## Number of Kenyon Cells (Input layer High Dim Coding)
 #N_SYN_per_KC <- 50 NOT USED  #ONLY FOR L1-2  n_top_px/500 ## Number of pic Features each KC neuron Codes for
@@ -351,14 +354,14 @@ N_KC = round(n_top_px*5) ## Number of Kenyon Cells (Input layer High Dim Coding)
 #v_Layer_N2 <- c(n_top_px, N_KC, 2)
 ###THESE SETTINGS L=5 (500,300,100,20, 2) WORKED WITH eta=10e-4
 #v_Layer_N <- c(n_top_px, 500,300,100,20, 2) ##number of Units per layer (assume fully connected with Normal Dist of Strength)
-v_Layer_N <- c(n_top_px, 750,500,300,200,100,20, 2) ##number of Units per layer (assume fully connected with Normal Dist of Strength)
+v_Layer_N <- round(c(n_top_px,n_top_px, n_top_px/2,n_top_px/4,n_top_px/8,n_top_px/16, 2)) ##number of Units per layer (assume fully connected with Normal Dist of Strength)
 N_Layers <- length(v_Layer_N)-1
 #v_Layer_CON <- c(N_SYN_per_KC/n_top_px,)
 Layer_Bias <- list() ## Number of INput that need to be active for Neuron to fire/Activate
 INPUT_SPARSENESS = 0.25
 
 
-batchSize = 222 # Number of Training IMages for Each Learning Episode (which will define error graident )
+batchSize = 32 # Number of Training IMages for Each Learning Episode (which will define error graident )
 Nbatches = 1500 ## Number of random batchs (of size batchSize) to repeat training over
 trainingN = 100 ## Training Cycles For Each Batch
 
@@ -489,7 +492,7 @@ for (b in 1:Nbatches)
     vTrainingError[rIdx] = dnetout$MSQError  #plot(unlist(dnetout$out$MSERR),main=paste(i,"Mean SQ Err"))
     rIdx = rIdx +1
     
-    plot(vTrainingError,ylim=c(0.00001,1),type="l",log="y") #ylim=c(0,1)xlim=c(0,trainingN*Nbatches)
+    plot(vTrainingError,ylim=c(0.01,1),type="l",log="y") #ylim=c(0,1)xlim=c(0,trainingN*Nbatches)
     
   }## Repeated Training On Batch 
   

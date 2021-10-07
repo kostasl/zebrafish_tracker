@@ -580,7 +580,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     //Then Use ThresholdImage TO Trace More detailed Contours
     //cv::dilate(threshold_output_COMB,threshold_output_COMB_fish,kernelOpenfish,cv::Point(-1,-1),4);
     assert(!fgEdgeMask.empty());
-    cv::imshow("FishMAsk Edge",fgEdgeMask);
+    //cv::imshow("FishMAsk Edge",fgEdgeMask);
 
     ptFishblobs.clear();
 
@@ -750,7 +750,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             /// DEBUG - Show imgs
             if (!imgFishAnterior_NetNorm.empty()){
                 cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
-                cv::normalize(mask_fnetScore, mask_fnetScore, 0, 1, cv::NORM_MINMAX);
+                cv::normalize(mask_fnetScore, mask_fnetScore, 1, 0, cv::NORM_MINMAX);
                 cv::imshow((QString("FishNet ScoreRegion (Norm)") + QString::number(iHitCount)).toStdString(), mask_fnetScore);
             }
 

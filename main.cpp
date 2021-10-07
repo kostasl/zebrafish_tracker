@@ -2834,7 +2834,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
     ////Template Matching Is already Done On Fish Blob/Object
     //Pick The largest dimension and Make A Square
-    cv::Size szTempIcon(std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows),std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows));
+    cv::Size szTempIcon(std::max(gTrackerState.gLastfishimg_template.cols, gTrackerState.gLastfishimg_template.rows), std::max(gTrackerState.gLastfishimg_template.cols, gTrackerState.gLastfishimg_template.rows));
    // cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
 
 //    ///Detect Head Feature //
@@ -2914,7 +2914,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
 
           cv::Size szHeadImg(min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height),
-                             max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)*0.75);
+                             max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height));
 //          cv::Point ptTopLeftHead(ptTopLeftTemplate.x,0);//(szFishAnteriorNorm.width/2-szTemplateImg.width/2,szFishAnteriorNorm.height/2-szTemplateImg.height/2);
           cv::Rect rectFishHeadBound = cv::Rect(cv::Point(max(0,imgFishAnterior_Norm.cols/2-szHeadImg.width/2),
                                                           max(0,imgFishAnterior_Norm.rows-szHeadImg.height)),szHeadImg);
