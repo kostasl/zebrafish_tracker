@@ -32,6 +32,7 @@ print(tf.version.VERSION)
 
 
 data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
+valid_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
 
 fish = list(data_dir.glob('./fish/*.jpg'))
 #PIL.Image.open(str(fish[0]))
@@ -40,14 +41,14 @@ fish = list(data_dir.glob('./fish/*.jpg'))
 nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 #PIL.Image.open(str(nonfish[0]))
 
-batch_size = 32
-img_height = 28
-img_width = 38
+batch_size = 64
+img_height = 38
+img_width = 28
 def train_model(batch_size,img_height,img_width):
 
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
       str(data_dir),
-      validation_split=0.2,
+      validation_split=0.01,
       subset="training",
       seed=123,
       image_size=(img_height, img_width),
@@ -56,8 +57,8 @@ def train_model(batch_size,img_height,img_width):
 
 
     val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-      str(data_dir),
-      validation_split=0.2,
+      str(valid_dir),
+      validation_split=0.9,
       subset="validation",
       seed=123,
       image_size=(img_height, img_width),
@@ -143,7 +144,7 @@ def train_model(batch_size,img_height,img_width):
 
 
     ## TRAIN MODEL
-    epochs=10
+    epochs=30
     history = model.fit(
       train_ds,
       validation_data=val_ds,
@@ -179,7 +180,16 @@ def train_model(batch_size,img_height,img_width):
     plt.title('Training and Validation Loss')
     plt.show()
 
+    return([class_names,model])
 
+
+class_names = ["fish","nonfish"]
+#[class_names,model] = train_model(batch_size,img_height,img_width)
+print("Model training complete")
+
+
+
+print(class_names)
 
 ## LOAD MODEL ##
 model = tf.keras.models.load_model('savedmodels/fishNet')
@@ -190,7 +200,8 @@ model.summary()
 from tensorflow.keras.preprocessing import image
 
 # change this as you see fit
-image_path = '/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/00240.png'
+image_path = '/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/00219.png'
+#image_path = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/templ_HB40_LR_camA_003_Templ_15752.jpg"
 
 # Convert image to np.array
 imgScene = image.load_img(image_path,color_mode = "grayscale")
@@ -212,17 +223,17 @@ print(imgb_size)
 # Sliding window
 y_len,x_len,_ = image_array.shape
 
-scale_x = 38
-scale_y = 28
+scale_x = img_width
+scale_y = img_height
 
 
 print("image size (%sx%s)",(y_len,x_len))
 probability_model = Sequential([model,
                                 layers.Softmax()])
 
-
-for y in range(0,y_len-scale_y,scale_y):
-    for x in range(0,x_len-scale_x,scale_x):
+## Sliding window of fixed size
+for y in range(0, round(y_len/scale_y)*scale_y-scale_y,round(scale_y/2) ) :
+    for x in range(0, round(x_len/scale_x)*scale_x-scale_x,round(scale_x/2) ):
         y_idxS = round(y)
         y_idxT = round(y+scale_y)
         x_idxS = round(x)
@@ -234,15 +245,21 @@ for y in range(0,y_len-scale_y,scale_y):
         #cropped_image.save(imgByteArray, format='JPEG')
         #imgByteArray = imgByteArray.getvalue()
         cimg_size = np.shape(cropped_image)
-        print(cimg_size)
+        #print(cimg_size)
 
         # Classify
         #classifier(imgByteArray,label_path,retrained_path)
-        predictions = probability_model.predict_classes(cropped_image)
+        predictions = probability_model.predict(cropped_image)
         print(predictions[0])
-        print("~~~ Predicted Class:")
         pclass = np.argmax(predictions[0])
-        image.save_img("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/valid/fish/"+str(x)+"x"+str(y)+".jpg",cropped_image[0])
+        print("~~~ Predicted Class: %s %s" % (pclass,class_names[pclass] ) )
+
+        if (pclass == 0):
+            image.save_img("/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/fish/00219-" + str(x)+"x"+str(y)+".jpg",cropped_image[0])
+        else:
+            image.save_img("/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/nonfish/00219-" + str(x) + "x" + str(y) + ".jpg", cropped_image[0])
+
+
 
 
 ## END
