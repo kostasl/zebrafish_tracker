@@ -15,8 +15,14 @@
 #include "fishdetector.h"
 #include "template_detect.h"
 
+#include <tensorflow/c/c_api.h> // TensorFlow C API header.
+
+
 extern trackerState gTrackerState;
 extern cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
+
+//TF Aux funct
+void NoOpDeallocator(void* data, size_t a, void* b) {}
 
 
 static cv::Point2f rotate2d(const cv::Point2f& inPoint, const double& angRad)
@@ -44,6 +50,112 @@ static cv::Mat loadImage(const std::string& name)
         exit(-1);
     }
     return image;
+}
+
+
+/// Example from https://github.com/kostasl/tensorflow_capi_sample
+void loadSavedModel()
+{
+    //********* Read model
+    TF_Graph* Graph = TF_NewGraph();
+    TF_Status* Status = TF_NewStatus();
+
+    TF_SessionOptions* SessionOpts = TF_NewSessionOptions();
+    TF_Buffer* RunOpts = NULL;
+
+
+
+    const char* saved_model_dir = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet"; // Path of the model
+    const char* tags = "serve"; // default model serving tag; can change in future
+    int ntags = 1;
+
+    TF_Session* Session = TF_LoadSessionFromSavedModel(SessionOpts, RunOpts, saved_model_dir, &tags, ntags, Graph, NULL, Status);
+    if(TF_GetCode(Status) == TF_OK)
+    {
+        printf("TF_LoadSessionFromSavedModel OK\n");
+    }
+    else
+    {
+        printf("%s",TF_Message(Status));
+    }
+
+    //Next we grab the tensor node from the graph by their name
+    //****** Get input tensor
+    int NumInputs = 1;
+    TF_Output* Input = (TF_Output*)malloc(sizeof(TF_Output) * NumInputs);
+
+    TF_Output t0 = {TF_GraphOperationByName(Graph, "sequential_input" ), 0}; //"serving_default_input_1"
+    if(t0.oper == NULL)
+        printf("ERROR: Failed TF_GraphOperationByName sequential input //serving_default_input_1\n");
+    else
+        printf("TF_GraphOperationByName serving_default_input_1 is OK\n");
+
+    Input[0] = t0;
+
+    //********* Get Output tensor
+    int NumOutputs = 1;
+    TF_Output* Output = (TF_Output*)malloc(sizeof(TF_Output) * NumOutputs);
+
+    TF_Output t2 = {TF_GraphOperationByName(Graph, "StatefulPartitionedCall"), 0};
+    if(t2.oper == NULL)
+        printf("ERROR: Failed TF_GraphOperationByName StatefulPartitionedCall\n");
+    else
+    printf("TF_GraphOperationByName StatefulPartitionedCall is OK\n");
+
+    Output[0] = t2;
+
+    cv::Mat image = cv::imread( "fishbody_sample.pgm", cv::IMREAD_UNCHANGED );
+    image.convertTo(image,CV_32FC1);
+    cv::imshow("Input img",image);
+
+    //********* Allocate data for inputs & outputs
+        TF_Tensor** InputValues = (TF_Tensor**)malloc(sizeof(TF_Tensor*)*NumInputs);
+        TF_Tensor** OutputValues = (TF_Tensor**)malloc(sizeof(TF_Tensor*)*NumOutputs);
+
+        int ndims = 2;
+        int64_t dims[] = {28,38};
+        uchar* data = image.data;// {20};
+        int ndata = sizeof(uchar)*image.size().height*image.size().width; // This is tricky, it number of bytes not number of element
+
+        TF_Tensor* int_tensor = TF_NewTensor(TF_QUINT8, dims, ndims, data, ndata, &NoOpDeallocator, 0);
+        if (int_tensor != NULL)
+        {
+            printf("TF_NewTensor is OK\n");
+        }
+        else
+        printf("ERROR: Failed TF_NewTensor\n");
+
+        InputValues[0] = int_tensor;
+
+
+        printf("Attempting to run session...");//Inp:%f Ival:%f" //Input,InputValues
+    // //Run the Session
+        TF_SessionRun(Session, NULL, Input, InputValues, NumInputs, Output, OutputValues, NumOutputs, NULL, 0,NULL , Status);
+
+        if(TF_GetCode(Status) == TF_OK)
+        {
+            printf("Session is OK\n");
+        }
+        else
+        {
+            printf("%s",TF_Message(Status));
+        }
+
+        // //Free memory
+        TF_DeleteGraph(Graph);
+        TF_DeleteSession(Session, Status);
+        TF_DeleteSessionOptions(SessionOpts);
+        TF_DeleteStatus(Status);
+
+
+
+        /// \brief Lastly, we want get back the output value from the output tensor using TF_TensorData that extract data from the tensor object. Since we know the size of the output which is 1, i can directly print it. Else use TF_GraphGetTensorNumDims or other API that is available in c_api.h or tf_tensor.h
+        void* buff = TF_TensorData(OutputValues[0]);
+        float* offsets = (float*)buff;
+        printf("Result Tensor :\n");
+        printf("%f\n",offsets[0]);
+
+
 }
 
 

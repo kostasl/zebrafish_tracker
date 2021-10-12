@@ -18,17 +18,40 @@ from tensorflow.keras.models import Sequential
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+
+def my_freeze_graph(output_node_names, destination, name="frozen_model.pb"):
+    """
+    Freeze the current graph alongside its weights (converted to constants) into a protobuf file.
+    :param output_node_names: The name of the output node names we are interested in
+    :param destination: Destination folder or remote service (eg. gs://)
+    :param name: Filename of the saved graph
+    :return:
+    """
+    tf.keras.backend.set_learning_phase(0)  # set inference phase
+
+    sess = tf.compat.v1.keras.backend.get_session()
+    input_graph_def = sess.graph_def
+    #input_subgraph_def = tf.compat.v1.graph_util.extract_sub_graph(input_graph_def,output_node_names) #      # get graph def proto from keras session's graph
+
+    with sess.as_default():
+        # Convert variables into constants so they will be stored into the graph def
+        output_graph_def = tf.compat.v1.graph_util.convert_variables_to_constants(
+            sess,
+            input_graph_def,
+            output_node_names=output_node_names)
+
+        tf.train.write_graph(graph_or_graph_def=output_graph_def, logdir=destination, name=name, as_text=False)
+
+    tf.keras.backend.clear_session()
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    print('FishNet TensorFlow Model Training')
+    print(tf.version.VERSION)
 
 
-print(tf.version.VERSION)
+
 
 
 data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
@@ -44,6 +67,7 @@ nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 batch_size = 64
 img_height = 38
 img_width = 28
+epochs = 50
 def train_model(batch_size,img_height,img_width):
 
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
@@ -144,7 +168,7 @@ def train_model(batch_size,img_height,img_width):
 
 
     ## TRAIN MODEL
-    epochs=30
+
     history = model.fit(
       train_ds,
       validation_data=val_ds,
@@ -152,12 +176,15 @@ def train_model(batch_size,img_height,img_width):
       callbacks=[cp_callback]
     )
 
+    print(f'input_layer_name={model.input.name}')
+    output_layer_name = model.output.name.split(':')[0]
+    print(f'output_layer_name={output_layer_name}')
+
     ## Save Model ##
     model.save('savedmodels/fishNet')
-
+    my_freeze_graph([output_layer_name], destination='savedmodels/frozen/', name="frozen_model.pb")
 
     ## VISUALIZE RESULTS
-
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
 
@@ -192,15 +219,28 @@ print("Model training complete")
 print(class_names)
 
 ## LOAD MODEL ##
+#model = tf.saved_model.load('savedmodels/fishNet')
 model = tf.keras.models.load_model('savedmodels/fishNet')
+
 model.summary()
+
+print(f'input_layer_name={model.input.name}')
+output_layer_name = model.output.name.split(':')[0]
+
+print(f'output_layer_name={output_layer_name},{model.output.name}')
+
+printTensors("savedmodels/fishNet/saved_model.pb")
+
+## Freeze
+my_freeze_graph(["dense_1"], destination='savedmodels/frozen/', name="frozen_model.pb")
+
 
 
 ## SLIDING WINDOW CLASSIFIER ##
 from tensorflow.keras.preprocessing import image
 
 # change this as you see fit
-image_path = '/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/00219.png'
+image_path = '/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/00266.png'
 #image_path = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/templ_HB40_LR_camA_003_Templ_15752.jpg"
 
 # Convert image to np.array
@@ -255,9 +295,9 @@ for y in range(0, round(y_len/scale_y)*scale_y-scale_y,round(scale_y/2) ) :
         print("~~~ Predicted Class: %s %s" % (pclass,class_names[pclass] ) )
 
         if (pclass == 0):
-            image.save_img("/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/fish/00219-" + str(x)+"x"+str(y)+".jpg",cropped_image[0])
+            image.save_img("/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/fish/00266-" + str(x)+"x"+str(y)+".jpg",cropped_image[0])
         else:
-            image.save_img("/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/nonfish/00219-" + str(x) + "x" + str(y) + ".jpg", cropped_image[0])
+            image.save_img("/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/nonfish/00266-" + str(x) + "x" + str(y) + ".jpg", cropped_image[0])
 
 
 
