@@ -84,7 +84,7 @@ void loadSavedModel()
     int NumInputs = 1;
     TF_Output* Input = (TF_Output*)malloc(sizeof(TF_Output) * NumInputs);
 
-    TF_Output t0 = {TF_GraphOperationByName(Graph, "sequential_input" ), 0}; //"serving_default_input_1"
+    TF_Output t0 = {TF_GraphOperationByName(Graph, "serving_default_sequential_input" ), 0}; //"serving_default_input_1"
     if(t0.oper == NULL)
         printf("ERROR: Failed TF_GraphOperationByName sequential input //serving_default_input_1\n");
     else
@@ -104,20 +104,26 @@ void loadSavedModel()
 
     Output[0] = t2;
 
-    cv::Mat image = cv::imread( "fishbody_sample.pgm", cv::IMREAD_UNCHANGED );
-    image.convertTo(image,CV_32FC1);
+    cv::Mat image = cv::imread( "/home/kostasl/workspace/hello_tf_c_api/build/nonfish_sample.jpg", cv::IMREAD_UNCHANGED );
     cv::imshow("Input img",image);
+    cv::Mat image_norm;
+    //image.convertTo(image,CV_32FC1);
+    cv::normalize(image,image,1.0,0,cv::NORM_MINMAX,CV_32FC1);
+    cv::imshow("NORM Input img",image);
 
+    cv::waitKey(1000); //For Img Rendering to finish
+
+    std::cout << "Test TF Code" << std::endl;
     //********* Allocate data for inputs & outputs
         TF_Tensor** InputValues = (TF_Tensor**)malloc(sizeof(TF_Tensor*)*NumInputs);
         TF_Tensor** OutputValues = (TF_Tensor**)malloc(sizeof(TF_Tensor*)*NumOutputs);
 
-        int ndims = 2;
-        int64_t dims[] = {28,38};
+        int ndims = 4;
+        int64_t dims[] = {1,38,28,1};
         uchar* data = image.data;// {20};
-        int ndata = sizeof(uchar)*image.size().height*image.size().width; // This is tricky, it number of bytes not number of element
+        int ndata = sizeof(float)*image.size().height*image.size().width; // This is tricky, it number of bytes not number of element
 
-        TF_Tensor* int_tensor = TF_NewTensor(TF_QUINT8, dims, ndims, data, ndata, &NoOpDeallocator, 0);
+        TF_Tensor* int_tensor = TF_NewTensor(TF_FLOAT, dims, ndims, data, ndata, &NoOpDeallocator, 0);
         if (int_tensor != NULL)
         {
             printf("TF_NewTensor is OK\n");
@@ -140,20 +146,25 @@ void loadSavedModel()
         {
             printf("%s",TF_Message(Status));
         }
+        /// \brief Lastly, we want get back the output value from the output tensor using TF_TensorData that extract data from the tensor object.
+        ///  Since we know the size of the output which is 1, i can directly print it. Else use TF_GraphGetTensorNumDims or other API that is available in c_api.h or tf_tensor.h
+        int dims_out= TF_GraphGetTensorNumDims(Graph,t2,Status);
+        if (TF_GetCode(Status) == TF_OK)
+             printf("Get Out Dims ret: %d OK\n,",dims_out);
+        else
+             printf("%s",TF_Message(Status));
+
+        void* buff = TF_TensorData(OutputValues[0]);
+        float* offsets = (float*)buff;
+        printf("Result Tensor :\n");
+        printf("%f,%f\n",offsets[0],offsets[1]);
+
 
         // //Free memory
         TF_DeleteGraph(Graph);
         TF_DeleteSession(Session, Status);
         TF_DeleteSessionOptions(SessionOpts);
         TF_DeleteStatus(Status);
-
-
-
-        /// \brief Lastly, we want get back the output value from the output tensor using TF_TensorData that extract data from the tensor object. Since we know the size of the output which is 1, i can directly print it. Else use TF_GraphGetTensorNumDims or other API that is available in c_api.h or tf_tensor.h
-        void* buff = TF_TensorData(OutputValues[0]);
-        float* offsets = (float*)buff;
-        printf("Result Tensor :\n");
-        printf("%f\n",offsets[0]);
 
 
 }
