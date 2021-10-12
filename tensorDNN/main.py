@@ -64,10 +64,11 @@ fish = list(data_dir.glob('./fish/*.jpg'))
 nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 #PIL.Image.open(str(nonfish[0]))
 
-batch_size = 64
+batch_size = 100
 img_height = 38
 img_width = 28
 epochs = 50
+
 def train_model(batch_size,img_height,img_width):
 
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
@@ -182,7 +183,7 @@ def train_model(batch_size,img_height,img_width):
 
     ## Save Model ##
     model.save('savedmodels/fishNet')
-    my_freeze_graph([output_layer_name], destination='savedmodels/frozen/', name="frozen_model.pb")
+    #my_freeze_graph([output_layer_name], destination='savedmodels/frozen/', name="frozen_model.pb")
 
     ## VISUALIZE RESULTS
     acc = history.history['accuracy']
@@ -215,24 +216,22 @@ class_names = ["fish","nonfish"]
 print("Model training complete")
 
 
-
 print(class_names)
 
 ## LOAD MODEL ##
 #model = tf.saved_model.load('savedmodels/fishNet')
-model = tf.keras.models.load_model('savedmodels/fishNet')
-
+model = tf.keras.models.load_model('savedmodels/fishNet_prob')
 model.summary()
 
 print(f'input_layer_name={model.input.name}')
 output_layer_name = model.output.name.split(':')[0]
-
 print(f'output_layer_name={output_layer_name},{model.output.name}')
 
-printTensors("savedmodels/fishNet/saved_model.pb")
+
+#printTensors("savedmodels/fishNet/saved_model.pb")
 
 ## Freeze
-my_freeze_graph(["dense_1"], destination='savedmodels/frozen/', name="frozen_model.pb")
+#my_freeze_graph(["dense_1"], destination='savedmodels/frozen/', name="frozen_model.pb")
 
 
 
@@ -240,8 +239,8 @@ my_freeze_graph(["dense_1"], destination='savedmodels/frozen/', name="frozen_mod
 from tensorflow.keras.preprocessing import image
 
 # change this as you see fit
-image_path = '/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/00266.png'
-#image_path = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/templ_HB40_LR_camA_003_Templ_15752.jpg"
+#image_path = '/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/00266.png'
+image_path = "/home/kostasl/workspace/hello_tf_c_api/build/nonfish_sample.jpg"
 
 # Convert image to np.array
 imgScene = image.load_img(image_path,color_mode = "grayscale")
@@ -265,15 +264,25 @@ y_len,x_len,_ = image_array.shape
 
 scale_x = img_width
 scale_y = img_height
-
-
 print("image size (%sx%s)",(y_len,x_len))
-probability_model = Sequential([model,
-                                layers.Softmax()])
+
+probability_model = model #Sequential([model,                                 layers.Softmax()])
+#probability_model.save('savedmodels/fishNet_prob')
+
+
 
 ## Sliding window of fixed size
-for y in range(0, round(y_len/scale_y)*scale_y-scale_y,round(scale_y/2) ) :
-    for x in range(0, round(x_len/scale_x)*scale_x-scale_x,round(scale_x/2) ):
+bScanStop = False
+for y in range(0, round(y_len/scale_y)*scale_y,round(scale_y/2) ) :
+    if bScanStop:
+        print("Image scan done")
+        break
+
+    for x in range(0, round(x_len/scale_x)*scale_x,round(scale_x/2) ):
+        if ((x+x_len) > img_width ):
+            bScanStop = True
+            break
+
         y_idxS = round(y)
         y_idxT = round(y+scale_y)
         x_idxS = round(x)
