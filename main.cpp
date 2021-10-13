@@ -236,11 +236,14 @@ int main(int argc, char *argv[])
     //fishdetector::test();
     //testAngleDiff();
     std::cout << "Test FishNET DNN - Load FISH Image..." << std::endl;
-    cv::Mat image = cv::imread( "/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/templ_HB40_LR_camB_Templ_51629.jpg", cv::IMREAD_UNCHANGED );
-    fishdetector::testTFModelPrediction(image);
+    std::vector<cv::Mat> vtimg;
+    cv::Mat imageA = cv::imread( "/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/templ_HB40_LR_camB_Templ_51629.jpg", cv::IMREAD_UNCHANGED );
+    vtimg.push_back(imageA);
+    //fishdetector::testTFModelPrediction(image);
     std::cout << "Test FishNET DNN - Load NONFISH Image..." << std::endl;
-    image = cv::imread( "/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/nonfish/00219-308x0.jpg", cv::IMREAD_UNCHANGED );
-    fishdetector::testTFModelPrediction(image);
+    cv::Mat imageB = cv::imread( "/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/nonfish/00219-308x0.jpg", cv::IMREAD_UNCHANGED );
+    vtimg.push_back(imageB);
+    fishdetector::testTFModelPrediction(vtimg);
     // resize the image to fit the model's input:
 
 

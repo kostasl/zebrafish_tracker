@@ -539,7 +539,7 @@ void fishdetector::test()
 
 
 /// Example from https://github.com/kostasl/tensorflow_capi_sample
-void fishdetector::testTFModelPrediction(cv::Mat image)
+void fishdetector::testTFModelPrediction(const std::vector<cv::Mat>& vimages)
 {
     // Only 20% of the available GPU memory will be allocated
     float gpu_memory_fraction = 0.2f;
@@ -556,28 +556,31 @@ void fishdetector::testTFModelPrediction(cv::Mat image)
     model1.setOutputs( { "StatefulPartitionedCall" } );
 
 
-    cv::resize( image, image, { 28,38 } );
+    //cv::resize( image, image, { 28,38 } );
 
     // run prediction:
-    std::cout << "*  run prediction..." << std::endl;
-    std::vector< std::vector< float > > results = model1.predict<std::vector<float>>( { image } );
-    //   ^              ^ second vector is a normal model output (i.e. for classification or regression)
-    //   ^ the elements of the first vector correspond to the model's outputs (if the model has only one, the vector contains only 1 vector)
-
-    // print results
-    std::cout << "* print results n:" << results.size() << std::endl;
-    for ( size_t i = 0; i < results.size(); i++ )
+    for (int i=0; i< vimages.size();i++)
     {
-      std::cout << "Output vector #" << i << ": ";
-      for ( size_t j = 0; j < results[i].size(); j++ )
-      {
-        std::cout << std::fixed << std::setprecision(4) << results[i][j] << "\t";
-      }
-      if (results[0] > results[1])
-          std::cout << "Image shows FISH"<< std::endl;
-      else
-          std::cout << "Image *NOT a FISH"<< std::endl;
-      std::cout << std::endl;
+        std::cout << i << ".  run prediction..." << std::endl;
+        std::vector< std::vector< float > > results = model1.predict<std::vector<float>>( {vimages[i]} );
+        //   ^              ^ second vector is a normal model output (i.e. for classification or regression)
+        //   ^ the elements of the first vector correspond to the model's outputs (if the model has only one, the vector contains only 1 vector)
+
+        // print results
+        std::cout << "* print results n:" << results.size() << std::endl;
+        for ( size_t i = 0; i < results.size(); i++ )
+        {
+          std::cout << "Output vector #" << i << ": ";
+          for ( size_t j = 0; j < results[i].size(); j++ )
+          {
+            std::cout << std::fixed << std::setprecision(4) << results[i][j] << "\t";
+          }
+          if (results[i][0] > results[i][1])
+              std::cout << "Image shows FISH"<< std::endl;
+          else
+              std::cout << "Image *NOT a FISH"<< std::endl;
+          std::cout << std::endl;
+        }
     }
 
 }

@@ -29,7 +29,7 @@ public:
     float scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,std::string regTag);
     float fL1_activity_thres = 10; //# Number of INput that need to be active for KC to fire/Activate
     static void test(); //Test with given Images
-    static void testTFModelPrediction(cv::Mat image); //Test  Tensorflow DNN model on provided Image
+    static void testTFModelPrediction(const std::vector<cv::Mat>& image); //Test  Tensorflow DNN model on provided Image
 private:
 
     /// Vector of Matrices Holding Layer state / Result of FWD prop

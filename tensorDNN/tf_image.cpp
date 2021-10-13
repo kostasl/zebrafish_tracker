@@ -103,7 +103,7 @@ std::vector<std::vector<float>> tf_image::TF_Model::predict_image2vector( const 
 {
   std::vector<std::vector<float>> output;
 
-  if ( input.size() != input_ops.size() ) {
+  if (input.size() != input_ops.size() ) {
      std::cout  << "[ERROR] input.size() != input_ops.size()" << std::endl;
     return output;
   }
