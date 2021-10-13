@@ -235,6 +235,14 @@ int main(int argc, char *argv[])
     /// Run Unit Tests ///
     //fishdetector::test();
     //testAngleDiff();
+    std::cout << "Test FishNET DNN - Load FISH Image..." << std::endl;
+    cv::Mat image = cv::imread( "/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/templ_HB40_LR_camB_Templ_51629.jpg", cv::IMREAD_UNCHANGED );
+    fishdetector::testTFModelPrediction(image);
+    std::cout << "Test FishNET DNN - Load NONFISH Image..." << std::endl;
+    image = cv::imread( "/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/nonfish/00219-308x0.jpg", cv::IMREAD_UNCHANGED );
+    fishdetector::testTFModelPrediction(image);
+    // resize the image to fit the model's input:
+
 
    /// Start Tracking of Video Files ///
    try{

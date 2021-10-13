@@ -16,7 +16,7 @@
 #include "template_detect.h"
 
 #include <tensorflow/c/c_api.h> // TensorFlow C API header.
-
+#include <tensorDNN/tf_image.hpp>
 
 extern trackerState gTrackerState;
 extern cv::Mat gFishTemplateCache; //A mosaic image contaning copies of template across different angles
@@ -50,123 +50,6 @@ static cv::Mat loadImage(const std::string& name)
         exit(-1);
     }
     return image;
-}
-
-
-/// Example from https://github.com/kostasl/tensorflow_capi_sample
-void loadSavedModel()
-{
-    //********* Read model
-    TF_Graph* Graph = TF_NewGraph();
-    TF_Status* Status = TF_NewStatus();
-
-    TF_SessionOptions* SessionOpts = TF_NewSessionOptions();
-    TF_Buffer* RunOpts = NULL;
-
-
-
-    const char* saved_model_dir = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet"; // Path of the model
-    const char* tags = "serve"; // default model serving tag; can change in future
-    int ntags = 1;
-
-    TF_Session* Session = TF_LoadSessionFromSavedModel(SessionOpts, RunOpts, saved_model_dir, &tags, ntags, Graph, NULL, Status);
-    if(TF_GetCode(Status) == TF_OK)
-    {
-        printf("TF_LoadSessionFromSavedModel OK\n");
-    }
-    else
-    {
-        printf("%s",TF_Message(Status));
-    }
-
-    //Next we grab the tensor node from the graph by their name
-    //****** Get input tensor
-    int NumInputs = 1;
-    TF_Output* Input = (TF_Output*)malloc(sizeof(TF_Output) * NumInputs);
-
-    TF_Output t0 = {TF_GraphOperationByName(Graph, "serving_default_sequential_input" ), 0}; //"serving_default_input_1"
-    if(t0.oper == NULL)
-        printf("ERROR: Failed TF_GraphOperationByName sequential input //serving_default_input_1\n");
-    else
-        printf("TF_GraphOperationByName serving_default_input_1 is OK\n");
-
-    Input[0] = t0;
-
-    //********* Get Output tensor
-    int NumOutputs = 1;
-    TF_Output* Output = (TF_Output*)malloc(sizeof(TF_Output) * NumOutputs);
-
-    TF_Output t2 = {TF_GraphOperationByName(Graph, "StatefulPartitionedCall"), 0};
-    if(t2.oper == NULL)
-        printf("ERROR: Failed TF_GraphOperationByName StatefulPartitionedCall\n");
-    else
-    printf("TF_GraphOperationByName StatefulPartitionedCall is OK\n");
-
-    Output[0] = t2;
-
-    cv::Mat image = cv::imread( "/home/kostasl/workspace/hello_tf_c_api/build/nonfish_sample.jpg", cv::IMREAD_UNCHANGED );
-    cv::imshow("Input img",image);
-    cv::Mat image_norm;
-    //image.convertTo(image,CV_32FC1);
-    cv::normalize(image,image,1.0,0,cv::NORM_MINMAX,CV_32FC1);
-    cv::imshow("NORM Input img",image);
-
-    cv::waitKey(1000); //For Img Rendering to finish
-
-    std::cout << "Test TF Code" << std::endl;
-    //********* Allocate data for inputs & outputs
-        TF_Tensor** InputValues = (TF_Tensor**)malloc(sizeof(TF_Tensor*)*NumInputs);
-        TF_Tensor** OutputValues = (TF_Tensor**)malloc(sizeof(TF_Tensor*)*NumOutputs);
-
-        int ndims = 4;
-        int64_t dims[] = {1,38,28,1};
-        uchar* data = image.data;// {20};
-        int ndata = sizeof(float)*image.size().height*image.size().width; // This is tricky, it number of bytes not number of element
-
-        TF_Tensor* int_tensor = TF_NewTensor(TF_FLOAT, dims, ndims, data, ndata, &NoOpDeallocator, 0);
-        if (int_tensor != NULL)
-        {
-            printf("TF_NewTensor is OK\n");
-        }
-        else
-        printf("ERROR: Failed TF_NewTensor\n");
-
-        InputValues[0] = int_tensor;
-
-
-        printf("Attempting to run session...");//Inp:%f Ival:%f" //Input,InputValues
-    // //Run the Session
-        TF_SessionRun(Session, NULL, Input, InputValues, NumInputs, Output, OutputValues, NumOutputs, NULL, 0,NULL , Status);
-
-        if(TF_GetCode(Status) == TF_OK)
-        {
-            printf("Session is OK\n");
-        }
-        else
-        {
-            printf("%s",TF_Message(Status));
-        }
-        /// \brief Lastly, we want get back the output value from the output tensor using TF_TensorData that extract data from the tensor object.
-        ///  Since we know the size of the output which is 1, i can directly print it. Else use TF_GraphGetTensorNumDims or other API that is available in c_api.h or tf_tensor.h
-        int dims_out= TF_GraphGetTensorNumDims(Graph,t2,Status);
-        if (TF_GetCode(Status) == TF_OK)
-             printf("Get Out Dims ret: %d OK\n,",dims_out);
-        else
-             printf("%s",TF_Message(Status));
-
-        void* buff = TF_TensorData(OutputValues[0]);
-        float* offsets = (float*)buff;
-        printf("Result Tensor :\n");
-        printf("%f,%f\n",offsets[0],offsets[1]);
-
-
-        // //Free memory
-        TF_DeleteGraph(Graph);
-        TF_DeleteSession(Session, Status);
-        TF_DeleteSessionOptions(SessionOpts);
-        TF_DeleteStatus(Status);
-
-
 }
 
 
@@ -653,3 +536,50 @@ void fishdetector::test()
     qDebug() << "~~~ Total MSQ Error:" << (fsumErrNF + fsumErrF)/2;
 
 }
+
+
+/// Example from https://github.com/kostasl/tensorflow_capi_sample
+void fishdetector::testTFModelPrediction(cv::Mat image)
+{
+    // Only 20% of the available GPU memory will be allocated
+    float gpu_memory_fraction = 0.2f;
+
+    // the model will try to infer the input and output layer names automatically
+    // (only use if it's a simple "one-input -> one-output" model
+    bool inferInputOutput = false;
+
+    // load a model from a .pb file
+    tf_image::TF_Model model1;
+
+    model1.loadModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_prob/" , gpu_memory_fraction, inferInputOutput );//"graph_im2vec.pb"
+    model1.setInputs( { "serving_default_sequential_1_input" } );
+    model1.setOutputs( { "StatefulPartitionedCall" } );
+
+
+    cv::resize( image, image, { 28,38 } );
+
+    // run prediction:
+    std::cout << "*  run prediction..." << std::endl;
+    std::vector< std::vector< float > > results = model1.predict<std::vector<float>>( { image } );
+    //   ^              ^ second vector is a normal model output (i.e. for classification or regression)
+    //   ^ the elements of the first vector correspond to the model's outputs (if the model has only one, the vector contains only 1 vector)
+
+    // print results
+    std::cout << "* print results n:" << results.size() << std::endl;
+    for ( size_t i = 0; i < results.size(); i++ )
+    {
+      std::cout << "Output vector #" << i << ": ";
+      for ( size_t j = 0; j < results[i].size(); j++ )
+      {
+        std::cout << std::fixed << std::setprecision(4) << results[i][j] << "\t";
+      }
+      if (results[0] > results[1])
+          std::cout << "Image shows FISH"<< std::endl;
+      else
+          std::cout << "Image *NOT a FISH"<< std::endl;
+      std::cout << std::endl;
+    }
+
+}
+
+

@@ -31,6 +31,9 @@ SOURCES += main.cpp \
     ellipse_detect.cpp \
     preymodel.cpp \
     template_detect.cpp \
+    tensorDNN/tf_image.cpp \
+    tensorDNN/tf_utils.cpp \
+    #tensorDNN/3rdparty/scope_guard/scope_guard.hpp \
     zfttracks.cpp \
     fgmaskprocessing.cpp \
     errorhandlers.cpp \
@@ -113,6 +116,9 @@ HEADERS += \
     GUI/TrackerScene.hpp \
     ellipse_detect.h \
     template_detect.h \
+    tensorDNN/3rdparty/scope_guard/include/scope_guard.hpp \
+    tensorDNN/tf_image.hpp \
+    tensorDNN/tf_utils.hpp \
     zfttracks.h \
     config.h \
     foodmodel.h \
@@ -128,6 +134,7 @@ FORMS += \
 DISTFILES += \
     README.md \
     img/fishbodyb_tmp.pgm \
+    tensorDNN/main.py \
     zebraprey_track.supp \
     img/fishbody_tmp9.pgm
 
