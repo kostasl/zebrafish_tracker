@@ -212,15 +212,15 @@ def train_model(batch_size,img_height,img_width):
 
 
 class_names = ["fish","nonfish"]
+## UNCOMMENT IF YOU WANT TO RETRAIN MODEL ##
 #[class_names,model] = train_model(batch_size,img_height,img_width)
-print("Model training complete")
+#print("Model training complete")
 
 
 print(class_names)
 
 ## LOAD MODEL ##
-#model = tf.saved_model.load('savedmodels/fishNet')
-model = tf.keras.models.load_model('savedmodels/fishNet_prob')
+model = tf.keras.models.load_model('savedmodels/fishNet')
 model.summary()
 
 print(f'input_layer_name={model.input.name}')
@@ -228,23 +228,23 @@ output_layer_name = model.output.name.split(':')[0]
 print(f'output_layer_name={output_layer_name},{model.output.name}')
 
 
-#printTensors("savedmodels/fishNet/saved_model.pb")
-
-## Freeze
-#my_freeze_graph(["dense_1"], destination='savedmodels/frozen/', name="frozen_model.pb")
-
-
-
-## SLIDING WINDOW CLASSIFIER ##
+## Test SLIDING WINDOW CLASSIFIER ##
 from tensorflow.keras.preprocessing import image
 
 # change this as you see fit
 #image_path = '/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/00266.png'
-image_path = "/home/kostasl/workspace/hello_tf_c_api/build/nonfish_sample.jpg"
 
-# Convert image to np.array
-imgScene = image.load_img(image_path,color_mode = "grayscale")
 
+image_path = pathlib.Path("/home/kostasl/workspace/hello_tf_c_api/build/nonfish_sample.jpg")
+img_basename = os.path.basename(image_path)
+
+
+if ( image_path.is_file()):
+    # Convert image to np.array
+    imgScene = image.load_img(image_path,color_mode = "grayscale")
+else:
+    print("ERROR image not found")
+    raise ("Image not found")
 
 #plt.figure(figsize=(6, 6))
 #plt.imshow(image)
@@ -266,9 +266,10 @@ scale_x = img_width
 scale_y = img_height
 print("image size (%sx%s)",(y_len,x_len))
 
-probability_model = model #Sequential([model,                                 layers.Softmax()])
-#probability_model.save('savedmodels/fishNet_prob')
-
+## Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
+probability_model = Sequential([model,
+                                layers.Softmax()])
+probability_model.save('savedmodels/fishNet_prob')
 
 
 ## Sliding window of fixed size
