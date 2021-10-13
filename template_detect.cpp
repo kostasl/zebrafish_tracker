@@ -613,7 +613,7 @@ std::vector<cv::Mat> loadTemplatesFromDirectory(QString strDir)
         return vTempl_mat;
     }
 
-    QStringList fileFilters; fileFilters << "*.png" << "*.tiff" << "*.pgm" << "*.png";
+    QStringList fileFilters; fileFilters << "*.png" << "*.tiff" << "*.pgm" << "*.png" << "*.jpg";
     QStringList imgFiles = QDir(strDir).entryList(fileFilters,QDir::Files,QDir::Name);
     strDir.append('/');
     QListIterator<QString> itfile (imgFiles);

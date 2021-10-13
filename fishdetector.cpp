@@ -97,6 +97,13 @@ fishdetector::fishdetector()
 
     //mW_L1.convertTo(mW_L1, CV_32FC1);    mW_L2.convertTo(mW_L2, CV_32FC1);    mW_L3.convertTo(mW_L3, CV_32FC1);    mW_L4.convertTo(mW_L4, CV_32FC1);
     //mB_L1.convertTo(mB_L1, CV_32FC1);    mB_L2.convertTo(mB_L2, CV_32FC1);    mB_L3.convertTo(mB_L3, CV_32FC1);    mB_L4.convertTo(mB_L4, CV_32FC1);
+
+
+    /// DNN tensorflow
+    m_TFmodel.loadModel(mSavedModelPath ,m_gpu_memory_fraction , m_inferInputOutput );//"graph_im2vec.pb"
+    m_TFmodel.setInputs( { "serving_default_sequential_1_input" } );
+    m_TFmodel.setOutputs( { "StatefulPartitionedCall" } );
+
 }
 
 /// \brief Utility function takes img contained in rotated rect and returns the contained image region
@@ -253,19 +260,20 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
   //Binarize Input To set Specific Sparseness/Density
   //imgFishAnterior_Norm_bin = sparseBinarize(imgFishAnterior_Norm,gTrackerState.fishnet_inputSparseness);
+  imgFishAnterior_Norm.copyTo(imgFishAnterior_Norm_bin);
   cv::normalize(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,1.0,0,NORM_MINMAX,CV_32FC1);
   //cv::imshow(std::string("BIN_N") + regTag,imgFishAnterior_Norm_bin);
 
 
   /// SliDing Window Scanning
   int iSlidePx_H_step = 2;
-  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - 4;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = iSlidePx_H_begin+4;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - 14;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = iSlidePx_H_begin+14;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
   int iSlidePx_V_step = 2;
-  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-8); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = iSlidePx_V_begin + 8;//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-18); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = iSlidePx_V_begin + 18;//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
@@ -281,7 +289,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           //CROP Extract a Template sized subregion of Orthonormal Fish
           imgFishAnterior_Norm_bin(rectFishTemplateBound).copyTo(imgFishAnterior_Norm_tmplcrop);
 
-          dscore = this->netDetect(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreNonFish);
+          dscore = this->netDNNDetect(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreNonFish);
 
           ///Do Not Test Orientation - Blob Should Have the correct Angle
           //Check Both Vertical Orientations
@@ -482,13 +490,39 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     return(fFishClass-fNonFishClass);
 }
 
+float fishdetector::netDNNDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass)
+{
+    //std::cout << ".  run prediction..." << std::endl;
+    cv::resize(imgRegion_bin,imgRegion_bin,{28,38});
+    cv::imshow("DNN detect",imgRegion_bin);
+    std::vector< std::vector< float > > results = m_TFmodel.predict<std::vector<float>>( {imgRegion_bin} );
+
+
+    // print results - Assume Single Result Vector
+    if ( results.size() > 0 )
+    {
+      //std::cout << "Output vector #" << i << ": ";
+      for ( size_t j = 0; j < results[0].size(); j++ )
+      {
+        //qDebug() << results[0][j] << "\t";
+         std::cout << std::fixed << std::setprecision(4) << results[0][j] << "\t";
+      }
+
+       fFishClass = results[0][0];
+       fNonFishClass = results[0][1];
+    }
+    std::cout << std::endl;
+
+ return(fFishClass-fNonFishClass);
+}
+
 ///\brief Unit test fishnet detector by loading and testing against the set of images used during training (R Script)
 ///  and comparing output to the networks output to the script in R
 void fishdetector::test()
 {
-    qDebug() << "Testing fishNet Classifier Using stock template pics from disk.";
-    QString strDirFish("/home/kostasl/workspace/zebrafishtrack/img/debug/fish/");
-    QString strDirNonFish("/home/kostasl/workspace/zebrafishtrack/img/debug/nonfish/");
+    qDebug() << "Testing fishNet trained NN Classifier - loaded from YML Using stock template pics from disk.";
+    QString strDirFish("/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/fish/");
+    QString strDirNonFish("/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/nonfish/");
 
     std::vector<cv::Mat> vfish_mat = loadTemplatesFromDirectory(strDirFish);
     float fsumErrF =0.0f;
@@ -502,7 +536,7 @@ void fishdetector::test()
     {
         cv::Mat imgTempl = vfish_mat[i];
 
-        dscore = gTrackerState.fishnet.netDetect(imgTempl,fishClassScore,nonfishScore);
+        dscore = gTrackerState.fishnet.netDNNDetect(imgTempl,fishClassScore,nonfishScore);
         if (fishClassScore > -1)
             fsumErrF += pow((1-fishClassScore) + (0-nonfishScore),2);
         if (fishClassScore > nonfishScore) //Count Classification Errors
@@ -525,7 +559,7 @@ void fishdetector::test()
     {
         cv::Mat imgTempl = vnonfish_mat[i];
 
-        dscore = gTrackerState.fishnet.netDetect(imgTempl,fishClassScore,nonfishScore);
+        dscore = gTrackerState.fishnet.netDNNDetect(imgTempl,fishClassScore,nonfishScore);
         qDebug() << "Non-Fish img gave F:" << fishClassScore << " NF:" << nonfishScore;
         if (fishClassScore > -1)
             fsumErrNF += pow((0-fishClassScore) + (1-nonfishScore),2);

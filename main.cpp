@@ -143,6 +143,7 @@ int main(int argc, char *argv[])
     auto old_rdbufclog = std::clog.rdbuf();
     auto old_rdbufcerr = std::cerr.rdbuf();
 
+    qDebug() << fixed << qSetRealNumberPrecision(4);
 
     installErrorHandlers();
 
@@ -233,7 +234,7 @@ int main(int argc, char *argv[])
     pwindow_main->LogEvent(QString::number(iLoadedTemplates) + QString("# Templates Loaded "));
 
     /// Run Unit Tests ///
-    //fishdetector::test();
+    fishdetector::test();
     //testAngleDiff();
     std::cout << "Test FishNET DNN - Load FISH Image..." << std::endl;
     std::vector<cv::Mat> vtimg;

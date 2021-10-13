@@ -110,20 +110,20 @@ std::vector<std::vector<float>> tf_image::TF_Model::predict_image2vector( const 
 
   std::map<std::string, std::vector<cv::Mat>> inputMap;
 
-  std::cout  << "Make Input Map" << std::endl;
+  //std::cout  << "Make Input Map" << std::endl;
   int j = 0;
   for ( auto& inp : input_op_names ) {
     inputMap[inp.first] = { input[j++] };
   }
 
-  std::cout  << "processDataImg..." << std::endl;
+ // std::cout  << "processDataImg..." << std::endl;
   auto output_tensors = processDataImg( inputMap );
 
   // if everything ok, parse the output:
   if ( !output_tensors.empty() ) {
 
     // construct the method output:
-    std::cout  << "construct the method output..." << std::endl;
+    //std::cout  << "construct the method output..." << std::endl;
     for ( size_t i = 0; i < output_tensors.size(); i++ )
     {
       auto shape = GetTensorShape( output_tensors.at( i ) );
