@@ -1,7 +1,16 @@
 /// \brief Class utilizing trained neural network that detects fish anterior at size of a template img and
 /// corrects the position the blob centre to so as to assist correct eye detection.
-/// The NN classifier is trained in tracker_img_recognitionNN.R script using a collection of fish and non-fish images and saved as Matrices
+///
+/// \note
+/// I tried two methods- Method A - A customly designed NN trained with BackProp : The NN classifier is trained in tracker_img_recognitionNN.R
+/// script using a collection of fish and non-fish images and saved as Matrices
 /// exported as YAML in fishNet.yml. These are loaded as OpenCV matrices and is used to classify candidate fish blobs.
+/// The classifier perfomance of a 5 Layer version of this (or 7 layer) performace of this was poor when it came to the curved edges of the dish.
+///
+///   Method B: A DNN classifier using Tensorflow library : THis was trained using a python script found in tensorDNN subfolder.
+///   The model is in the tensorDNN/savedmodels/fishNet and then it modified to add a softMax Output layer and saved again as tensorDNN/savedmodels/fishNet_prob
+///   The tracker here uses an helper class TF_image (https://github.com/Xonxt/hello_tf_c_api) which I forked and had to modify
+///   so it can load SavedModels without having to freeze them, thus utilizing the power of the newer TF V2.6 C API.
 ///
 ///
 ///
