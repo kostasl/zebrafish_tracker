@@ -261,7 +261,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
   //Binarize Input To set Specific Sparseness/Density
   //imgFishAnterior_Norm_bin = sparseBinarize(imgFishAnterior_Norm,gTrackerState.fishnet_inputSparseness);
   imgFishAnterior_Norm.copyTo(imgFishAnterior_Norm_bin);
-  cv::normalize(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,1.0,0,NORM_MINMAX,CV_32FC1);
+  //cv::normalize(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,1.0,0,NORM_MINMAX,CV_32FC1);
   //cv::imshow(std::string("BIN_N") + regTag,imgFishAnterior_Norm_bin);
 
 
