@@ -718,9 +718,31 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
         //cv::Mat frameMasked;
         //frameImg.copyTo(frameMasked, fgMask);cv::imshow("FishMAsk frameMasked",frameMasked);
-        //// Classify Keypoint for fish //
-        float fR =  gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
-                                                          mask_fnetScore, QString::number(iHitCount).toStdString());
+        //// Classify Keypoint for fish  - Find Best Angle if 1st Pass Fails //
+        float fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
+                                                         mask_fnetScore, QString::number(iHitCount).toStdString());
+        float maxfR = 0.0;
+        int bestAngle = kp.angle;
+        if (fR < gTrackerState.fishnet_L2_classifier)
+        {
+            for (int a=0;a<350;a+=10)
+            {
+                kp.angle = a;
+                fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
+                                                                  mask_fnetScore, QString::number(iHitCount).toStdString());
+                if (fR > maxfR)
+                {
+                    maxfR = fR;
+                    bestAngle = kp.angle;
+                }
+
+            }
+            kp.angle = bestAngle;
+            if (maxfR >= gTrackerState.fishnet_L2_classifier)
+                break;
+        }
+
+
 
         if (bFishBlobFlowed)
             kp.response +=1.0f;
@@ -733,6 +755,16 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         /// Add TO Filtered KP - IF keypoint is still within roi (moved by classifier) and Passes Classifier threshold
         if (kp.response >= gTrackerState.fishnet_L2_classifier && pointIsInROI(kp.pt,2))
         {
+            // Fix Blob Angle //
+            // get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
+            cv::RotatedRect fishRotAnteriorBox(kp.pt,
+                                                cv::Size(gTrackerState.gFishBoundBoxSize,gTrackerState.gFishBoundBoxSize),
+                                                          kp.angle);
+            cv::Mat imgFishAnterior_Norm =  fishdetector::getNormedBoundedImg(frameImg,fishRotAnteriorBox);
+            kp.angle = fishRotAnteriorBox.angle;
+            //cv::imshow("blob Detected",imgFishAnterior_Norm);
+
+
             ptFishblobs.push_back(kp);
 
             /// \todo Conditionally add this Contour to output if it matches template.

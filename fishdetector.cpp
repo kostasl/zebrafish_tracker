@@ -111,6 +111,10 @@ fishdetector::fishdetector()
 cv::Mat fishdetector::getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox)
 {
     cv::Mat imgFishAnterior, imgFishAnterior_Norm;
+
+//    std::vector<std::vector<cv::Point> > fishAnteriorcontours;
+//    std::vector<cv::Vec4i> fishAnteriorhierarchy;
+
     /// Size Of Norm Head Image
     cv::Rect fishBoundingRect = fishRotAnteriorBox.boundingRect();
     // fishBoundingRect.width  +=2; fishBoundingRect.height +=2;
@@ -123,6 +127,7 @@ cv::Mat fishdetector::getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect 
     cv::Rect imgBounds(0,0,frame.cols,frame.rows);
 
 
+
     if (!( //Check IMage Bounds contain the whole bounding box//
         imgBounds.contains(fishBoundingRect.br()) &&
             imgBounds.contains(fishBoundingRect.tl())))
@@ -130,6 +135,21 @@ cv::Mat fishdetector::getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect 
 
     // Use the FG Image to extract Head Frame
     frame(fishBoundingRect).copyTo(imgFishAnterior);
+
+//    cv::findContours( imgFishAnterior, fishAnteriorcontours,fishAnteriorhierarchy, cv::RETR_CCOMP,
+//                      cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+//    if (fishAnteriorcontours.size() > 0)
+//    {
+//        if (fishAnteriorcontours[0].size() > 5)
+//        {
+//            cv::RotatedRect boundEllipse = cv::fitEllipse(fishAnteriorcontours[0]);
+//            int DAngle = getAngleDiff(fishRotAnteriorBox.angle,boundEllipse.angle); //Correct Angle
+//            if (abs(DAngle) < 90){
+//                fishRotAnteriorBox.angle += DAngle;
+//                qDebug() << "Th.Fix:" << DAngle;
+//            }
+//        }
+//    }
 
     /// Make Rotation MAtrix About Centre Of Cropped Image
     cv::Point2f ptRotCenter = fishRotAnteriorBox.center - fishRotAnteriorBox.boundingRect2f().tl();
@@ -265,13 +285,13 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 
   /// SliDing Window Scanning
-  int iSlidepxLim = 30;
-  int iSlidePx_H_step = 6;
+  int iSlidepxLim = 25;
+  int iSlidePx_H_step = 8;
   int iSlidePx_H_begin = std::max(0, (int)ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - iSlidepxLim);//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
   int iSlidePx_H_lim = min(imgFishAnterior_Norm_bin.cols-gTrackerState.gszTemplateImg.width, iSlidePx_H_begin+2*iSlidepxLim);  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
-  int iSlidePx_V_step = 6;
+  int iSlidePx_V_step = 8;
   int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-iSlidepxLim); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
   int iSlidePx_V_lim = min(imgFishAnterior_Norm_bin.rows-gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 2*iSlidepxLim);//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
@@ -310,7 +330,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     /// Find Max Match Position In Non-Norm pic (original orientation)
     double minL1,maxL1;
     cv::Point ptmin,ptmax;
-    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(9,9),9,9);
+    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(13,13),13,13);
     cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
     // Rotate Max Point Back to Original Orientation
     //cv::Mat MrotInv = cv::getRotationMatrix2D( ptRotCenter, -fishblob.angle,1.0); //Rotate Upwarte Upwards

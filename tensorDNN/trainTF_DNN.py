@@ -19,37 +19,10 @@ from tensorflow.keras.models import Sequential
 
 
 
-def my_freeze_graph(output_node_names, destination, name="frozen_model.pb"):
-    """
-    Freeze the current graph alongside its weights (converted to constants) into a protobuf file.
-    :param output_node_names: The name of the output node names we are interested in
-    :param destination: Destination folder or remote service (eg. gs://)
-    :param name: Filename of the saved graph
-    :return:
-    """
-    tf.keras.backend.set_learning_phase(0)  # set inference phase
-
-    sess = tf.compat.v1.keras.backend.get_session()
-    input_graph_def = sess.graph_def
-    #input_subgraph_def = tf.compat.v1.graph_util.extract_sub_graph(input_graph_def,output_node_names) #      # get graph def proto from keras session's graph
-
-    with sess.as_default():
-        # Convert variables into constants so they will be stored into the graph def
-        output_graph_def = tf.compat.v1.graph_util.convert_variables_to_constants(
-            sess,
-            input_graph_def,
-            output_node_names=output_node_names)
-
-        tf.train.write_graph(graph_or_graph_def=output_graph_def, logdir=destination, name=name, as_text=False)
-
-    tf.keras.backend.clear_session()
-
-
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     print('FishNet TensorFlow Model Training')
     print(tf.version.VERSION)
-
 
 
 
@@ -67,9 +40,9 @@ nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 batch_size = 64
 img_height = 38
 img_width = 28
-epochs = 60
+epochs = 20
 
-def train_model(batch_size,img_height,img_width):
+def train_model(epochs, batch_size,img_height,img_width,model=None):
 
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
       str(data_dir),
@@ -146,25 +119,26 @@ def train_model(batch_size,img_height,img_width):
 
     ## Create the model ##
     num_classes = 2
-
-    model = Sequential([
-      data_augmentation,
-      layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 1)),
-      layers.Conv2D(16, 3, padding='same', activation='relu'),
-      layers.MaxPooling2D(),
-      layers.Conv2D(32, 3, padding='same', activation='relu'),
-      layers.MaxPooling2D(),
-      layers.Conv2D(64, 3, padding='same', activation='relu'),
-      layers.MaxPooling2D(),
-      layers.Flatten(),
-      layers.Dense(128, activation='relu'),
-      layers.Dense(num_classes)
-    ])
-    ##COMPILE MODEL
-    model.compile(optimizer='adam',
-                  loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                  metrics=['accuracy'])
-
+    if model is None:
+        model = Sequential([
+          data_augmentation,
+          layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 1)),
+          layers.Conv2D(32,(3,3), padding='same'), #, activation='relu'
+          layers.MaxPooling2D(),
+          layers.Conv2D(64, (3,3), padding='same'), #, activation='relu'
+          layers.MaxPooling2D(),
+          layers.Conv2D(80, (3, 3), padding='same'), #, activation='relu'
+          layers.MaxPooling2D(),
+          layers.Conv2D(70, (3, 3), padding='same', activation='relu'),
+          layers.MaxPooling2D(),
+          layers.Flatten(),
+          layers.Dense(20, activation='relu'),
+          layers.Dense(num_classes)
+        ])
+        ##COMPILE MODEL
+        model.compile(optimizer='adam',
+                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                      metrics=['accuracy'])
 
     model.summary()
 
@@ -221,16 +195,16 @@ def train_model(batch_size,img_height,img_width):
 
 
 class_names = ["fish","nonfish"]
-## UNCOMMENT IF YOU WANT TO RETRAIN MODEL ##
-[class_names,model] = train_model(batch_size,img_height,img_width)
-#print("Model training complete")
-
-
-print(class_names)
 
 ## LOAD MODEL ##
 model = tf.keras.models.load_model('savedmodels/fishNet')
-model.summary()
+## UNCOMMENT IF YOU WANT TO RETRAIN MODEL ##
+model = None
+[class_names,model] = train_model(epochs,batch_size,img_height,img_width,model)
+#print("Model training complete")
+
+print(class_names)
+#model.summary()
 
 print(f'input_layer_name={model.input.name}')
 output_layer_name = model.output.name.split(':')[0]
@@ -276,6 +250,7 @@ scale_y = img_height
 print("image size (%sx%s)",(y_len,x_len))
 
 ## Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
+print("Saving fishNet_prob Model With Probabilistic SOFTMAX output layer")
 probability_model = Sequential([model,
                                 layers.Softmax()])
 probability_model.save('savedmodels/fishNet_prob')
