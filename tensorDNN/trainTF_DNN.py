@@ -64,16 +64,16 @@ fish = list(data_dir.glob('./fish/*.jpg'))
 nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 #PIL.Image.open(str(nonfish[0]))
 
-batch_size = 100
+batch_size = 64
 img_height = 38
 img_width = 28
-epochs = 50
+epochs = 60
 
 def train_model(batch_size,img_height,img_width):
 
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
       str(data_dir),
-      validation_split=0.01,
+      validation_split=0.2,
       subset="training",
       seed=123,
       image_size=(img_height, img_width),
@@ -82,8 +82,8 @@ def train_model(batch_size,img_height,img_width):
 
 
     val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-      str(valid_dir),
-      validation_split=0.9,
+      str(data_dir),
+      validation_split=0.2,
       subset="validation",
       seed=123,
       image_size=(img_height, img_width),
@@ -91,7 +91,9 @@ def train_model(batch_size,img_height,img_width):
       batch_size=batch_size)
 
     class_names = train_ds.class_names
+    y_labels = np.concatenate([y for x, y in train_ds], axis=0)
     print(class_names)
+
 
 
     plt.figure(figsize=(10, 10))
@@ -113,17 +115,24 @@ def train_model(batch_size,img_height,img_width):
         layers.experimental.preprocessing.RandomFlip("horizontal",
                           input_shape=(img_height,  img_width, 1)),
         layers.experimental.preprocessing.RandomRotation(0.05),
-        layers.experimental.preprocessing.RandomZoom(0.1),
+        layers.experimental.preprocessing.RandomZoom(0.2),
       ]
     )
 
-    plt.figure(figsize=(10, 10))
-    for images, _ in train_ds.take(1):
+    fig = plt.figure(figsize=(10, 10))
+    fig.suptitle("Augmented fish samples")
+    ## Show Augmented Images of Fish samples ##
+    for images,labels in train_ds.take(1):
+      idxF = np.where(labels == 0)  ## Get All Idx Of all Fish Train samples
       for i in range(9):
         augmented_images = data_augmentation(images)
         ax = plt.subplot(3, 3, i + 1)
-        plt.imshow(augmented_images[0].numpy().astype("uint8"))
+        plt.imshow(augmented_images[idxF[0][0]].numpy().astype("uint8"),label='Augmented data')
+        plt.title(class_names[labels[idxF[0][0]] ])
         plt.axis("off")
+
+    plt.show()
+
 
 
     ## Config Dataset performance
@@ -213,7 +222,7 @@ def train_model(batch_size,img_height,img_width):
 
 class_names = ["fish","nonfish"]
 ## UNCOMMENT IF YOU WANT TO RETRAIN MODEL ##
-#[class_names,model] = train_model(batch_size,img_height,img_width)
+[class_names,model] = train_model(batch_size,img_height,img_width)
 #print("Model training complete")
 
 

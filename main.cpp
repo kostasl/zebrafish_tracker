@@ -234,17 +234,20 @@ int main(int argc, char *argv[])
     pwindow_main->LogEvent(QString::number(iLoadedTemplates) + QString("# Templates Loaded "));
 
     /// Run Unit Tests ///
-    fishdetector::test();
-    //testAngleDiff();
-    std::cout << "Test FishNET DNN - Load FISH Image..." << std::endl;
-    std::vector<cv::Mat> vtimg;
-    cv::Mat imageA = cv::imread( "/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/templ_HB40_LR_camB_Templ_51629.jpg", cv::IMREAD_UNCHANGED );
-    vtimg.push_back(imageA);
-    //fishdetector::testTFModelPrediction(image);
-    std::cout << "Test FishNET DNN - Load NONFISH Image..." << std::endl;
-    cv::Mat imageB = cv::imread( "/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/nonfish/00219-308x0.jpg", cv::IMREAD_UNCHANGED );
-    vtimg.push_back(imageB);
-    fishdetector::testTFModelPrediction(vtimg);
+//    qDebug() << "<<< fishDetector Tests >>>";
+//    fishdetector::test();
+//    //testAngleDiff();
+//    std::cout << "Test FishNET DNN - Load FISH Image..." << std::endl;
+//    std::vector<cv::Mat> vtimg;
+//    cv::Mat imageA = cv::imread( "/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/templ_HB40_LR_camB_Templ_51629.jpg", cv::IMREAD_UNCHANGED );
+//    vtimg.push_back(imageA);
+//    //fishdetector::testTFModelPrediction(image);
+//    std::cout << "Test FishNET DNN - Load NONFISH Image..." << std::endl;
+//    cv::Mat imageB = cv::imread( "/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/nonfish/00219-308x0.jpg", cv::IMREAD_UNCHANGED );
+//    vtimg.push_back(imageB);
+//    fishdetector::testTFModelPrediction(vtimg);
+//    qDebug() << "<<< fishDetector Tests Complete >>>";
+    cv::waitKey(1000);
     // resize the image to fit the model's input:
 
 

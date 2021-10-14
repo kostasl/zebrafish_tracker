@@ -221,11 +221,11 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
   cv::Mat imgFishAnterior,imgFishAnterior_Norm,imgFishAnterior_Norm_bin,imgFishAnterior_Norm_tmplcrop;
   cv::Mat imgFishAnterior_Norm_bin_dense; //Used to Find Contours
 
-  if ((fishblob.pt.x + gTrackerState.gFishBoundBoxSize) > frame.cols ||
-      (fishblob.pt.x - gTrackerState.gFishBoundBoxSize) < 0)
+  if ((fishblob.pt.x + gTrackerState.gFishBoundBoxSize/2) > frame.cols ||
+      (fishblob.pt.x - gTrackerState.gFishBoundBoxSize/2) < 0)
       return(0.0f);
-  if ((fishblob.pt.y + gTrackerState.gFishBoundBoxSize) > frame.rows ||
-          (fishblob.pt.y - gTrackerState.gFishBoundBoxSize) < 0 )
+  if ((fishblob.pt.y + gTrackerState.gFishBoundBoxSize/2) > frame.rows ||
+          (fishblob.pt.y - gTrackerState.gFishBoundBoxSize/2) < 0 )
       return(0.0f);
 
   // Take bounding of blob,
@@ -261,19 +261,19 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
   //Binarize Input To set Specific Sparseness/Density
   //imgFishAnterior_Norm_bin = sparseBinarize(imgFishAnterior_Norm,gTrackerState.fishnet_inputSparseness);
   imgFishAnterior_Norm.copyTo(imgFishAnterior_Norm_bin);
-  //cv::normalize(imgFishAnterior_Norm,imgFishAnterior_Norm_bin,1.0,0,NORM_MINMAX,CV_32FC1);
   //cv::imshow(std::string("BIN_N") + regTag,imgFishAnterior_Norm_bin);
 
 
   /// SliDing Window Scanning
-  int iSlidePx_H_step = 2;
-  int iSlidePx_H_begin = ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - 14;//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = iSlidePx_H_begin+14;  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidepxLim = 30;
+  int iSlidePx_H_step = 6;
+  int iSlidePx_H_begin = std::max(0, (int)ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - iSlidepxLim);//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = min(imgFishAnterior_Norm_bin.cols-gTrackerState.gszTemplateImg.width, iSlidePx_H_begin+2*iSlidepxLim);  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
-  int iSlidePx_V_step = 2;
-  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-18); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = iSlidePx_V_begin + 18;//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
+  int iSlidePx_V_step = 6;
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-iSlidepxLim); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = min(imgFishAnterior_Norm_bin.rows-gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 2*iSlidepxLim);//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
 
   float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
@@ -310,7 +310,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     /// Find Max Match Position In Non-Norm pic (original orientation)
     double minL1,maxL1;
     cv::Point ptmin,ptmax;
-    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(3,3),3,3);
+    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(9,9),9,9);
     cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
     // Rotate Max Point Back to Original Orientation
     //cv::Mat MrotInv = cv::getRotationMatrix2D( ptRotCenter, -fishblob.angle,1.0); //Rotate Upwarte Upwards
@@ -367,7 +367,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     /// CROP Extract a Template sized subregion of Orthonormal Fish ///
     imgFishAnterior_Norm_tmplcrop       = imgFishAnterior_Norm(rectFishTemplateBound);
     imgFishAnterior_Norm_tmplcrop.copyTo(outframeAnterior_Norm);
-    maskRegionScore_Norm(rectFishTemplateBound).copyTo(outmaskRegionScore);
+    maskRegionScore_Norm.copyTo(outmaskRegionScore); //(rectFishTemplateBound)
 
     /// Set Mark Point For Eye Detection ///
     //if (gTrackerState.bAdaptEyeMaskVOffset)
@@ -505,13 +505,13 @@ float fishdetector::netDNNDetect(cv::Mat imgRegion_bin,float &fFishClass,float &
       for ( size_t j = 0; j < results[0].size(); j++ )
       {
         //qDebug() << results[0][j] << "\t";
-         std::cout << std::fixed << std::setprecision(4) << results[0][j] << "\t";
+         //std::cout << std::fixed << std::setprecision(4) << results[0][j] << "\t";
       }
 
        fFishClass = results[0][0];
        fNonFishClass = results[0][1];
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 
  return(fFishClass-fNonFishClass);
 }
