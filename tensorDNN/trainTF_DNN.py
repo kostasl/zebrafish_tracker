@@ -87,7 +87,7 @@ def train_model(epochs, batch_size,img_height,img_width,model=None):
       [
         layers.experimental.preprocessing.RandomFlip("horizontal",
                           input_shape=(img_height,  img_width, 1)),
-        layers.experimental.preprocessing.RandomRotation(0.05),
+        layers.experimental.preprocessing.RandomRotation(0.01),
         layers.experimental.preprocessing.RandomZoom(0.2),
       ]
     )
@@ -199,7 +199,7 @@ class_names = ["fish","nonfish"]
 ## LOAD MODEL ##
 model = tf.keras.models.load_model('savedmodels/fishNet')
 ## UNCOMMENT IF YOU WANT TO RETRAIN MODEL ##
-model = None
+#model = None
 [class_names,model] = train_model(epochs,batch_size,img_height,img_width,model)
 #print("Model training complete")
 
