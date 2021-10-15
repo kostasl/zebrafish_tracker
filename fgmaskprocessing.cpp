@@ -766,7 +766,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
                                                 cv::Size(gTrackerState.gFishBoundBoxSize,gTrackerState.gFishBoundBoxSize),
                                                           kp.angle);
             cv::Mat imgFishAnterior_Norm =  fishdetector::getNormedBoundedImg(frameImg,fishRotAnteriorBox);
-            kp.angle = fishRotAnteriorBox.angle;
+            //kp.angle = fishRotAnteriorBox.angle;
             //cv::imshow("blob Detected",imgFishAnterior_Norm);
 
 
