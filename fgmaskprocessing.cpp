@@ -419,8 +419,8 @@ int getMaxInflectionAndSmoothedContour(const cv::Mat& frameImg, cv::Mat& fgMask,
     ptSharp = curve[idxMin]; //Most Likely Tail Point
     ptSharp2 = curve[idxMin2]; //This Could Be Head
 
-    //Simplify Points if Curve Too long
-    if ((int)curve.size() > gTrackerState.gcFishContourSize)
+    //Simplify Points if contour Curve Too long
+    if ((int)curve.size() > (2*gTrackerState.gcFishContourSize))
     {
         ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY,gTrackerState.gcFishContourSize,false);
         PolyLineMerge(curve,resampledcurveX,resampledcurveY); //Remerge
@@ -665,16 +665,16 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         zftblob kp(centroid.x,centroid.y,area,(int)(boundEllipse.angle+90)%360);
 
 
-        //Check if Blob belongs to moving fish - Draw Reveal Mask
-        bool bFishBlobFlowed = false;
-        for (int k=0; k < vFishKeypoints_next.size();k++)
-        {
-            if (boundEllipse.boundingRect().contains(vFishKeypoints_next[k].pt ))
-            {
-                circle(outFishMask,vFishKeypoints_next[k].pt,20,CV_RGB(255,255,255),CV_FILLED);
-                bFishBlobFlowed = true;
-            }
-        }
+//        /// Check if Blob belongs to moving fish - Draw Reveal Mask
+//        bool  = false;
+//        for (int k=0; k < vFishKeypoints_next.size();k++)
+//        {
+//            if (boundEllipse.boundingRect().contains(vFishKeypoints_next[k].pt ))
+//            {
+//                circle(outFishMask,vFishKeypoints_next[k].pt,20,CV_RGB(255,255,255),CV_FILLED);
+//                bFishBlobFlowed = true;
+//            }
+//        }
 
 
 //        if (boundEllipse.size.width/boundEllipse.size.height < 2.5 &&
@@ -719,38 +719,41 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         //cv::Mat frameMasked;
         //frameImg.copyTo(frameMasked, fgMask);cv::imshow("FishMAsk frameMasked",frameMasked);
         //// Classify Keypoint for fish  - Find Best Angle if 1st Pass Fails //
-        float fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
-                                                         mask_fnetScore, QString::number(iHitCount).toStdString());
+        //float fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
+        //                                                 mask_fnetScore, QString::number(iHitCount).toStdString());
         qDebug() << "A.Angle:" << kp.angle;
-        float maxfR = 0.0;
-        int bestAngle = kp.angle;
+        float fR,maxfR = 0.0;
+        int bestAngle,startAngle = kp.angle;
+        cv::Point kp_startpt = kp.pt; //Save kp to reinstate at every iteration
         if (fR < gTrackerState.fishnet_L2_classifier)
         {
-            for (int a=0;a<350;a+=5)
+            for (int a=kp.angle;a<(startAngle+350);a+=5)
             {
                 kp.angle = a;
+                kp.pt = kp_startpt; //Start Search from Last KNown Best Point (Avoids kp Sliding Away with repeated Application)
                 fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
                                                                   mask_fnetScore, QString::number(iHitCount).toStdString());
                 if (fR > maxfR)
                 {
                     maxfR = fR;
                     bestAngle = kp.angle;
+                    kp_startpt = kp.pt;
                     cv::imshow("BestAngle",imgFishAnterior_NetNorm);
                 }
-//                if (maxfR >= gTrackerState.fishnet_L2_classifier)
-//                     break; //Break If Classifier threshold has been found
+                if (maxfR >= gTrackerState.fishnet_L2_classifier)
+                     break; //Break If Classifier threshold has been found
             }// Test Full Circle
 
             kp.angle = (bestAngle)%360; //save best angle according to classifier (Convert from opencv Rotated Bound angle 0 being horizontal to tracker ref 0 on vertical
             kp.response =  maxfR;
-            qDebug() << "B.Angle:" << kp.angle;
+            qDebug() << "B.Angle:" << kp.angle << " fR:"<<maxfR;
 
         }
 
 
 
-        if (bFishBlobFlowed)
-            kp.response +=1.0f;
+//        if (bFishBlobFlowed) //Used With OpticFlow Tracking
+//            kp.response +=1.0f;
 
 
         QString strfRecScore = QString::number(kp.response,'g',3);

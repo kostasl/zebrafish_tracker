@@ -41,13 +41,13 @@ nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 batch_size = 64
 img_height = 38
 img_width = 28
-epochs = 10
+epochs = 100
 
 def train_model(epochs, batch_size,img_height,img_width,model=None):
 
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
       str(data_dir),
-      validation_split=0.2,
+      validation_split=0.3,
       subset="training",
       seed=123,
       image_size=(img_height, img_width),
@@ -57,7 +57,7 @@ def train_model(epochs, batch_size,img_height,img_width,model=None):
 
     val_ds = tf.keras.preprocessing.image_dataset_from_directory(
       str(data_dir),
-      validation_split=0.2,
+      validation_split=0.3,
       subset="validation",
       seed=123,
       image_size=(img_height, img_width),
