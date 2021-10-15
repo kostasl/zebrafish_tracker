@@ -725,30 +725,31 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         float fR,maxfR = 0.0;
         int bestAngle,startAngle = kp.angle;
         cv::Point kp_startpt = kp.pt; //Save kp to reinstate at every iteration
-        if (fR < gTrackerState.fishnet_L2_classifier)
+        for (int a=kp.angle;a<(startAngle+350);a+=5)
         {
-            for (int a=kp.angle;a<(startAngle+350);a+=5)
+            kp.angle = a;
+            kp.pt = kp_startpt; //Start Search from Last KNown Best Point (Avoids kp Sliding Away with repeated Application)
+            fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
+                                                              mask_fnetScore, QString::number(iHitCount).toStdString());
+            if (fR > maxfR)
             {
-                kp.angle = a;
-                kp.pt = kp_startpt; //Start Search from Last KNown Best Point (Avoids kp Sliding Away with repeated Application)
-                fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
-                                                                  mask_fnetScore, QString::number(iHitCount).toStdString());
-                if (fR > maxfR)
-                {
-                    maxfR = fR;
-                    bestAngle = kp.angle;
-                    kp_startpt = kp.pt;
-                    cv::imshow("BestAngle",imgFishAnterior_NetNorm);
-                }
-                if (maxfR >= gTrackerState.fishnet_L2_classifier)
-                     break; //Break If Classifier threshold has been found
-            }// Test Full Circle
+                maxfR = fR;
+                bestAngle = kp.angle;
+                kp_startpt = kp.pt;
+                cv::imshow("BestAngle",imgFishAnterior_NetNorm);
+            }
+            if (maxfR >= gTrackerState.fishnet_L2_classifier)
+                 break; //Break If Classifier threshold has been found
+        }// Test Full Circle
+        if (maxfR < gTrackerState.fishnet_L2_classifier/2.0f) //No Match Found Across Angles
+            kp.angle = (bestAngle); //save best angle according to classifier (Convert from opencv Rotated Bound angle 0 being horizontal to tracker ref 0 on vertical
+        else
+            kp.angle = startAngle; //Retain Blob Suggested Orientation
 
-            kp.angle = (bestAngle)%360; //save best angle according to classifier (Convert from opencv Rotated Bound angle 0 being horizontal to tracker ref 0 on vertical
-            kp.response =  maxfR;
-            qDebug() << "B.Angle:" << kp.angle << " fR:"<<maxfR;
+        kp.response =  maxfR;
+        qDebug() << "B.Angle:" << kp.angle << " fR:"<<maxfR;
 
-        }
+
 
 
 
