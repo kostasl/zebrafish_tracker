@@ -725,7 +725,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         int bestAngle = kp.angle;
         if (fR < gTrackerState.fishnet_L2_classifier)
         {
-            for (int a=0;a<350;a+=10)
+            for (int a=0;a<350;a+=5)
             {
                 kp.angle = a;
                 fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
@@ -735,11 +735,12 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
                     maxfR = fR;
                     bestAngle = kp.angle;
                 }
+                if (maxfR >= gTrackerState.fishnet_L2_classifier)
+                     break; //Break If Classifier threshold has been found
+            }// Test Full Circle
 
-            }
-            kp.angle = bestAngle;
-            if (maxfR >= gTrackerState.fishnet_L2_classifier)
-                break;
+            kp.angle = (bestAngle+90)%360; //save best angle according to classifier (Convert from opencv Rotated Bound angle 0 being horizontal to tracker ref 0 on vertical
+            qDebug() << "B.Angle:" << kp.angle;
         }
 
 

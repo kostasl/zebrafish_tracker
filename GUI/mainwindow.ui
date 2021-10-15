@@ -902,7 +902,7 @@
           <enum>QAbstractSpinBox::PlusMinus</enum>
          </property>
          <property name="decimals">
-          <number>2</number>
+          <number>4</number>
          </property>
          <property name="minimum">
           <double>-0.500000000000000</double>

@@ -296,7 +296,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
   int iSlidePx_V_lim = min(imgFishAnterior_Norm_bin.rows-gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 2*iSlidepxLim);//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
 
-  float scoreFish,scoreNonFish,dscore; //Recognition Score tested in both Vertical Directions
+  float scoreFish,scoreNonFish,dscore,max_dscore = 0.0f; //Recognition Score tested in both Vertical Directions
   // Do netDetect using a Sliding window
   cv::Mat imgFishAnterior_Norm_tmplcrop_vflip;
   for (int i=iSlidePx_H_begin;i <= iSlidePx_H_lim;i+=iSlidePx_H_step)
@@ -319,6 +319,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           ///  Store recognition score in Mask at(row,col) -//
           maskRegionScore_Norm.at<float>(j +gTrackerState.gszTemplateImg.height/2, // ,
                                          i +gTrackerState.gszTemplateImg.width/2) = dscore;// //max(0.0f,dscore);//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
+          if (dscore > max_dscore)
+              max_dscore = dscore;
           //qDebug() << "(" << i+sztemplate.width/2 << "," <<j+sztemplate.height/2<<") = " << round(sc1*100)/100.0;
             //qDebug() << maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2,
             //                                           i+gTrackerState.gszTemplateImg.width/2);
@@ -341,7 +343,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 
     //Update Blob Location And add Classifier Score
-    fishblob.response = maxL1; //Save Recognition Score
+    fishblob.response = max_dscore; //Save Recognition Score - Don t use the Gaussian Blurred one -Too low
     if (maxL1 > 0)
         fishblob.pt = ptmax_orig+fishRotAnteriorBox.boundingRect().tl(); //Shift Blob Position To Max  To Max Recognition Point
 
@@ -395,7 +397,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 
 
-  return (maxL1);
+  return (max_dscore);
 
 }
 

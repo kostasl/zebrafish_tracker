@@ -1262,7 +1262,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 //        //Report No Fish
     if (!bModelForBlobFound && maxTemplateScore < gTrackerState.fishnet_L2_classifier )
     {
-        std::clog << nFrame << "# Tscore:" << maxTemplateScore << " No good match for Fish Found " << std::endl;
+       // std::clog << nFrame << "# Tscore:" << maxTemplateScore << " No good match for Fish Found " << std::endl;
     }
 
 

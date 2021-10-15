@@ -12,6 +12,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
+from tensorflow.keras import regularizers
 
 
 # Press Shift+F10 to execute it or replace it with your code.
@@ -40,7 +41,7 @@ nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 batch_size = 64
 img_height = 38
 img_width = 28
-epochs = 20
+epochs = 10
 
 def train_model(epochs, batch_size,img_height,img_width,model=None):
 
@@ -83,11 +84,14 @@ def train_model(epochs, batch_size,img_height,img_width,model=None):
       break
 
     ## Data Augmentation
+    ##Random Translation ##height, width representing lower and upper bound for shifting vertically.
+    # A negative value means shifting image up, while a positive value means shifting image down.
     data_augmentation = keras.Sequential(
       [
         layers.experimental.preprocessing.RandomFlip("horizontal",
                           input_shape=(img_height,  img_width, 1)),
         layers.experimental.preprocessing.RandomRotation(0.01),
+        layers.experimental.preprocessing.RandomTranslation((0,0.15),0,fill_mode="nearest"),
         layers.experimental.preprocessing.RandomZoom(0.2),
       ]
     )
@@ -123,16 +127,21 @@ def train_model(epochs, batch_size,img_height,img_width,model=None):
         model = Sequential([
           data_augmentation,
           layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 1)),
-          layers.Conv2D(32,(3,3), padding='same'), #, activation='relu'
+          layers.Conv2D(8,(3,3), padding='same', activation='relu'), #, activation='relu'
+          layers.Dropout(0.1),
           layers.MaxPooling2D(),
-          layers.Conv2D(64, (3,3), padding='same'), #, activation='relu'
+          layers.Conv2D(16, (3,3), padding='same', activation='relu'), #, activation='relu'
+          layers.Dropout(0.1),
           layers.MaxPooling2D(),
-          layers.Conv2D(80, (3, 3), padding='same'), #, activation='relu'
+          layers.Conv2D(32, (3, 3), padding='same', activation='relu'), #, activation='relu'
           layers.MaxPooling2D(),
-          layers.Conv2D(70, (3, 3), padding='same', activation='relu'),
-          layers.MaxPooling2D(),
+          #layers.Conv2D(80, (3, 3), padding='same', activation='relu'),
+          #layers.MaxPooling2D(),
           layers.Flatten(),
-          layers.Dense(20, activation='relu'),
+          layers.Dense(250, activation='relu',kernel_regularizer=regularizers.l2(0.001)),
+          layers.Dropout(0.5),
+          layers.Dense(20, activation='relu',kernel_regularizer=regularizers.l2(0.001)),
+          layers.Dropout(0.3),
           layers.Dense(num_classes)
         ])
         ##COMPILE MODEL
@@ -196,10 +205,12 @@ def train_model(epochs, batch_size,img_height,img_width,model=None):
 
 class_names = ["fish","nonfish"]
 
+model = None
 ## LOAD MODEL ##
-model = tf.keras.models.load_model('savedmodels/fishNet')
+
+#model = tf.keras.models.load_model('savedmodels/fishNet')
 ## UNCOMMENT IF YOU WANT TO RETRAIN MODEL ##
-#model = None
+
 [class_names,model] = train_model(epochs,batch_size,img_height,img_width,model)
 #print("Model training complete")
 
