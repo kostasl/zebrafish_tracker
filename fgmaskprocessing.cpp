@@ -742,6 +742,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             }// Test Full Circle
 
             kp.angle = (bestAngle)%360; //save best angle according to classifier (Convert from opencv Rotated Bound angle 0 being horizontal to tracker ref 0 on vertical
+            kp.response =  maxfR;
             qDebug() << "B.Angle:" << kp.angle;
 
         }
