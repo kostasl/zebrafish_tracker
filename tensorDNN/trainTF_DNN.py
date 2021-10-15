@@ -208,7 +208,7 @@ class_names = ["fish","nonfish"]
 model = None
 ## LOAD MODEL ##
 
-#model = tf.keras.models.load_model('savedmodels/fishNet')
+model = tf.keras.models.load_model('savedmodels/fishNet')
 ## UNCOMMENT IF YOU WANT TO RETRAIN MODEL ##
 
 [class_names,model] = train_model(epochs,batch_size,img_height,img_width,model)
