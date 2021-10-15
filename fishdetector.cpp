@@ -516,7 +516,7 @@ float fishdetector::netDNNDetect(cv::Mat imgRegion_bin,float &fFishClass,float &
 {
     //std::cout << ".  run prediction..." << std::endl;
     cv::resize(imgRegion_bin,imgRegion_bin,{28,38});
-    cv::imshow("DNN detect",imgRegion_bin);
+    //cv::imshow("DNN detect",imgRegion_bin);
     std::vector< std::vector< float > > results = m_TFmodel.predict<std::vector<float>>( {imgRegion_bin} );
 
 

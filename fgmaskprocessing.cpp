@@ -721,6 +721,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         //// Classify Keypoint for fish  - Find Best Angle if 1st Pass Fails //
         float fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
                                                          mask_fnetScore, QString::number(iHitCount).toStdString());
+        qDebug() << "A.Angle:" << kp.angle;
         float maxfR = 0.0;
         int bestAngle = kp.angle;
         if (fR < gTrackerState.fishnet_L2_classifier)
@@ -734,13 +735,15 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
                 {
                     maxfR = fR;
                     bestAngle = kp.angle;
+                    cv::imshow("BestAngle",imgFishAnterior_NetNorm);
                 }
-                if (maxfR >= gTrackerState.fishnet_L2_classifier)
-                     break; //Break If Classifier threshold has been found
+//                if (maxfR >= gTrackerState.fishnet_L2_classifier)
+//                     break; //Break If Classifier threshold has been found
             }// Test Full Circle
 
             kp.angle = (bestAngle)%360; //save best angle according to classifier (Convert from opencv Rotated Bound angle 0 being horizontal to tracker ref 0 on vertical
             qDebug() << "B.Angle:" << kp.angle;
+
         }
 
 
