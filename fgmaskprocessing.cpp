@@ -721,7 +721,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         //// Classify Keypoint for fish  - Find Best Angle if 1st Pass Fails //
         //float fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
         //                                                 mask_fnetScore, QString::number(iHitCount).toStdString());
-        qDebug() << "A.Angle:" << kp.angle;
+        //qDebug() << "A.Angle:" << kp.angle;
         float fR,maxfR = 0.0;
         int bestAngle,startAngle = kp.angle;
         cv::Point kp_startpt = kp.pt; //Save kp to reinstate at every iteration
@@ -738,16 +738,16 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
                 kp_startpt = kp.pt;
                 cv::imshow("BestAngle",imgFishAnterior_NetNorm);
             }
-            if (maxfR >= gTrackerState.fishnet_L2_classifier)
+            if (maxfR >= gTrackerState.fishnet_classifier_thres)
                  break; //Break If Classifier threshold has been found
         }// Test Full Circle
-        if (maxfR < gTrackerState.fishnet_L2_classifier/2.0f) //No Match Found Across Angles
+        if (maxfR < gTrackerState.fishnet_classifier_thres/2.0f) //No Match Found Across Angles
             kp.angle = (bestAngle); //save best angle according to classifier (Convert from opencv Rotated Bound angle 0 being horizontal to tracker ref 0 on vertical
         else
             kp.angle = startAngle; //Retain Blob Suggested Orientation
 
         kp.response =  maxfR;
-        qDebug() << "B.Angle:" << kp.angle << " fR:"<<maxfR;
+        //qDebug() << "B.Angle:" << kp.angle << " fR:"<<maxfR;
 
 
 
@@ -762,7 +762,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         //qDebug() << "(" << kp.pt.x << "," << kp.pt.y << ")" << "R:" << strfRecScore;
 
         /// Add TO Filtered KP - IF keypoint is still within roi (moved by classifier) and Passes Classifier threshold
-        if (kp.response >= gTrackerState.fishnet_L2_classifier && pointIsInROI(kp.pt,2))
+        if (kp.response >= gTrackerState.fishnet_classifier_thres && pointIsInROI(kp.pt,2))
         {
             // Fix Blob Angle //
             // get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image

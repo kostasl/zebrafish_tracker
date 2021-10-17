@@ -328,8 +328,10 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
                 QString line = fvidfile.readLine().trimmed();
                 if (line.isNull())
                     break;
-                else
+                else{
+                    qDebug()  << line;
                     inVidFileNames.append(line);
+                }
             }
         }else
         {

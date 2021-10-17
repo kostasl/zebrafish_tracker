@@ -437,12 +437,11 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
                 std::cerr << gTimer.elapsed()/60000.0 << " Error Occurred Could not open data file for last video" << std::endl;
             else
                 window_main.LogEvent(" Skipping  previously processed Video."); // std::cerr << gTimer.elapsed()/60000.0 << " Error Occurred Could not process last video" << std::endl;
-
             continue; //Do Next File
         }
         istartFrame = 1; //Reset So Next Vid Starts From The Beginnning
         istopFrame = 0; //Rest So No Stopping On Next Video
-    }
+    } // For each Video File
     return istartFrame;
 }
 
@@ -1208,7 +1207,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         float maxMatchScore = fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
         int bestAngle = fishblob->angle;
         //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
-        if (maxMatchScore >= gTrackerState.fishnet_L2_classifier //|| maxMatchScore > 100.0f
+        if (maxMatchScore >= gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
             )  //User Click Sets Response to > 10
         {
             //Make new fish Model
@@ -1260,7 +1259,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 
 
 //        //Report No Fish
-    if (!bModelForBlobFound && maxTemplateScore < gTrackerState.fishnet_L2_classifier )
+    if (!bModelForBlobFound && maxTemplateScore < gTrackerState.fishnet_classifier_thres )
     {
        // std::clog << nFrame << "# Tscore:" << maxTemplateScore << " No good match for Fish Found " << std::endl;
     }
@@ -3052,7 +3051,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               ///If Both Eyes Detected Then Print Vergence Angle
               ss.precision(3);
               cv::Scalar colTxt;
-              if (fR < gTrackerState.fishnet_L2_classifier)
+              if (fR < gTrackerState.fishnet_classifier_thres)
                   colTxt = CV_RGB(100,100,100);
               else
                   colTxt = CV_RGB(200,50,0);

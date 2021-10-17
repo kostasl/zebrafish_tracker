@@ -148,7 +148,7 @@ void MainWindow::createSpinBoxes()
 
     this->ui->spinBoxFishNetSparseness->setValue(gTrackerState.fishnet_inputSparseness*100.0);
     //this->ui->spinBoxFishnetL1thres->setValue(gTrackerState.fishnet_L1_threshold);
-    this->ui->spinBoxFishnetClassifierthres->setValue(gTrackerState.fishnet_L2_classifier);
+    this->ui->spinBoxFishnetClassifierthres->setValue(gTrackerState.fishnet_classifier_thres);
     //this->connect(this->ui->spinBoxEyeThres, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this->ui->spinBoxEyeThres, &QSlider::setValue);
 
 //    QObject::connect(this->ui->spinBoxEyeThres,
@@ -1311,7 +1311,7 @@ void MainWindow::on_spinBoxFishnetL1thres_valueChanged(int arg1)
 ///\todo Slot no longer needed
 void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(int arg1)
 {
-    gTrackerState.fishnet_L2_classifier = (float)arg1;
+    gTrackerState.fishnet_classifier_thres = (float)arg1;
 }
 
 
@@ -1323,7 +1323,7 @@ void MainWindow::on_spinBoxFishNetSparseness_valueChanged(int arg1)
 
 void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(double arg1)
 {
-     gTrackerState.fishnet_L2_classifier = arg1;
+     gTrackerState.fishnet_classifier_thres = arg1;
 }
 
 
