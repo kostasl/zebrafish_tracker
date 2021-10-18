@@ -99,10 +99,18 @@ fishdetector::fishdetector()
     //mB_L1.convertTo(mB_L1, CV_32FC1);    mB_L2.convertTo(mB_L2, CV_32FC1);    mB_L3.convertTo(mB_L3, CV_32FC1);    mB_L4.convertTo(mB_L4, CV_32FC1);
 
 
-    /// DNN tensorflow
-    m_TFmodel.loadModel(mSavedModelPath ,m_gpu_memory_fraction , m_inferInputOutput );//"graph_im2vec.pb"
-    m_TFmodel.setInputs( { "serving_default_sequential_1_input" } );
-    m_TFmodel.setOutputs( { "StatefulPartitionedCall" } );
+    /// DNN tensorflow - There is py tool to get
+    /// Load  Direction Agnostic model - used to detection position of fish in image region
+    m_TFmodel_loc.loadModel(mSavedModelPath_localization_model ,m_gpu_memory_fraction , m_inferInputOutput );//"graph_im2vec.pb"
+    ///  You can obtain input/ouput names using saved_model_cli show --dir {mobilenet_save_path} --tag_set serve or by looking at the model name in python training script
+    /// and then assume "serving_default_<model name>_input"
+    m_TFmodel_loc.setInputs( { "serving_default_sequential_1_input" } );
+    m_TFmodel_loc.setOutputs( { "StatefulPartitionedCall" } );
+
+    /// Load  Directional model - used to detection correct up-right image of fish in image region - used for direction detection
+    m_TFmodel_dir.loadModel(mSavedModelPath_direction_model ,m_gpu_memory_fraction , m_inferInputOutput );//"graph_im2vec.pb"
+    m_TFmodel_dir.setInputs( { "serving_default_sequential_4_input" } );
+    m_TFmodel_dir.setOutputs( { "StatefulPartitionedCall" } );
 
 }
 
@@ -228,12 +236,11 @@ cv::Mat sparseBinarize(cv::Mat& imgRegion,float targetdensity)
     return(imgRegion_bin);
 }
 
-/// \brief Two step classificiation of region : First, it uses Neural
-/// Net to scan region around provided blog and provide a detection score as a mask (returns max score value)
+/// \brief  classificiation of region : First, it uses Deep Neural Net
+/// to scan region around provided blog and provide a detection score as a mask (returns max score value)
 /// If blob passes the FishNet classification threshold , the blobs centre position is changed to the point of max classification score.
-/// \todo could do image Pyramids to scan Across Scales
 /// @param regTag an Id for debugging purposes
-/// @outframeAnterior_Norm returns image of isolated head centered at best detection point according to NN
+/// @outframeAnterior_Norm returns image of isolated head centered at best detection point by the DNN and oriented according to blob angle
 
 float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,
                                     cv::Mat& outmaskRegionScore,string regTag="0")
@@ -250,9 +257,11 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
   // Take bounding of blob,
   // get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
+  // Allow Box Size to Adjust near Edges of Image
   cv::RotatedRect fishRotAnteriorBox(fishblob.pt,
-                                      cv::Size(gTrackerState.gFishBoundBoxSize,gTrackerState.gFishBoundBoxSize),
-                                                fishblob.angle);
+                                      cv::Size(std::min((int)fishblob.pt.x, gTrackerState.gFishBoundBoxSize),
+                                               std::min((int)fishblob.pt.y,gTrackerState.gFishBoundBoxSize)),
+                                                0);
    /// Size Of Norm Head Image
    cv::Size szFishAnteriorNorm = fishRotAnteriorBox.boundingRect().size();// (min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4,                              max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4);
    // Define SCore Canvas - Where we draw results from Recognition Scanning
@@ -285,13 +294,13 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
 
   /// SliDing Window Scanning
-  int iSlidepxLim = 25;
-  int iSlidePx_H_step = 8;
+  int iSlidepxLim = gTrackerState.gFishBoundBoxSize;
+  int iSlidePx_H_step = 5;
   int iSlidePx_H_begin = std::max(0, (int)ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - iSlidepxLim);//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
   int iSlidePx_H_lim = min(imgFishAnterior_Norm_bin.cols-gTrackerState.gszTemplateImg.width, iSlidePx_H_begin+2*iSlidepxLim);  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
-  int iSlidePx_V_step = 8;
+  int iSlidePx_V_step = 5;
   int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-iSlidepxLim); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
   int iSlidePx_V_lim = min(imgFishAnterior_Norm_bin.rows-gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 2*iSlidepxLim);//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
@@ -309,7 +318,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
           //CROP Extract a Template sized subregion of Orthonormal Fish
           imgFishAnterior_Norm_bin(rectFishTemplateBound).copyTo(imgFishAnterior_Norm_tmplcrop);
 
-          dscore = this->netDNNDetect(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreNonFish);
+          dscore = this->netDNNDetect_fish(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreNonFish);
 
           ///Do Not Test Orientation - Blob Should Have the correct Angle
           //Check Both Vertical Orientations
@@ -355,7 +364,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     //cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(0,0,0),2);
 
 
-    cv::imshow(string("Fish Region Body Norm ") + regTag,imgFishAnterior_Norm_bin);
+    //cv::imshow(string("Fish Region Body Norm ") + regTag,imgFishAnterior_Norm_bin);
     // DEBUG IMG //
     //cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, 0, 1, cv::NORM_MINMAX);
     //cv::imshow(string("Score Mask Body Norm") + regTag,maskRegionScore_Norm);                                   gionScore_Norm);
@@ -400,6 +409,66 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
   return (max_dscore);
 
 }
+
+
+/// \brief Uses DNN classifier to detect most likely direction of fish.
+/// \return best classifier output score/probability achieved while scanning rotations
+/// @param regTag an Id for debugging purposes
+/// @outframeAnterior_Norm returns image of isolated head centered at best detection point according to NN
+
+float fishdetector::scoreBlobOrientation(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,
+                                    cv::Mat& outmaskRegionScore,string regTag="0")
+{
+    cv::Mat imgFishAnterior_Norm;
+    float scoreFish,scoreNonFish,fRR,maxfRR = 0.0;;
+
+    int bestAngle = fishblob.angle;
+    int startAngle = fishblob.angle;
+
+    for (int a=fishblob.angle;a<(startAngle+350);a+=2)
+    {
+        fishblob.angle = a;
+
+        cv::RotatedRect fishRotAnteriorBox(fishblob.pt,  gTrackerState.gszTemplateImg,fishblob.angle);
+
+         // To Check Bounds Within Image
+         cv::Rect imgBounds(0,0,frame.cols,frame.rows);
+         // Check if region size is large enough to scan for fish
+         if (!( //Looks Like a fish is found, now Check Bounds
+             imgBounds.contains(fishRotAnteriorBox.boundingRect().br()) &&
+                 imgBounds.contains(fishRotAnteriorBox.boundingRect().tl())))
+                  continue; //This Fish Is out Of Bounds /
+        // Get Oriented image of fish Anterior
+        imgFishAnterior_Norm =  getNormedTemplateImg(frame,fishRotAnteriorBox);
+        // Check if Upright fish is detected within box
+        fRR = netDNNDetect_normedfish(imgFishAnterior_Norm,scoreFish,scoreNonFish);
+
+        if (fRR > maxfRR)
+        {
+            maxfRR = fRR;
+            bestAngle = fishblob.angle;
+
+        }
+        if (maxfRR >= gTrackerState.fishnet_classifier_thres)
+             break; //Break If Classifier threshold has been found
+    }// Test Full Circle
+
+    fishblob.angle = (bestAngle)%360; //save best angle according to classifier (Convert from opencv Rotated Bound angle 0 being horizontal to tracker ref 0 on vertical
+
+    if (maxfRR < gTrackerState.fishnet_classifier_thres) //No Match Found Across Angles
+        fishblob.angle = (startAngle); //Reset - Angle Detection Failed
+    else
+    {
+        //fishblob.response =  maxfRR;
+        qDebug() << "Angle " << startAngle << "->" << bestAngle << " fRR:" << maxfRR;
+        cv::imshow("BestAngle",imgFishAnterior_Norm);
+    }
+
+
+return (maxfRR);
+
+}
+
 
 float fishdetector::netNeuralTF(float a)
 {
@@ -512,12 +581,39 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     return(fFishClass-fNonFishClass);
 }
 
-float fishdetector::netDNNDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass)
+float fishdetector::netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass)
 {
     //std::cout << ".  run prediction..." << std::endl;
     cv::resize(imgRegion_bin,imgRegion_bin,{28,38});
     //cv::imshow("DNN detect",imgRegion_bin);
-    std::vector< std::vector< float > > results = m_TFmodel.predict<std::vector<float>>( {imgRegion_bin} );
+    std::vector< std::vector< float > > results = m_TFmodel_loc.predict<std::vector<float>>( {imgRegion_bin} );
+
+
+    // print results - Assume Single Result Vector
+    if ( results.size() > 0 )
+    {
+      //std::cout << "Output vector #" << i << ": ";
+      for ( size_t j = 0; j < results[0].size(); j++ )
+      {
+        //qDebug() << results[0][j] << "\t";
+         //std::cout << std::fixed << std::setprecision(4) << results[0][j] << "\t";
+      }
+
+       fFishClass = results[0][0];
+       fNonFishClass = results[0][1];
+    }
+    //std::cout << std::endl;
+
+ return(fFishClass-fNonFishClass);
+}
+
+
+float fishdetector::netDNNDetect_normedfish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass)
+{
+    //std::cout << ".  run prediction..." << std::endl;
+    cv::resize(imgRegion_bin,imgRegion_bin,{28,38});
+    //cv::imshow("DNN detect",imgRegion_bin);
+    std::vector< std::vector< float > > results = m_TFmodel_dir.predict<std::vector<float>>( {imgRegion_bin} );
 
 
     // print results - Assume Single Result Vector
@@ -558,7 +654,7 @@ void fishdetector::test()
     {
         cv::Mat imgTempl = vfish_mat[i];
 
-        dscore = gTrackerState.fishnet.netDNNDetect(imgTempl,fishClassScore,nonfishScore);
+        dscore = gTrackerState.fishnet.netDNNDetect_fish(imgTempl,fishClassScore,nonfishScore);
         if (fishClassScore > -1)
             fsumErrF += pow((1-fishClassScore) + (0-nonfishScore),2);
         if (fishClassScore > nonfishScore) //Count Classification Errors
@@ -581,7 +677,7 @@ void fishdetector::test()
     {
         cv::Mat imgTempl = vnonfish_mat[i];
 
-        dscore = gTrackerState.fishnet.netDNNDetect(imgTempl,fishClassScore,nonfishScore);
+        dscore = gTrackerState.fishnet.netDNNDetect_fish(imgTempl,fishClassScore,nonfishScore);
         qDebug() << "Non-Fish img gave F:" << fishClassScore << " NF:" << nonfishScore;
         if (fishClassScore > -1)
             fsumErrNF += pow((0-fishClassScore) + (1-nonfishScore),2);

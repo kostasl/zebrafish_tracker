@@ -26,9 +26,12 @@ public:
     static cv::Mat getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox); //Normed Bounded region of Rotated Rect
     static cv::Mat getNormedTemplateImg(const cv::Mat& frame, cv::RotatedRect& fishRotAnteriorBox); // Normed Rot Rect Image
     float netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
-    float netDNNDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
+    float netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
+    float netDNNDetect_normedfish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
 
     float scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,std::string regTag);
+    float scoreBlobOrientation(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,std::string regTag);
+
     float fL1_activity_thres = 10; //# Number of INput that need to be active for KC to fire/Activate
     static void test(); //Test with given Images
     static void testTFModelPrediction(const std::vector<cv::Mat>& image); //Test  Tensorflow DNN model on provided Image
@@ -46,8 +49,11 @@ private:
     // the model will try to infer the input and output layer names automatically
     // (only use if it's a simple "one-input -> one-output" model
     bool m_inferInputOutput = false;
-    const std::string mSavedModelPath = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_prob/";
-    tf_image::TF_Model m_TFmodel;
+    const std::string mSavedModelPath_localization_model = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc_prob/";
+    tf_image::TF_Model m_TFmodel_loc; // Model Used to Localize Larva in img region (rotation invariant)
+
+    const std::string mSavedModelPath_direction_model = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir_prob/";
+    tf_image::TF_Model m_TFmodel_dir; // Model Used to Localize Larva in img region (rotation invariant)
 
 
 

@@ -719,38 +719,12 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         //cv::Mat frameMasked;
         //frameImg.copyTo(frameMasked, fgMask);cv::imshow("FishMAsk frameMasked",frameMasked);
         //// Classify Keypoint for fish  - Find Best Angle if 1st Pass Fails //
-        //float fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
-        //                                                 mask_fnetScore, QString::number(iHitCount).toStdString());
-        //qDebug() << "A.Angle:" << kp.angle;
-        float fR,maxfR = 0.0;
-        int bestAngle,startAngle = kp.angle;
-        cv::Point kp_startpt = kp.pt; //Save kp to reinstate at every iteration
-        for (int a=kp.angle;a<(startAngle+350);a+=5)
-        {
-            kp.angle = a;
-            kp.pt = kp_startpt; //Start Search from Last KNown Best Point (Avoids kp Sliding Away with repeated Application)
-            fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
-                                                              mask_fnetScore, QString::number(iHitCount).toStdString());
-            if (fR > maxfR)
-            {
-                maxfR = fR;
-                bestAngle = kp.angle;
-                kp_startpt = kp.pt;
-                cv::imshow("BestAngle",imgFishAnterior_NetNorm);
-            }
-            if (maxfR >= gTrackerState.fishnet_classifier_thres)
-                 break; //Break If Classifier threshold has been found
-        }// Test Full Circle
-        if (maxfR < gTrackerState.fishnet_classifier_thres/2.0f) //No Match Found Across Angles
-            kp.angle = (bestAngle); //save best angle according to classifier (Convert from opencv Rotated Bound angle 0 being horizontal to tracker ref 0 on vertical
-        else
-            kp.angle = startAngle; //Retain Blob Suggested Orientation
+        float fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
+                                                         mask_fnetScore, QString::number(iHitCount).toStdString());
 
-        kp.response =  maxfR;
+        kp.response = fR;
+
         //qDebug() << "B.Angle:" << kp.angle << " fR:"<<maxfR;
-
-
-
 
 
 //        if (bFishBlobFlowed) //Used With OpticFlow Tracking
@@ -764,27 +738,26 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         /// Add TO Filtered KP - IF keypoint is still within roi (moved by classifier) and Passes Classifier threshold
         if (kp.response >= gTrackerState.fishnet_classifier_thres && pointIsInROI(kp.pt,2))
         {
-            // Fix Blob Angle //
-            // get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
-            cv::RotatedRect fishRotAnteriorBox(kp.pt,
-                                                cv::Size(gTrackerState.gFishBoundBoxSize,gTrackerState.gFishBoundBoxSize),
-                                                          kp.angle);
-            cv::Mat imgFishAnterior_Norm =  fishdetector::getNormedBoundedImg(frameImg,fishRotAnteriorBox);
+
+            float fRR = gTrackerState.fishnet.scoreBlobOrientation(frameImg, kp, imgFishAnterior_NetNorm,
+                                                                   mask_fnetScore, QString::number(iHitCount).toStdString());
             //kp.angle = fishRotAnteriorBox.angle;
-            //cv::imshow("blob Detected",imgFishAnterior_Norm);
+            cv::imshow("Normed fish Detected",imgFishAnterior_NetNorm);
 
 
-            ptFishblobs.push_back(kp);
+            kp.response = fRR;
+            if (kp.response >= gTrackerState.fishnet_classifier_thres && pointIsInROI(kp.pt,2))
+            {
+                ptFishblobs.push_back(kp);
+                /// \todo Conditionally add this Contour to output if it matches template.
+                vFilteredFishbodycontours.push_back(curve);
 
-            /// \todo Conditionally add this Contour to output if it matches template.
-            vFilteredFishbodycontours.push_back(curve);
-
-            ///  COMBINE - DRAW CONTOURS
-            ///\bug drawContours produces freezing sometimes
-            //Draw New Smoothed One - the idx should be the last one in the vector
-            //cv::drawContours( outFishMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(255,255,255), 3,cv::FILLED); //
-
-            cv::drawContours(outFishMask, fishbodycontours, kk, Scalar(255,255,255),1, cv::LINE_8,fishbodyhierarchy,2);
+                ///  COMBINE - DRAW CONTOURS
+                ///\bug drawContours produces freezing sometimes
+                //Draw New Smoothed One - the idx should be the last one in the vector
+                //cv::drawContours( outFishMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(255,255,255), 3,cv::FILLED); //
+                cv::drawContours(outFishMask, fishbodycontours, kk, Scalar(255,255,255),1, cv::LINE_8,fishbodyhierarchy,2);
+            }
 
 
 

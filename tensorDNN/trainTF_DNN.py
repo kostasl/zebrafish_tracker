@@ -1,4 +1,7 @@
-# This is a sample Python script.
+
+# FishNet DNN - Train two tensorflow models :
+#           * A model the fish anterior over all directions - to be used to locate the centre of fish template within a blob region
+##          * B model of upright (Normed) fish antrerior - which is used to detect direction by testing against rotated image regions for best match
 import matplotlib.pyplot
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,7 +46,7 @@ img_height = 38
 img_width = 28
 epochs = 100
 
-def train_model(epochs, batch_size,img_height,img_width,model=None):
+def train_model(epochs, batch_size,img_height,img_width,randRot=0.0,model=None):
 
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
       str(data_dir),
@@ -90,7 +93,7 @@ def train_model(epochs, batch_size,img_height,img_width,model=None):
       [
         layers.experimental.preprocessing.RandomFlip("horizontal",
                           input_shape=(img_height,  img_width, 1)),
-        layers.experimental.preprocessing.RandomRotation(0.01),
+        layers.experimental.preprocessing.RandomRotation(randRot),
         layers.experimental.preprocessing.RandomTranslation((0,0.15),0,fill_mode="nearest"),
         layers.experimental.preprocessing.RandomZoom(0.2),
       ]
@@ -173,8 +176,6 @@ def train_model(epochs, batch_size,img_height,img_width,model=None):
     output_layer_name = model.output.name.split(':')[0]
     print(f'output_layer_name={output_layer_name}')
 
-    ## Save Model ##
-    model.save('savedmodels/fishNet')
     #my_freeze_graph([output_layer_name], destination='savedmodels/frozen/', name="frozen_model.pb")
 
     ## VISUALIZE RESULTS
@@ -205,30 +206,55 @@ def train_model(epochs, batch_size,img_height,img_width,model=None):
 
 class_names = ["fish","nonfish"]
 
-model = None
+model_dir_invar = None
+model_directional = None
 ## LOAD MODEL ##
+model_dir_invar = tf.keras.models.load_model('savedmodels/fishNet_loc')
 
-model = tf.keras.models.load_model('savedmodels/fishNet')
-## UNCOMMENT IF YOU WANT TO RETRAIN MODEL ##
-
-[class_names,model] = train_model(epochs,batch_size,img_height,img_width,model)
+## Train to identify fish in region regardless of orientation
+[class_names,model_dir_invar] = train_model(epochs,batch_size,img_height,img_width,1.0,model_dir_invar)
+## Save Model ##
+model_dir_invar.save('savedmodels/fishNet_loc')
 #print("Model training complete")
-
 print(class_names)
 #model.summary()
+## GET OPERATION/LAYER NAMES INPUT -OUTPUT
+# -Another way is by using saved_model_cli show --dir {mobilenet_save_path} --tag_set serve
+print(f'input_layer_name={model_dir_invar.input.name}')
+output_layer_name = model_dir_invar.output.name.split(':')[0]
+print(f'output_layer_name={output_layer_name},{model_dir_invar.output.name}')
 
-print(f'input_layer_name={model.input.name}')
-output_layer_name = model.output.name.split(':')[0]
-print(f'output_layer_name={output_layer_name},{model.output.name}')
+## MAKE PROB PREDICTION Version Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
+print("Saving fishNet_prob Model With Probabilistic SOFTMAX output layer")
+probability_model = Sequential([model_dir_invar,
+                                layers.Softmax()])
+probability_model.save('savedmodels/fishNet_loc_prob')
+
+
+## DIRECTIONAL - UPRIGHT MODEL
+## Train to identify fish in region at a fixed (Vecrtical Orientation) Model used to Detect direction of fish
+[class_names,model_directional] = train_model(epochs,batch_size,img_height,img_width,0.0,model_directional)
+## Save Model ##
+model_directional = tf.keras.models.load_model('savedmodels/fishNet_dir')
+## MAKE PROB PREDICTION Version Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
+print("Saving fishNet_prob Directional Model With Probabilistic SOFTMAX output layer")
+probability_model = Sequential([model_directional,
+                                layers.Softmax()])
+probability_model.save('savedmodels/fishNet_dir_prob')
+
+#print("Model training complete")
+print(class_names)
+#model.summary()
+print(f'input_layer_name={probability_model.input.name}')
+output_layer_name = probability_model.output.name.split(':')[0]
+print(f'output_layer_name={output_layer_name},{probability_model.output.name}')
+
 
 
 ## Test SLIDING WINDOW CLASSIFIER ##
 from tensorflow.keras.preprocessing import image
-
 # change this as you see fit
 #image_path = '/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/00266.png'
-
-
 image_path = pathlib.Path("/home/kostasl/workspace/hello_tf_c_api/build/nonfish_sample.jpg")
 img_basename = os.path.basename(image_path)
 
@@ -259,12 +285,6 @@ y_len,x_len,_ = image_array.shape
 scale_x = img_width
 scale_y = img_height
 print("image size (%sx%s)",(y_len,x_len))
-
-## Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
-print("Saving fishNet_prob Model With Probabilistic SOFTMAX output layer")
-probability_model = Sequential([model,
-                                layers.Softmax()])
-probability_model.save('savedmodels/fishNet_prob')
 
 
 ## Sliding window of fixed size

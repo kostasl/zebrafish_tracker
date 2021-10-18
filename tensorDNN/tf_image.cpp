@@ -133,6 +133,10 @@ std::vector<std::vector<float>> tf_image::TF_Model::predict_image2vector( const 
   }else
    std::cout  << "Output Tensor is empty..." << std::endl;
 
+
+  // KL: Delete Output Tensors now that output data has been copied
+    tf_utils::DeleteTensors(output_tensors);
+
   return output;
 }
 
@@ -192,6 +196,7 @@ std::vector<TF_Tensor*> tf_image::TF_Model::processDataImg( const std::map<std::
 
   // list of input and output tensors
   std::vector<TF_Tensor*> input_tensors;
+  std::vector<TF_Tensor*>::iterator itensor_it;
   std::vector<TF_Tensor*> output_tensors;
 
   // check that the number of keys in the input map is the same as the number of input layers
@@ -248,6 +253,11 @@ std::vector<TF_Tensor*> tf_image::TF_Model::processDataImg( const std::map<std::
 
   // run inference on the network
   const TF_Code code = tf_utils::RunSession( m_pSession, input_ops, input_tensors, output_ops, output_tensors );
+
+
+ // KL:Delete Input Tensor
+ tf_utils::DeleteTensors(input_tensors);
+
 
   if ( code == TF_OK ) { 
     return output_tensors;
