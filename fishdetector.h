@@ -49,10 +49,10 @@ private:
     // the model will try to infer the input and output layer names automatically
     // (only use if it's a simple "one-input -> one-output" model
     bool m_inferInputOutput = false;
-    const std::string mSavedModelPath_localization_model = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc_prob/";
+    const std::string mSavedModelPath_localization_model = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/";
     tf_image::TF_Model m_TFmodel_loc; // Model Used to Localize Larva in img region (rotation invariant)
 
-    const std::string mSavedModelPath_direction_model = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir_prob/";
+    const std::string mSavedModelPath_direction_model = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir/";
     tf_image::TF_Model m_TFmodel_dir; // Model Used to Localize Larva in img region (rotation invariant)
 
 

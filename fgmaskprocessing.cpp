@@ -444,7 +444,7 @@ int getMaxInflectionAndSmoothedContour(const cv::Mat& frameImg, cv::Mat& fgMask,
 
 /// \brief Returns the index of the point furthest away from the provided tail point idx on the curve
 /// That furthest from the tail position is likely the larva's head
-int findAntipodePointinContour(int idxTail, std::vector<cv::Point>& curve,cv::Point ptCentroid, cv::Point& ptHead,cv::Point& ptTail)
+int findAntipodePointinContour(int idxTail, std::vector<cv::Point>& curve,cv::Point ptCentroid, cv::Point2f& ptHead,cv::Point2f& ptTail)
 {
     cv::Point ptHead2;
     int retIdx;
@@ -509,7 +509,7 @@ int findAntipodePointinContour(int idxTail, std::vector<cv::Point>& curve,cv::Po
         retIdx = idxA;
     }
      //Verify Head Point is closest to the Centroid (COM) than tail / Otherwise Switch
-    if (norm(ptTail-ptCentroid)  < norm(ptHead-ptCentroid))
+    if (norm((cv::Point)ptTail-ptCentroid)  < norm((cv::Point)ptHead-ptCentroid))
     {
         cv::Point temp = ptTail;
         ptTail = ptHead;
@@ -560,7 +560,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     cv::Mat fgEdgeMask;
     std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
     zftblobs vFishKeypoints_next;
-    cv::Point ptHead,ptHead2,ptTail; //Traced Points for Tail and Head
+    cv::Point2f ptHead,ptHead2,ptTail; //Traced Points for Tail and Head
     //Make Empty Canvas to Draw Fish Mask
     outFishMask = cv::Mat::zeros(frameImg.rows,frameImg.cols,CV_8UC1);
 
@@ -627,12 +627,33 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         if (area <  gTrackerState.thresh_fishblobarea || area > gTrackerState.thresh_maxfishblobarea) //If Contour Is large Enough then Must be fish
             continue; //skip to next Contour
 
-        // Check Centroid is in ROI - Find Centroi
+        // Check Centroid is in ROI - Find Barycenter - Centroid
         cv::Moments moments =  cv::moments(fishbodycontours[kk]);
         centroid.x = moments.m10/moments.m00;
         centroid.y = moments.m01/moments.m00;
 
+        //% Central moments (intermediary step)
+        double  a = moments.m20/moments.m00 - pow(centroid.x,2);
+        double  b = 2.0*(moments.m11/moments.m00 - centroid.x*centroid.y);
+        double  c = moments.m02/moments.m00 - pow(centroid.y,2);
 
+        //% Orientation (radians)
+        double theta = 1.0/2.0*std::atan(b/(a-c)) + ((int)(a<c))*CV_PI/2.0;
+
+
+        //% Minor and major axis
+        double E_w = sqrt(8.0*(a+c-sqrt(pow(b,2)+pow(a-c,2) )))/2.0;
+        double E_l = sqrt(8.0*(a+c+sqrt(pow(b,2)+pow(a-c,2) )))/2.0;
+
+        //% Ellipse focal points
+        double d = sqrt(pow(E_l,2)-pow(E_w,2));
+        double E_x1 = centroid.x + d*cos(theta);
+        double E_y1 = centroid.y + d*std::sin(theta);
+        double E_x2 = centroid.x - d*std::cos(theta);
+        double E_y2 = centroid.y - d*std::sin(theta);
+
+        ptHead.x = E_x1; ptHead.y=E_y1;
+        ptTail.x = E_x2; ptTail.y=E_y2;
         //If Contained In ROI
         if (!pointIsInROI(centroid,2)) //
             continue;
@@ -688,34 +709,6 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 //        }
 
 
-
-
-        /// \todo Here I could Use Shape Similarity Filtering - Through the CurveCSS header
-
-        //Find Tail Point- As the one with the sharpest Angle
-        // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
-         cv::Point2f ptSearch = kp.pt;
-        int idxTail,idxHead ;
-            idxTail = getMaxInflectionAndSmoothedContour(frameImg, fgMask, curve);
-        if (idxTail >= 0 )
-        {
-            ///
-            idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead,ptTail);
-            gptHead = ptHead; //Hack To Get Head position to Classify fish image
-            gptTail = ptTail;
-            //Move Search location Anteriorly - IMprove fishNet localization
-            ptSearch  = ((cv::Point)kp.pt-gptHead)/2+gptHead;
-            kp.pt = ptSearch;
-            //Correct Angle - 0 is Vertical Up
-            kp.angle = (int)(cv::fastAtan2(ptHead.y-ptTail.y,ptHead.x-ptTail.x)+90)%360;
-        }else
-            gptHead.x = 0; gptHead.y = 0;
-
-        //Move fishNet Detection towards Anterior of Blob
-        cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
-
-
-
         //cv::Mat frameMasked;
         //frameImg.copyTo(frameMasked, fgMask);cv::imshow("FishMAsk frameMasked",frameMasked);
         //// Classify Keypoint for fish  - Find Best Angle if 1st Pass Fails //
@@ -723,8 +716,54 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
                                                          mask_fnetScore, QString::number(iHitCount).toStdString());
 
         kp.response = fR;
-
         //qDebug() << "B.Angle:" << kp.angle << " fR:"<<maxfR;
+
+
+        /// \todo Here I could Use Shape Similarity Filtering - Through the CurveCSS header
+        //Find Tail Point- As the one with the sharpest Angle
+        // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
+         cv::Point2f ptSearch = kp.pt;
+//        int idxTail,idxHead ;
+//            idxTail = getMaxInflectionAndSmoothedContour(frameImg, fgMask, curve);
+//        if (idxTail >= 0 )
+        {
+            ///
+ //          idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead,ptTail);
+
+
+            // Classifier Detects head - Use it To orient correctly //
+            if (cv::norm(kp.pt-ptHead) < cv::norm(kp.pt-ptTail) )
+            {
+                gptHead = ptHead; //Hack To Get Head position to Classify fish image
+                gptTail = ptTail;
+            }else{
+                gptHead = ptTail; //Hack To Get Head position to Classify fish image
+                gptTail = ptHead;
+            }
+
+
+            //Move Search location Anteriorly - IMprove fishNet localization
+            ptSearch  = ((cv::Point)kp.pt-gptHead)/2+gptHead;
+            //kp.pt = ptSearch;
+            //Correct Angle - 0 is Vertical Up
+            kp.angle = (int)(cv::fastAtan2(gptHead.y-gptTail.y,gptHead.x-gptTail.x)+90)%360;
+        }
+         //else
+        //    gptHead.x = 0; gptHead.y = 0;
+
+
+
+        //kp.angle = (int)(theta*180.0/CV_PI+90)%360; //Degrees
+        //Move fishNet Detection towards Anterior of Blob
+        cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
+
+        //2nd Pass Move fishNet Detection towards Anterior of Blob //
+        //float fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
+         //                                                mask_fnetScore, QString::number(iHitCount).toStdString());
+
+        //kp.response = fR;
+
+
 
 
 //        if (bFishBlobFlowed) //Used With OpticFlow Tracking
@@ -739,14 +778,15 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         if (kp.response >= gTrackerState.fishnet_classifier_thres && pointIsInROI(kp.pt,2))
         {
 
-            float fRR = gTrackerState.fishnet.scoreBlobOrientation(frameImg, kp, imgFishAnterior_NetNorm,
-                                                                   mask_fnetScore, QString::number(iHitCount).toStdString());
+            //float fRR = gTrackerState.fishnet.scoreBlobOrientation(frameImg, kp, imgFishAnterior_NetNorm,
+            //                                                       mask_fnetScore, QString::number(iHitCount).toStdString());
             //kp.angle = fishRotAnteriorBox.angle;
+            //kp.response = fRR;
             cv::imshow("Normed fish Detected",imgFishAnterior_NetNorm);
 
 
-            kp.response = fRR;
-            if (kp.response >= gTrackerState.fishnet_classifier_thres && pointIsInROI(kp.pt,2))
+
+            //if (kp.response >= gTrackerState.fishnet_classifier_thres && pointIsInROI(kp.pt,2))
             {
                 ptFishblobs.push_back(kp);
                 /// \todo Conditionally add this Contour to output if it matches template.
