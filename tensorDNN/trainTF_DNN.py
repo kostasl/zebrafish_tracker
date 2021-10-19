@@ -144,11 +144,11 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0, model=No
         model = Sequential([
             data_augmentation,
             layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=(img_height, img_width, 1)),
-            #layers.Conv2D(8, (3, 3), padding='same', activation='relu'),  # , activation='relu'
-            #layers.Dropout(0.1),
+            layers.Conv2D(8, (3, 3), padding='same', activation='relu'),  # , activation='relu'
+            layers.Dropout(0.1),
             #layers.MaxPooling2D(),
             layers.Conv2D(16, (3, 3), padding='same', activation='relu'),  # , activation='relu'
-            #layers.Dropout(0.1),
+            layers.Dropout(0.1),
             layers.MaxPooling2D(),
             layers.Conv2D(32, (3, 3), padding='same', activation='relu'),  # , activation='relu'
             layers.MaxPooling2D(),

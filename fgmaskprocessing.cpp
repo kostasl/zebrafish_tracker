@@ -713,10 +713,26 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         //cv::Mat frameMasked;
         //frameImg.copyTo(frameMasked, fgMask);cv::imshow("FishMAsk frameMasked",frameMasked);
         //// Classify Keypoint for fish  - Find Best Angle if 1st Pass Fails //
-        float fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
+        kp.pt = ptHead;
+        float fRH = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
                                                          mask_fnetScore, QString::number(iHitCount).toStdString());
-
-        kp.response = fR;
+        ptHead2 = kp.pt;
+        kp.pt = ptTail;
+        float fRT = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
+                                                         mask_fnetScore, QString::number(iHitCount).toStdString());
+        ptTail2 = kp.pt;
+        if (fRT > fRH){
+            kp.response = fRT;
+            kp.pt = ptTail2;
+            gptHead = ptTail; //Hack To Get Head position to Classify fish image
+            gptTail = ptHead;
+        }
+        else{
+            kp.response = fRH;
+            kp.pt = ptHead2;
+            gptHead = ptHead; //Hack To Get Head position to Classify fish image
+            gptTail = ptTail;
+        }
         //qDebug() << "B.Angle:" << kp.angle << " fR:"<<maxfR;
 
 
@@ -732,16 +748,16 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 //           idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead,ptTail);
 
 
-            // Classifier Detects head - Use it To orient correctly //
-            if (cv::norm(kp.pt-ptHead) < cv::norm(kp.pt-ptTail) )
-            {
-                gptHead = ptTail; //Hack To Get Head position to Classify fish image
-                gptTail = ptHead;
+//            // Classifier Detects head - Use it To orient correctly //
+//            if (cv::norm(kp.pt-ptHead) < cv::norm(kp.pt-ptTail) )
+//            {
+//                gptHead = ptTail; //Hack To Get Head position to Classify fish image
+//                gptTail = ptHead;
 
-            }else{
-                gptHead = ptHead; //Hack To Get Head position to Classify fish image
-                gptTail = ptTail;
-            }
+//            }else{
+//                gptHead = ptHead; //Hack To Get Head position to Classify fish image
+//                gptTail = ptTail;
+//            }
 
 
             //Move Search location Anteriorly - IMprove fishNet localization
@@ -758,13 +774,6 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         //kp.angle = (int)(theta*180.0/CV_PI+90)%360; //Degrees
         //Move fishNet Detection towards Anterior of Blob
 
-
-        //2nd Pass Move fishNet Detection towards Anterior of Blob //
-         kp.pt = gptHead;
-        fR = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
-                                                        mask_fnetScore, QString::number(iHitCount).toStdString());
-
-        //kp.response = fR;
 
 //        if (bFishBlobFlowed) //Used With OpticFlow Tracking
 //            kp.response +=1.0f;
@@ -815,8 +824,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
 
          //Add Trailing Expansion to the mask- In Case End bit of tail is not showing (ptTail-ptHead)/30+
-        cv::circle(outFishMask, ptTail,4,CV_RGB(255,255,255),cv::FILLED);
-        cv::circle(outFishMask, ptHead,6,CV_RGB(255,255,255),cv::FILLED);
+        cv::circle(outFishMask, gptTail,4,CV_RGB(255,255,255),cv::FILLED);
+        cv::circle(outFishMask, gptHead,6,CV_RGB(255,255,255),cv::FILLED);
           cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
         cv::putText(outFishMask,strfRecScore.toStdString(), ptSearch +cv::Point2f(10,-10), gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(255,255,250));
         //cv::circle(outFishMask, ptHead - (ptHead-centroid)/2,5,CV_RGB(255,255,255),cv::FILLED);
