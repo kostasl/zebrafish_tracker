@@ -325,7 +325,7 @@ def testModel(strTImg):
 
 
 class_names = ["fish", "nonfish"]
-bResetModelTraining = True
+bResetModelTraining = False
 #
 # #
 model_dir_invar = None
