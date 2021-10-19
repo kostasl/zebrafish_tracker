@@ -349,6 +349,13 @@ if (not model_dir_invar is  None):
     output_layer_name = model_dir_invar.output.name.split(':')[0]
     print(f'output_layer_name={output_layer_name},{model_dir_invar.output.name}')
 
+
+print("~~~~~~~~~ Test Prediction on Non-fish and 2 fish samples ~~~~")
+testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/nonfish/non-fish.jpg")
+testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/fish.jpg")
+testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/fish2.jpg")
+
+
 # ## MAKE PROB PREDICTION Version Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
 # print("Saving fishNet_prob Model With Probabilistic SOFTMAX output layer")
 # probability_model_loc = Sequential([model_dir_invar,
@@ -358,30 +365,25 @@ if (not model_dir_invar is  None):
 ## ## DIRECTIONAL - UPRIGHT MODEL
 ## Save Model ##
 #if (not bResetModelTraining):
-model_directional = tf.keras.models.load_model('savedmodels/fishNet_dir')
-
-## Train to identify fish in region at a fixed (Vecrtical Orientation) Model used to Detect direction of fish
-[class_names,model_directional] = train_model(epochs,batch_size,img_height,img_width,0.0,model_directional)
-model_directional.save('savedmodels/fishNet_dir')
-
-## MAKE PROB PREDICTION Version Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
-# print("Saving fishNet_prob Directional Model With Probabilistic SOFTMAX output layer")
-# probability_model = Sequential([model_directional,
-#                                 layers.Softmax()])
-# probability_model.save('savedmodels/fishNet_dir_prob')
-if (not model_directional is  None):
- print("Model training complete")
- print(class_names)
- model_directional.summary()
- print(f'input_layer_name={model_directional.input.name}')
- output_layer_name = model_directional.output.name.split(':')[0]
- print(f'output_layer_name={output_layer_name},{model_directional.output.name}')
+# model_directional = tf.keras.models.load_model('savedmodels/fishNet_dir')
 #
-
-print("~~~~~~~~~ Test Prediction on Non-fish and 2 fish samples ~~~~")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/nonfish/non-fish.jpg")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/fish.jpg")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/fish2.jpg")
+# ## Train to identify fish in region at a fixed (Vecrtical Orientation) Model used to Detect direction of fish
+# [class_names,model_directional] = train_model(epochs,batch_size,img_height,img_width,0.0,model_directional)
+# model_directional.save('savedmodels/fishNet_dir')
+#
+# ## MAKE PROB PREDICTION Version Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
+# # print("Saving fishNet_prob Directional Model With Probabilistic SOFTMAX output layer")
+# # probability_model = Sequential([model_directional,
+# #                                 layers.Softmax()])
+# # probability_model.save('savedmodels/fishNet_dir_prob')
+# if (not model_directional is  None):
+#  print("Model training complete")
+#  print(class_names)
+#  model_directional.summary()
+#  print(f'input_layer_name={model_directional.input.name}')
+#  output_layer_name = model_directional.output.name.split(':')[0]
+#  print(f'output_layer_name={output_layer_name},{model_directional.output.name}')
+# #
 
 ## END
 input("Press Enter to exit...")
