@@ -361,7 +361,9 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
         fishblob.pt = ptmax+fishRotAnteriorBox.boundingRect().tl(); //Shift Blob Position To Max  To Max Recognition Point
 
     // DEBUG IMG //
-    //cv::circle(imgFishAnterior,ptmax_orig,4,CV_RGB(250,200,210),2);
+    cv::circle(imgFishAnterior,ptmax,4,CV_RGB(250,200,210),2);
+    cv::circle(frame,fishblob.pt,4,CV_RGB(250,200,210),2);
+
     //cv::imshow(string("Fish Region Body ") + regTag,imgFishAnterior);
     // DEBUG IMG //
     //cv::circle(imgFishAnterior_Norm,ptmax,3,CV_RGB(200,200,210),2);

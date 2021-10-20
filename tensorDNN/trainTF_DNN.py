@@ -42,8 +42,9 @@ img_width = 28
 epochs = 100
 bResetModelTraining = False  ## Do Not Incremental Train / Reset And Start over
 
-
-def train_model(epochs, batch_size, img_height, img_width, randRot=0.0, model=None):
+## Had To run x3 times with a validation split 0.3 - 0.5 before I got good filtering of entire scene - as tested by testModel
+def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
+                , model=None):
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
         str(data_dir),
         validation_split=0.3,
@@ -144,23 +145,25 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0, model=No
         model = Sequential([
             data_augmentation,
             layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=(img_height, img_width, 1)),
-            #layers.Conv2D(8, (3, 3), padding='same', activation='relu'),  # , activation='relu'
+            layers.Conv2D(8, (3, 3), padding='same', activation='relu'),  # , activation='relu'
             #layers.Dropout(0.1),
-            #layers.MaxPooling2D(),
+            layers.MaxPooling2D(),
             layers.Conv2D(16, (3, 3), padding='same', activation='relu'),  # , activation='relu'
-            layers.Dropout(0.1),
+            #layers.Dropout(0.1),
             layers.MaxPooling2D(),
             layers.Conv2D(32, (3, 3), padding='same', activation='relu'),  # , activation='relu'
-            layers.Dropout(0.1),
+            #layers.Dropout(0.1),
             layers.MaxPooling2D(),
+            layers.Conv2D(64, (3, 3), padding='same', activation='relu'),
+            #layers.MaxPooling2D(),
             layers.Conv2D(80, (3, 3), padding='same', activation='relu'),
             layers.MaxPooling2D(),
             layers.Flatten(),
             layers.Dense(750, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dense(300, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-            #layers.Dense(100, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-            layers.Dropout(0.5),
-            layers.Dense(20, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            #layers.Dropout(0.3),
+            layers.Dense(100, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(50, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dropout(0.3),
             layers.Dense(num_classes, activation='softmax')  ##
         ])
@@ -314,16 +317,23 @@ def testModel(strTImg):
             # classifier(imgByteArray,label_path,retrained_path)
             predictions = probability_model_loc.predict(cropped_image)
             print(predictions[0])
-            if (np.shape(predictions[0]) > 1):
-                pclass = np.argmax(predictions[0])
+            if (np.shape(predictions[0])[0] > 1):
+                #pclass = np.argmax(predictions[0])
+                if (predictions[0][0]-predictions[0][1] > 0.5):
+                    pclass = 0
+                else:
+                    pclass = 1
                 print("~~~ Predicted Class: %s %s" % (predictions[0], class_names[pclass]))
+                image.save_img(
+                "/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/" + str(class_names[pclass]) + "/" + str(
+                    img_basename) + "-" + str(x) + "x" + str(y) + ".jpg", cropped_image[0])
             else:
                 if predictions[0] < 0.5:
                     print("~~~ Predicted Class: %s %s" % (predictions[0], class_names[0]))
                 else:
                     print("~~~ Predicted Class: %s %s" % (predictions[0], class_names[1]))
 
-            # image.save_img("/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/"+ str(class_names[pclass]) +"/" +str(img_basename) + "-" + str(x)+"x"+str(y)+".jpg",cropped_image[0])
+
 
     #            image.save_img("/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/nonfish/00266-" + str(x) + "x" + str(y) + ".jpg", cropped_image[0])
 
@@ -331,7 +341,7 @@ def testModel(strTImg):
 class_names = ["fish", "nonfish"]
 
 #
-# #
+# # #
 model_dir_invar = None
 model_directional = None
 ## LOAD MODEL ##
@@ -357,7 +367,9 @@ if (not model_dir_invar is  None):
 print("~~~~~~~~~ Test Prediction on Non-fish and 2 fish samples ~~~~")
 testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/nonfish/non-fish.jpg")
 testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/fish.jpg")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/fish2.jpg")
+testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/10796.png")
+
+
 
 
 # ## MAKE PROB PREDICTION Version Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
