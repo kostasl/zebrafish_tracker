@@ -1,12 +1,13 @@
 # FishNet DNN - Train two tensorflow models :
 #           * A model the fish anterior over all directions - to be used to locate the centre of fish template within a blob region
 ##          * B model of upright (Normed) fish antrerior - which is used to detect direction by testing against rotated image regions for best match
-import matplotlib.pyplot
+#import matplotlib.pyplot
+#import io
+#import PIL
+
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import io
-import PIL
 import pathlib
 
 from tensorflow.keras import datasets, layers, models
@@ -40,7 +41,7 @@ batch_size = 64
 img_height = 38
 img_width = 28
 epochs = 100
-bResetModelTraining = False  ## Do Not Incremental Train / Reset And Start over
+bResetModelTraining = True  ## Do Not Incremental Train / Reset And Start over
 
 ## Had To run x3 times with a validation split 0.3 - 0.5 before I got good filtering of entire scene - as tested by testModel
 def train_model(epochs, batch_size, img_height, img_width, randRot=0.0

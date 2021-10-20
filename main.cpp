@@ -2939,6 +2939,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            tEllipsoids vellLeft;
            tEllipsoids vellRight;
 
+           //ShortCut
+
            imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(maskedfishImg_gray,fish->bodyRotBound); //fishRotAnteriorBox
            // Check empty in case of an Error In extraction - due to boundary conditions
            if (imgFishAnterior_Norm.empty())

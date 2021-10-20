@@ -265,7 +265,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
    /// Size Of Norm Head Image
    cv::Size szFishAnteriorNorm = fishRotAnteriorBox.boundingRect().size();// (min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4,                              max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4);
    // Define SCore Canvas - Where we draw results from Recognition Scanning
-   cv::Mat maskRegionScore_Norm((int)szFishAnteriorNorm.width, (int)szFishAnteriorNorm.height, CV_32FC1, cv::Scalar(0, 0, 0));
+   cv::Mat maskRegionScore_Norm((int)szFishAnteriorNorm.height, (int)szFishAnteriorNorm.width, CV_32FC1, cv::Scalar(0, 0, 0));
 
 
    //To Check Bounds Within Image
@@ -361,8 +361,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
         fishblob.pt = ptmax+fishRotAnteriorBox.boundingRect().tl(); //Shift Blob Position To Max  To Max Recognition Point
 
     // DEBUG IMG //
-    cv::circle(imgFishAnterior,ptmax,4,CV_RGB(250,200,210),2);
-    cv::circle(frame,fishblob.pt,4,CV_RGB(250,200,210),2);
+    //cv::circle(imgFishAnterior,ptmax,4,CV_RGB(250,200,210),2);
+    //cv::circle(frame,fishblob.pt,4,CV_RGB(250,200,210),2);
 
     //cv::imshow(string("Fish Region Body ") + regTag,imgFishAnterior);
     // DEBUG IMG //
