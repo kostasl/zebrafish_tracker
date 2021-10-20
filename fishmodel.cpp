@@ -153,7 +153,7 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 //        // [ 0    0   0     0     0    Ea_v0  0]
           // [ 0    0   0     0     0    0   lE 0]
           // [ 0    0   0     0     0    0   0  rE]
-    cv::setIdentity(KF.processNoiseCov, cv::Scalar(6e-4)); // default is 1, for smoothing try 0.0001
+    cv::setIdentity(KF.processNoiseCov, cv::Scalar(6e-5)); // default is 1, for smoothing try 0.0001
     //Maybe Noise Suppression too high at 1e-3 , introduces lag in position
 //    KF.processNoiseCov.at<float>(0,0) = 1e-2;
 //    KF.processNoiseCov.at<float>(1,1) = 1e-2;
@@ -168,7 +168,7 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 //    //KF.processNoiseCov.at<float>(35) = 1e-1f;
 
 //    // Measures Noise Covariance Matrix R - Set high/low so Filter Follows Measurement more closely
-    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-4f)); // default is 1, increasing should smooth but I get erratic behaviour
+    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-5f)); // default is 1, increasing should smooth but I get erratic behaviour
     //KF.measurementNoiseCov.at<float>(2,2) = 1e-3f; //Angular Diff (Speed)- per frame
     //KF.measurementNoiseCov.at<float>(3,3) = 1e-3f; //Angle Accell
     //KF.measurementNoiseCov.at<float>(1,2) = 1e-2f; // Y speed X pos
