@@ -144,7 +144,7 @@ class trackerState
       double dBGMaskAccumulateSpeed             = 1.0/(4.0*MOGhistory);
 
       const double dLearningRate                = 1.0/(MOGhistory); //Learning Rate During Initial BG Modelling - Learn Slow So 1st Playbacl Frame doesnt look new anymore
-      const double dLearningRateNominal         = 0.00001; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
+      const double dLearningRateNominal         = 0.001; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
       double dactiveMOGLearningRate             = dLearningRateNominal;
       //Processing Loop delay
       uint cFrameDelayms                        = 1;
@@ -309,7 +309,7 @@ class trackerState
       double gTemplateMatchThreshold_LowLimit = 0.65;
       double gTemplateMatchThreshold_UpLimit = 0.95;
 
-      int gFishBoundBoxSize               = 60; /// 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
+      int gFishBoundBoxSize               = 80; /// 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
       int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*4; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState

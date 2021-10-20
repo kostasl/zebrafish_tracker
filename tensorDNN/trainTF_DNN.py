@@ -36,11 +36,11 @@ fish = list(data_dir.glob('./fish/*.jpg'))
 nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 # PIL.Image.open(str(nonfish[0]))
 
-batch_size = 300
+batch_size = 64
 img_height = 38
 img_width = 28
 epochs = 100
-bResetModelTraining = True  ## Do Not Incremental Train / Reset And Start over
+bResetModelTraining = False  ## Do Not Incremental Train / Reset And Start over
 
 
 def train_model(epochs, batch_size, img_height, img_width, randRot=0.0, model=None):
@@ -139,21 +139,22 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0, model=No
     normalization_layer = tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255)
 
     ## Create the model ##
-    num_classes = 1
+    num_classes = 2
     if model is None:
         model = Sequential([
             data_augmentation,
             layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=(img_height, img_width, 1)),
-            layers.Conv2D(8, (3, 3), padding='same', activation='relu'),  # , activation='relu'
-            layers.Dropout(0.1),
+            #layers.Conv2D(8, (3, 3), padding='same', activation='relu'),  # , activation='relu'
+            #layers.Dropout(0.1),
             #layers.MaxPooling2D(),
             layers.Conv2D(16, (3, 3), padding='same', activation='relu'),  # , activation='relu'
             layers.Dropout(0.1),
             layers.MaxPooling2D(),
             layers.Conv2D(32, (3, 3), padding='same', activation='relu'),  # , activation='relu'
+            layers.Dropout(0.1),
             layers.MaxPooling2D(),
-            # layers.Conv2D(80, (3, 3), padding='same', activation='relu'),
-            # layers.MaxPooling2D(),
+            layers.Conv2D(80, (3, 3), padding='same', activation='relu'),
+            layers.MaxPooling2D(),
             layers.Flatten(),
             layers.Dense(750, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dense(300, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
@@ -161,13 +162,13 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0, model=No
             layers.Dropout(0.5),
             layers.Dense(20, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dropout(0.3),
-            layers.Dense(num_classes, activation='sigmoid')  ##
+            layers.Dense(num_classes, activation='softmax')  ##
         ])
         ##COMPILE MODEL
         model.compile(optimizer='adam',
                       # optimizer=RMSprop(lr=0.001),
-                      loss=tf.keras.losses.binary_crossentropy, ##For Binary Classifier
-                      #loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), ##Categorial classifier
+                      #loss=tf.keras.losses.binary_crossentropy, ##For Binary Classifier
+                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), ##Categorial classifier
                       metrics=['accuracy'])
 
     model.summary()
@@ -313,11 +314,14 @@ def testModel(strTImg):
             # classifier(imgByteArray,label_path,retrained_path)
             predictions = probability_model_loc.predict(cropped_image)
             print(predictions[0])
-            # pclass = np.argmax(predictions[0])
-            if predictions[0] < 0.5:
-                print("~~~ Predicted Class: %s %s" % (predictions[0], class_names[0]))
+            if (np.shape(predictions[0]) > 1):
+                pclass = np.argmax(predictions[0])
+                print("~~~ Predicted Class: %s %s" % (predictions[0], class_names[pclass]))
             else:
-                print("~~~ Predicted Class: %s %s" % (predictions[0], class_names[1]))
+                if predictions[0] < 0.5:
+                    print("~~~ Predicted Class: %s %s" % (predictions[0], class_names[0]))
+                else:
+                    print("~~~ Predicted Class: %s %s" % (predictions[0], class_names[1]))
 
             # image.save_img("/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/"+ str(class_names[pclass]) +"/" +str(img_basename) + "-" + str(x)+"x"+str(y)+".jpg",cropped_image[0])
 
@@ -325,7 +329,7 @@ def testModel(strTImg):
 
 
 class_names = ["fish", "nonfish"]
-bResetModelTraining = False
+
 #
 # #
 model_dir_invar = None
