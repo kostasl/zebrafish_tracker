@@ -710,29 +710,33 @@ bool fishModel::stepPredict(unsigned int nFrame)
 /// \param Angle
 /// \param bcentre
 ///
-bool fishModel::updateState(zftblob* fblob,double templatematchScore,float Angle, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
+bool fishModel::updateState(zftblob* fblob, cv::Point2f bcentre,unsigned int nFrame,int SpineSegLength,int TemplRow, int TemplCol)
 {
 
-    assert(!std::isnan(Angle));
+    //assert(!std::isnan(Angle));
 
     //Compare displacements to Last Measurements Not To Predicted Position In BearingAngle
     // Note Blob Angles can flip 180 between frames so we need to take the closest to the current orientation
     // \note Issue with Mod numbers Compass - Correcting towards from 355 to 0 the wrong way
     float angleDisplacement;
-    float angleDisplacementA = getAngleDiff(zfishBlob.angle,Angle);
-    float angleDisplacementB = getAngleDiff((int)(zfishBlob.angle+180)%360,Angle);
+    float angleDisplacementA = getAngleDiff(zfishBlob.angle,this->bearingAngle);
+    float angleDisplacementB = getAngleDiff((int)(zfishBlob.angle+180)%360,this->bearingAngle);
     //Choose the Displacement Closer to Current Angle (Fix Blob Noisy angle inversions)
     angleDisplacement = (abs(angleDisplacementA) < abs(angleDisplacementB))?angleDisplacementA:angleDisplacementB;
     //Angle = (abs(angleDisplacementA) < abs(angleDisplacementB))?Angle:(int)(Angle+180.0f)%360;
 
-//    if (angleDisplacement > 100 && !bNewModel) //Reject Large Change - Blob Angle Flipped
-//        return (false);
 
     double stepDisplacement = cv::norm(bcentre - this->zTrack.centroid);
     float dT = (float)(nFrame-nLastUpdateFrame);///((double)gTrackerState.gfVidfps+1.0)
 
     if (bNewModel)
         dT = 0;
+    else
+        if (angleDisplacement/dT > 150 ) //Correct Large Change - Blob Angle Flipped
+        {
+            qDebug() << "[W] Large angle change detected";
+            //return (false);
+        }
 
     if (!gTrackerState.bDraggingTemplateCentre)
         bUserDrag = false;
@@ -791,7 +795,7 @@ bool fishModel::updateState(zftblob* fblob,double templatematchScore,float Angle
 
 
     this->zTrack.id     = ID;
-    this->matchScore  = templatematchScore;
+    this->matchScore  = fblob->response;// templatematchScore;
     this->Delta_bearingAngle = mCorrected.at<float>(4);
     this->bearingAngle   =   zfishBlob.angle  + mCorrected.at<float>(4); // Integrate Angle Change onto Bearing;
     assert(!std::isnan(this->bearingAngle));

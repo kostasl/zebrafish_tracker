@@ -37,7 +37,7 @@ fish = list(data_dir.glob('./fish/*.jpg'))
 nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 # PIL.Image.open(str(nonfish[0]))
 
-batch_size = 64
+batch_size = 32
 img_height = 38
 img_width = 28
 epochs = 100

@@ -843,6 +843,9 @@
          </property>
         </widget>
         <widget class="QSpinBox" name="spinBoxFishNetSparseness">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="geometry">
           <rect>
            <x>170</x>
@@ -877,6 +880,9 @@
          </property>
         </widget>
         <widget class="QLabel" name="label_TemplateMatch_4">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="geometry">
           <rect>
            <x>10</x>

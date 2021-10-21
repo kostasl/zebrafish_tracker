@@ -1014,7 +1014,7 @@ void MainWindow::mouseDblClickEvent( QGraphicsSceneMouseEvent * mouseEvent )
             fish->idxTemplateRow = 0;
             fish->idxTemplateCol = 0;
 
-            fish->updateState(&fishblob,101,0,ptMouse,nFrame,
+            fish->updateState(&fishblob,ptMouse,nFrame,
                               gTrackerState.gFishTailSpineSegmentLength,0,0);
 
             vfishmodels.insert(IDFishModel(fish->ID,fish));

@@ -290,7 +290,7 @@ class trackerState
       int gthresEyeSegL                   = 2;
       int gFishTailSpineSegmentLength     = 9;
       // Eye Masks //
-      int giHeadIsolationMaskVOffset     = 17; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
+      int giHeadIsolationMaskVOffset     = 23; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
       int iEyeMaskSepWidth               = 18; //5 px width vertical line separates the eyes for segmentation
 

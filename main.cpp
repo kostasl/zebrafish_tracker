@@ -1160,8 +1160,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 minL1 < gTrackerState.gDisplacementLimitPerFrame)
         {
            if (!gTrackerState.bPaused)
-                pfish->updateState(fishblob,fishblob->response,
-                                   fishblob->angle,
+                pfish->updateState(fishblob,
+                                   //fishblob->angle,
                                    fishblob->pt,nFrame,
                                    gTrackerState.gFishTailSpineSegmentLength,0,0);
 
@@ -1216,7 +1216,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
            fish->idxTemplateRow = 0;
            fish->idxTemplateCol = 0;
            fish->stepPredict(nFrame);
-           fish->updateState(fishblob,maxMatchScore,bestAngle,ptSearch,nFrame,
+           fish->updateState(fishblob,ptSearch,nFrame,
                              gTrackerState.gFishTailSpineSegmentLength,0,0);
 
            vfishmodels.insert(IDFishModel(fish->ID,fish));
