@@ -560,7 +560,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     cv::Mat fgEdgeMask;
     std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
     zftblobs vFishKeypoints_next;
-    cv::Point2f ptHead,ptHead2,ptTail; //Traced Points for Tail and Head
+    cv::Point2f ptHead,ptHead2,ptTail,ptTail2; //Traced Points for Tail and Head
     //Make Empty Canvas to Draw Fish Mask
     outFishMask = cv::Mat::zeros(frameImg.rows,frameImg.cols,CV_8UC1);
 
@@ -596,8 +596,29 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     cv::findContours( fgEdgeMask, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,
                       cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
-    // Obtain Optic Flow of fish positions from previous frame - Score Contours as fish based on whether they contain a fish keypoint that moved into the vicinity //
-   // processFishOpticFlow(fgEdgeMask,gframeLast, vfishmodels, vFishKeypoints_next);
+    /* Obtain Optic Flow of fish positions from previous frame - Score Contours as fish based on whether they contain a fish keypoint that moved into the vicinity //
+     processFishOpticFlow(fgEdgeMask,gframeLast, vfishmodels, vFishKeypoints_next);
+     /// Check if Blob belongs to moving fish - Draw Reveal Mask
+        bool  = false;
+        for (int k=0; k < vFishKeypoints_next.size();k++)
+        {
+            if (boundEllipse.boundingRect().contains(vFishKeypoints_next[k].pt ))
+            {
+                circle(outFishMask,vFishKeypoints_next[k].pt,20,CV_RGB(255,255,255),CV_FILLED);
+                bFishBlobFlowed = true;
+            }
+        }
+
+
+        if (boundEllipse.size.width/boundEllipse.size.height < 2.5 &&
+                boundEllipse.size.height/boundEllipse.size.width < 2.5 &&
+                !bFishBlobFlowed)
+        {
+            if (bFishBlobFlowed)
+                qDebug() << "Bounded Shape/Flow Filt.";
+
+            continue;
+        }*/
 
 
     ///Draw Only the largest contours that should belong to fish
@@ -631,83 +652,42 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         cv::Moments moments =  cv::moments(fishbodycontours[kk]);
         centroid.x = moments.m10/moments.m00;
         centroid.y = moments.m01/moments.m00;
-
-        //% Central moments (intermediary step)
-        double  a = moments.m20/moments.m00 - pow(centroid.x,2);
-        double  b = 2.0*(moments.m11/moments.m00 - centroid.x*centroid.y);
-        double  c = moments.m02/moments.m00 - pow(centroid.y,2);
-
-        //% Orientation (radians)
-        double theta = 1.0/2.0*std::atan(b/(a-c))  ;
-        if (a<c)
-            theta+=CV_PI/2.0;
-
-
-        //% Minor and major axis
-        double E_w = sqrt(8.0*(a+c-sqrt(pow(b,2)+pow(a-c,2) )))/2.0;
-        double E_l = sqrt(8.0*(a+c+sqrt(pow(b,2)+pow(a-c,2) )))/2.0;
-
-        //% Ellipse focal points
-        double d = sqrt(pow(E_l,2)-pow(E_w,2));
-        double E_x1 = centroid.x + d*cos(theta);
-        double E_y1 = centroid.y + d*std::sin(theta);
-        double E_x2 = centroid.x - d*std::cos(theta);
-        double E_y2 = centroid.y - d*std::sin(theta);
-
-        ptHead.x = E_x1; ptHead.y=E_y1;
-        ptTail.x = E_x2; ptTail.y=E_y2;
+        //ptHead.x = E_x1; ptHead.y=E_y1;
+        //ptTail.x = E_x2; ptTail.y=E_y2;
         //If Contained In ROI
         if (!pointIsInROI(centroid,2)) //
             continue;
 
         curve = fishbodycontours[kk];
 
-
         //If Has enough Points Skip Very Small Curves //If curve is empty then  Small Area Contour will be skipped
         if ((int)curve.size() < gTrackerState.gcFishContourSize/2)
             continue;
 
-        //Check If Elongated Object  - Use Width Height Ratio
+        /// Fit Ellipse And Obtain Orientation and Focal Points //
         cv::RotatedRect boundEllipse = cv::fitEllipse(curve);
         cv::ellipse(outFishMask,boundEllipse,CV_RGB(255,255,255),1,cv::LINE_8);
-        // Get  Ellipse Major Axis
+        // Get  Ellipse Major/Minor Axis
         Point2f vertices[4];
         boundEllipse.points(vertices);
-        ptHead = (vertices[0] + vertices[1])/2.0;
-        ptTail = (vertices[2] + vertices[3])/2.0;
+        cv::Point2f  ptEllFocus1 = (vertices[0] + vertices[1])/2.0;
+        cv::Point2f  ptEllFocus2 = (vertices[2] + vertices[3])/2.0;
 
-        cv::Point2f  ptHead2 =  (vertices[1] + vertices[2])/2.0;
-        cv::Point2f ptTail2 = (vertices[3] + vertices[0])/2.0;
-        if (cv::norm(ptHead-ptTail)<cv::norm(ptHead2-ptTail2)){
-           ptHead = ptHead2;
-           ptTail = ptTail2;
+        cv::Point2f  ptEllFocus3 =  (vertices[1] + vertices[2])/2.0;
+        cv::Point2f  ptEllFocus4 = (vertices[3] + vertices[0])/2.0;
+        //Obtain Major axis  Based on Distances - Assign Head - Tail To Major Axis
+        if (cv::norm(ptEllFocus1-ptEllFocus2)<cv::norm(ptEllFocus3-ptEllFocus4)){
+           ptHead = ptEllFocus3;
+           ptTail = ptEllFocus4;
+        }else
+        {
+            ptHead = ptEllFocus1; //Direction ignorant - Only Orientation is picked up
+            ptTail = ptEllFocus2;
         }
 
-
+        // Make Blob / Keypoint//
         zftblob kp(boundEllipse.center.x,boundEllipse.center.y,area,(int)(boundEllipse.angle+90)%360);
 
-
-//        /// Check if Blob belongs to moving fish - Draw Reveal Mask
-//        bool  = false;
-//        for (int k=0; k < vFishKeypoints_next.size();k++)
-//        {
-//            if (boundEllipse.boundingRect().contains(vFishKeypoints_next[k].pt ))
-//            {
-//                circle(outFishMask,vFishKeypoints_next[k].pt,20,CV_RGB(255,255,255),CV_FILLED);
-//                bFishBlobFlowed = true;
-//            }
-//        }
-
-
-//        if (boundEllipse.size.width/boundEllipse.size.height < 2.5 &&
-//                boundEllipse.size.height/boundEllipse.size.width < 2.5 &&
-//                !bFishBlobFlowed)
-//        {
-//            if (bFishBlobFlowed)
-//                qDebug() << "Bounded Shape/Flow Filt.";
-
-//            continue;
-//        }
 
 
 
@@ -720,55 +700,28 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
        if (idxTail >= 0 )
         {
 
-           idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead,ptTail);
-           //           //Set likely Direction using tail/head poinst detected from Curvature
-           //            if (cv::norm(ptHead2-ptHead) < cv::norm(ptHead2-ptTail) )
-           //            {
-           //                gptHead = ptHead; //Hack To Get Head position to Classify fish image
-           //                gptTail = ptTail;
+           idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead2,ptTail2);
 
-           //           }else{
-           //              gptHead = ptTail; //Hack To Get Head position to Classify fish image
-           //              gptTail = ptHead;
-           //           }
            //cv::Mat frameMasked;
            //frameImg.copyTo(frameMasked, fgMask);cv::imshow("FishMAsk frameMasked",frameMasked);
-           //// Classify Keypoint for fish  - Find Best Angle if 1st Pass Fails //
-           kp.pt = gptHead;
-           float fRH = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
+
+           // Classify Keypoint for fish  - Find Best Angle if 1st Pass Fails //
+           ptSearch  = (ptHead-ptHead2)/2.0f+ptHead2; //Classifier search focused between candidate Ellipse head point And  Contour Head POint
+
+           kp.pt = ptSearch;
+           float fRH = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
                                                             mask_fnetScore, QString::number(iHitCount).toStdString());
-            ptHead2 = kp.pt; //Save Classifier Located Point
-            gptHead = ptHead; //Hack To Get Head position to Classify fish image
-            gptTail = ptTail;
-           //gptHead = ptHead; //Hack To Get Head position to Classify fish image
-           //gptTail = ptTail;
-
-//           float fRT = 0.0f;
-//           if (fRH < gTrackerState.fishnet_classifier_thres)
-//           {
-
-//                kp.pt = ptTail;
-//                fRT = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp, imgFishAnterior_NetNorm,
-//                                                            mask_fnetScore, QString::number(iHitCount).toStdString());
-//                ptTail2 = kp.pt;
-//           }
-
-//           if (fRT > fRH){
-//               kp.response = fRT;
-//               kp.pt = ptTail2; //Restore Point Classifier Located
-//               gptHead = ptTail; //Hack To Get Head position to Classify fish image
-//               gptTail = ptHead;
-//           }else{
-//               kp.response = fRH;
-//               kp.pt = ptHead2;//Restore Point Classifier Located
-//               gptHead = ptHead; //Hack To Get Head position to Classify fish image
-//               gptTail = ptTail;
-//           }
-//           //qDebug() << "B.Angle:" << kp.angle << " fR:"<<maxfR;
+            // Fix Orientation against Head Point detected by classifier
+           if (cv::norm(ptHead-kp.pt)>cv::norm(ptTail - kp.pt)){
+               gptHead = kp.pt; //Hack To Get Head position to Classify fish image
+               gptTail = ptHead; //On Curve Point
+           }else{
+               gptHead = kp.pt; //Hack To Get Head position to Classify fish image
+               gptTail = ptTail; //On Curve Point
+           }
 
 
-            //Move Search location Anteriorly - IMprove fishNet localization
-            ptSearch  = (gptHead-(cv::Point)kp.pt)/2+gptHead;
+
             //kp.pt = ptSearch; //Move Closer to Head
             //Correct Angle - 0 is Vertical Up
             kp.angle = (int)(cv::fastAtan2(gptHead.y-gptTail.y,gptHead.x-gptTail.x)+90)%360;

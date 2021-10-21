@@ -1166,3 +1166,26 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
 }
 
 
+/// Other Ellipse Momements code http://raphael.candelier.fr/?blog=Image%20Moments
+
+//        //% Central moments (intermediary step)
+//        double  a = moments.m20/moments.m00 - pow(centroid.x,2);
+//        double  b = 2.0*(moments.m11/moments.m00 - centroid.x*centroid.y);
+//        double  c = moments.m02/moments.m00 - pow(centroid.y,2);
+
+//        //% Orientation (radians)
+//        double theta = 1.0/2.0*std::atan(b/(a-c))  ;
+//        if (a<c)
+//            theta+=CV_PI/2.0;
+
+
+//        //% Minor and major axis
+//        double E_w = sqrt(8.0*(a+c-sqrt(pow(b,2)+pow(a-c,2) )))/2.0;
+//        double E_l = sqrt(8.0*(a+c+sqrt(pow(b,2)+pow(a-c,2) )))/2.0;
+
+//        //% Ellipse focal points
+//        double d = sqrt(pow(E_l,2)-pow(E_w,2));
+//        double E_x1 = centroid.x + d*cos(theta);
+//        double E_y1 = centroid.y + d*std::sin(theta);
+//        double E_x2 = centroid.x - d*std::cos(theta);
+//        double E_y2 = centroid.y - d*std::sin(theta);

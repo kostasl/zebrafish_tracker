@@ -242,7 +242,7 @@ cv::Mat sparseBinarize(cv::Mat& imgRegion,float targetdensity)
 /// @param regTag an Id for debugging purposes
 /// @outframeAnterior_Norm returns image of isolated head centered at best detection point by the DNN and oriented according to blob angle
 
-float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,
+float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedRect fishRotAnteriorBox,cv::Mat& outframeAnterior_Norm,
                                     cv::Mat& outmaskRegionScore,string regTag="0")
 {
   cv::Mat imgFishAnterior,imgFishAnterior_bin,imgFishAnterior_Norm_tmplcrop;
@@ -258,12 +258,21 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
   // Take bounding of blob,
   // get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
   // Allow Box Size to Adjust near Edges of Image
-  cv::RotatedRect fishRotAnteriorBox(fishblob.pt,
-                                      cv::Size(std::min((int)fishblob.pt.x, gTrackerState.gFishBoundBoxSize),
-                                               std::min((int)fishblob.pt.y,gTrackerState.gFishBoundBoxSize)),
-                                                0);
+  //cv::RotatedRect fishRotAnteriorBox(fishblob.pt,
+  //                                    cv::Size(std::min((int)fishblob.pt.x, gTrackerState.gFishBoundBoxSize),
+  //                                             std::min((int)fishblob.pt.y,gTrackerState.gFishBoundBoxSize)),
+  //                                              0);
+
+
    /// Size Of Norm Head Image
-   cv::Size szFishAnteriorNorm = fishRotAnteriorBox.boundingRect().size();// (min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4,                              max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4);
+   cv::Rect fishRotAnteriorBox_Bound = fishRotAnteriorBox.boundingRect();
+   cv::Size szFishAnteriorNorm = fishRotAnteriorBox_Bound.size();// (min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4,                              max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4);
+   // Optimaziation to Make Search Region Adapt to size of Blob
+   fishRotAnteriorBox_Bound.height = szFishAnteriorNorm.height = max(min(gTrackerState.gFishBoundBoxSize,szFishAnteriorNorm.height),gTrackerState.gszTemplateImg.height+15);
+   fishRotAnteriorBox_Bound.width = szFishAnteriorNorm.width = max(min(gTrackerState.gFishBoundBoxSize,szFishAnteriorNorm.width),gTrackerState.gszTemplateImg.height+15);
+   fishRotAnteriorBox_Bound.x = fishRotAnteriorBox.center.x - fishRotAnteriorBox_Bound.width/2; //Recenter Scaled Bound
+   fishRotAnteriorBox_Bound.y = fishRotAnteriorBox.center.y - fishRotAnteriorBox_Bound.height/2; //Recenter Scaled Bound
+
    // Define SCore Canvas - Where we draw results from Recognition Scanning
    cv::Mat maskRegionScore_Norm((int)szFishAnteriorNorm.height, (int)szFishAnteriorNorm.width, CV_32FC1, cv::Scalar(0, 0, 0));
 
@@ -273,20 +282,20 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
 
    // Check if region size is large enough to scan for fish
    if (!( //Looks Like a fish is found, now Check Bounds
-       imgBounds.contains(fishRotAnteriorBox.boundingRect().br()) &&
-           imgBounds.contains(fishRotAnteriorBox.boundingRect().tl())))
+       imgBounds.contains(fishRotAnteriorBox_Bound.br()) &&
+           imgBounds.contains(fishRotAnteriorBox_Bound.tl())))
             return (-1); //This Fish Is out Of Bounds /
 
 
-   imgFishAnterior = frame(fishRotAnteriorBox.boundingRect()); // getNormedBoundedImg(frame,fishRotAnteriorBox);
-   //cv::imshow("Test Tmpl Norm",imgTemplate_Norm);
-   if (fishRotAnteriorBox.boundingRect().size().area() < gTrackerState.gszTemplateImg.area())
+   imgFishAnterior = frame(fishRotAnteriorBox_Bound); // getNormedBoundedImg(frame,fishRotAnteriorBox);
+   cv::imshow("imgFishAnterior scoreBlobRegion",imgFishAnterior);
+   if (szFishAnteriorNorm.area() < gTrackerState.gszTemplateImg.area())
        //Not Enough Space Abort
        return(0.0);
   // Extract Region and rotate to orient larva body vertically
   // Use the FG Image to extract Head Frame
   //frame(fishRotAnteriorBox.boundingRect()).copyTo(imgFishAnterior);
-
+  // Find point Center Coords of Image Region Of Search
   cv::Point2f ptRotCenter = fishRotAnteriorBox.center - fishRotAnteriorBox.boundingRect2f().tl();
 
   //Binarize Input To set Specific Sparseness/Density
@@ -358,7 +367,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::Mat& out
     //Update Blob Location And add Classifier Score
     fishblob.response = max_dscore; //Save Recognition Score - Don t use the Gaussian Blurred one -Too low
     if (maxL1 > 0)
-        fishblob.pt = ptmax+fishRotAnteriorBox.boundingRect().tl(); //Shift Blob Position To Max  To Max Recognition Point
+        fishblob.pt = ptmax+fishRotAnteriorBox_Bound.tl(); //Shift Blob Position To Max  To Max Recognition Point
 
     // DEBUG IMG //
     //cv::circle(imgFishAnterior,ptmax,4,CV_RGB(250,200,210),2);
