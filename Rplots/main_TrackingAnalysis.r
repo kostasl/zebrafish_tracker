@@ -41,23 +41,27 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 
 
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
 
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
 source("DataLabelling/labelHuntEvents_lib.r")
-########
 
-
+########   Directory to Source Tracker Exported CSV Files 
+# Hunting Assay Experiments
+# strDataSetDirectories <- paste(strTrackInputPath, list(
+#                               "HB80_7dpf_LF3/", ##Dataset 2
+#                               "HB70_7dpf_NF1/",
+#                               "HB60_7dpf_LF2",
+#                               "HB50_7dpf_NF0",
+#                               "HB40_7dpf_LF1"
+#                               ),sep="/")
+## Hunger Exp
 strDataSetDirectories <- paste(strTrackInputPath, list(
-                              "HB80_7dpf_LF3/", ##Dataset 2
-                              "HB70_7dpf_NF1/",
-                              "HB60_7dpf_LF2",
-                              "HB50_7dpf_NF0",
-                              "HB40_7dpf_LF1"
-                              ),sep="/")
-##Add Source Directory
-
+                                 "DS_6dpf/", ##Dataset 2
+                                 "DS_7dpf/",
+                                 "DS_8dpf"
+                                 ),sep="/")
 
 ### Set Colour Pallette Size from List Of Datasets
 G_DATASETPALLETSIZE = NROW(strDataSetDirectories)
