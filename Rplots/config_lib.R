@@ -139,12 +139,14 @@ setEnvFileLocations <- function(strSetName)
     strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release//" 
     strTrackeroutPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
     #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/"
-    strTrackInputPath <<- "/media/kostasl/ARXEIO1TB/Behaviour/" 
-    strDatDir         <<-  "/media/kostasl/ARXEIO1TB/Behaviour/Rdat/" ##Where Are the Imported RData Stored
-    strDataExportDir  <<-  "/media/kostasl/ARXEIO1TB/Behaviour/Rdat/out/"
+    strTrackInputPath <<- "/media/kostasl/zFish-Gamma-T7/HungerExp/trackedDat/" 
+    strDatDir         <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrkSessionHungerExp/" ##Where Are the Imported RData Stored
+    strDataExportDir  <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/HungerExp/"
     strDataStore      <<-  "/media/kostasl/D445GB_ext4/kostasl/nextcloud/Dropbox_overflow/Calculations/zebrafishtrackerData/out/" ##Where Large Data Is stored because Dropbox-Overflows
     strPlotExportPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
   }
+  
+  
   
   if (strSetName == "OFFICE")
   {
@@ -157,7 +159,6 @@ setEnvFileLocations <- function(strSetName)
     #strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
     #strTrackInputPath <<- "/media/LinuxDat/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
     strTrackInputPath <<- "/media/LinuxDat/expDataKostas/HungerExp/trackedDat/" 
-    
     strDatDir         <<- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrkSessionHungerExp" ##Where Are the Imported RData Stored
     strDataExportDir  <<- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/HungerExp"
     strDataStore      <<-  "/home/kostasl/nextcloud-client/10/Nextcloud/Dropbox_overflow/Calculations/zebrafishtrackerData/out/" ##Where Large Data Is stored because Dropbox-Overflows

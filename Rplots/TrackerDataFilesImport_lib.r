@@ -580,21 +580,24 @@ extractFileNameParams_HungerExp_camB <- function(strFileName)
   basename <- basename(strFileName)
   brokenname = unlist(strsplit(basename,"_"))
   expID <-  as.numeric(gsub("[^0-9]","",brokenname[1]) )
-  eventID <- as.numeric(brokenname[4]);
-  camID <- (brokenname[3])
-  testCond <- brokenname[2]
-  larvaID <- as.numeric(gsub("[^0-9]","",brokenname[1]) );
+  eventID <- 0 #as.numeric(brokenname[4]);
+  strGroupID <- brokenname[2]
+  ageDPF <-as.numeric(gsub("[^0-9]","",brokenname[3]) );
+  testCond <- brokenname[4]
+  camID <- (brokenname[5])
   
-  vpath <- strsplit(normalizePath(dirname(strFileName) ),"/")[[1]]
-  expDir <- vpath[length(vpath)-1] ## Extract parent Dir with Exp iNfo
-  vexpDir <- unlist(strsplit(expDir,"_"))
-  stopifnot(vexpDir[1] == brokenname[1])
+  larvaID <- 1# as.numeric(gsub("[^0-9]","",brokenname[1]) );
+  trackID <- as.numeric(gsub("[^0-9]","",brokenname[7]) );
   
-  strGroupID <- vexpDir[3]
-  ageDPF <-    as.numeric(gsub("[^0-9]","",vexpDir[2]) );
+  #vpath <- strsplit(normalizePath(dirname(strFileName) ),"/")[[1]]
+  #expDir <- vpath[length(vpath)-1] ## Extract parent Dir with Exp iNfo
+  #vexpDir <- unlist(strsplit(expDir,"_"))
+  #stopifnot(vexpDir[1] == brokenname[1])
+  #strGroupID <- vexpDir[3]
+  
   fps = NA
   
-  return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps,groupID=strGroupID,age=ageDPF) )
+  return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps,groupID=strGroupID,testCond=testCond,age=ageDPF) )
 }
 
 

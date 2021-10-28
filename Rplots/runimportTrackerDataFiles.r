@@ -21,7 +21,7 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   strDataFileNameRDS <- paste(strDataExportDir,"/setn1_Dataset_", strDataSetIdentifier,".rds",sep="") ##To Which To Save After Loading
   message(paste(" Importing to:",strDataFileName))
   ##RUN IMPORT FUNCTION
-  datAllFrames <-importTrackerFilesToFrame(groupsrcdatList,"extractFileNameParams_HungerExp") ##"extractFileNameParams_huntingExp")
+  datAllFrames <-importTrackerFilesToFrame(groupsrcdatList,"extractFileNameParams_HungerExp_camB") ##"extractFileNameParams_huntingExp")
   datAllFrames$dataSet <- idxDataSet ##Identify DataSet
   
   datAllSets[[n]] <- datAllFrames
