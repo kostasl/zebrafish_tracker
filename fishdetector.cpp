@@ -267,9 +267,9 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
    /// Size Of Norm Head Image
    cv::Rect fishRotAnteriorBox_Bound = fishRotAnteriorBox.boundingRect();
    cv::Size szFishAnteriorNorm = fishRotAnteriorBox_Bound.size();// (min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4,                              max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4);
-   // Optimaziation to Make Search Region Adapt to size of Blob
-   fishRotAnteriorBox_Bound.height = szFishAnteriorNorm.height = max(min(gTrackerState.gFishBoundBoxSize,szFishAnteriorNorm.height),gTrackerState.gszTemplateImg.height+15);
-   fishRotAnteriorBox_Bound.width = szFishAnteriorNorm.width = max(min(gTrackerState.gFishBoundBoxSize,szFishAnteriorNorm.width),gTrackerState.gszTemplateImg.height+15);
+   // Optimaziation to Make Search Region Adapt to size of Blob - Min is 2xtemplsize max is BoundBox Size
+   fishRotAnteriorBox_Bound.height = szFishAnteriorNorm.height = max(min(gTrackerState.gFishBoundBoxSize,szFishAnteriorNorm.height),2*gTrackerState.gszTemplateImg.height);
+   fishRotAnteriorBox_Bound.width = szFishAnteriorNorm.width = max(min(gTrackerState.gFishBoundBoxSize,szFishAnteriorNorm.width),2*gTrackerState.gszTemplateImg.height);
    fishRotAnteriorBox_Bound.x = fishRotAnteriorBox.center.x - fishRotAnteriorBox_Bound.width/2; //Recenter Scaled Bound
    fishRotAnteriorBox_Bound.y = fishRotAnteriorBox.center.y - fishRotAnteriorBox_Bound.height/2; //Recenter Scaled Bound
 
