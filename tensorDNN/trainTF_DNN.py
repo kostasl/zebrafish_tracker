@@ -141,7 +141,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
     normalization_layer = tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255)
 
     ## Create the model ##
-    num_classes = 2
+    num_classes = 3
     if model is None:
         model = Sequential([
             data_augmentation,

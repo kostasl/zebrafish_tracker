@@ -274,7 +274,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
    fishRotAnteriorBox_Bound.y = fishRotAnteriorBox.center.y - fishRotAnteriorBox_Bound.height/2; //Recenter Scaled Bound
 
    // Define SCore Canvas - Where we draw results from Recognition Scanning
-   cv::Mat maskRegionScore_Norm((int)szFishAnteriorNorm.height, (int)szFishAnteriorNorm.width, CV_32FC1, cv::Scalar(0, 0, 0));
+   cv::Mat maskRegionScore_Norm((int)szFishAnteriorNorm.height, (int)szFishAnteriorNorm.width, CV_32FC1, cv::Scalar(0.001, 0.001, 0.001));
 
 
    //To Check Bounds Within Image
@@ -306,12 +306,12 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
   /// SliDing Window Scanning
   int iSlidepxLim = gTrackerState.gFishBoundBoxSize;
-  int iSlidePx_H_step = 5;
+  int iSlidePx_H_step = 2;
   int iSlidePx_H_begin = std::max(0, (int)ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - iSlidepxLim);//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
   int iSlidePx_H_lim = min(imgFishAnterior_bin.cols-gTrackerState.gszTemplateImg.width, iSlidePx_H_begin+2*iSlidepxLim);  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
-  int iSlidePx_V_step = 5;
+  int iSlidePx_V_step = 2;
   int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-iSlidepxLim); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
   int iSlidePx_V_lim = min(imgFishAnterior_bin.rows-gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 2*iSlidepxLim);//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
@@ -352,7 +352,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     /// Find Max Match Position In Non-Norm pic (original orientation)
     double minL1,maxL1;
     cv::Point ptmin,ptmax;
-    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(13,13),13,13);
+    //cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(13,13),13,13);
     cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
 
     // Rotate Max Point Back to Original Orientation
@@ -366,7 +366,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
     //Update Blob Location And add Classifier Score
     fishblob.response = max_dscore; //Save Recognition Score - Don t use the Gaussian Blurred one -Too low
-    if (maxL1 > 0)
+    if (max_dscore > 0)
         fishblob.pt = ptmax+fishRotAnteriorBox_Bound.tl(); //Shift Blob Position To Max  To Max Recognition Point
 
     // DEBUG IMG //
@@ -621,7 +621,7 @@ float fishdetector::netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,fl
          //std::cout << std::fixed << std::setprecision(4) << results[0][j] << "\t";
       }
 
-       fFishClass = results[0][0]; //results[0][1] //Shifted
+       fFishClass = results[0][0]+results[0][2]; //Add Small and Large Fish Class Togetherresults[0][1] //Shifted
        fNonFishClass = results[0][1];//1.0f - fFishClass;//results[0][2];
     }
     //std::cout << std::endl;

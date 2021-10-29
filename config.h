@@ -250,7 +250,7 @@ class trackerState
       bool bUseContourToFitSpine                = false; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
       bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
-      bool bUseMaskedFishForSpineDetect         = false; /// When True, The Spine Is fit to the Masked FG Fish Image -
+      bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked FG Fish Image and not the full frame- (Masks can lose fine features)
       bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
       bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
       bool bUseGPU                              = false;
@@ -270,7 +270,7 @@ class trackerState
       uint iSpineContourFitFramePeriod         = 20; //Check that Tail Fitting Matches Contour Every X Frames
 
       /// Segmentation / threshold  Params
-      int g_FGSegthresh             = 18;
+      int g_FGSegthresh             = 5;
       int g_FGStaticMaskSegthresh   = g_FGSegthresh;//Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
       int g_SegFoodThesMin        = max(0,g_FGSegthresh-25); //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
       int g_SegFoodThesMax        = g_SegFoodThesMin+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob

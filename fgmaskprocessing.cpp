@@ -565,9 +565,9 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     outFishMask = cv::Mat::zeros(frameImg.rows,frameImg.cols,CV_8UC1);
 
     //Shring-Grow -Erase Thin Border Lines
-    //cv::morphologyEx(fgMask,fgMask, cv::MORPH_ERODE, kernelOpenfish,cv::Point(-1,-1),2);
-    cv::morphologyEx(fgMask,fgMask, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
-    cv::morphologyEx(fgMask,fgMask, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),3);
+    cv::morphologyEx(fgMask,fgMask,cv::MORPH_DILATE, kernelOpenfish,cv::Point(-1,-1),1);
+    //cv::morphologyEx(fgMask,fgMask, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
+    cv::morphologyEx(fgMask,fgMask, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),1);
 
     //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
     cv::morphologyEx(fgMask,fgEdgeMask, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);

@@ -2839,11 +2839,11 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
  ///Do not Use MaskedFish For Spine maskedfishImg_gray / + Fixed Contrast
     if (gTrackerState.bUseMaskedFishForSpineDetect)
-        frameFGIncreasedContrast = maskedfishImg_gray*2.2;
+        frameFGIncreasedContrast = maskedfishImg_gray*0.9;
     else
-        frameFGIncreasedContrast = frame_gray*2.2;
+        frameFGIncreasedContrast = frame_gray*0.9;
 
-    cv::GaussianBlur(frameFGIncreasedContrast,maskedfishFeature_blur,cv::Size(5,5),3,3);
+    cv::GaussianBlur(frameFGIncreasedContrast,maskedfishFeature_blur,cv::Size(3,3),1,1);
 
 
     ////Template Matching Is already Done On Fish Blob/Object
@@ -3120,6 +3120,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                }
 
                /// Main Method Uses Pixel Intensity //
+               cv::imshow("Spine Detect Img",maskedfishFeature_blur);
                fish->fitSpineToIntensity(maskedfishFeature_blur,gTrackerState.gFitTailIntensityScanAngleDeg);
                fish->drawSpine(fullImgOut);
 
