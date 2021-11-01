@@ -580,7 +580,7 @@ extractFileNameParams_HungerExp_camB <- function(strFileName)
   basename <- basename(strFileName)
   brokenname = unlist(strsplit(basename,"_"))
   expID <-  as.numeric(gsub("[^0-9]","",brokenname[1]) )
-  eventID <- 0 #as.numeric(brokenname[4]);
+  eventID <- 1 #0 Would Make other Scripts Fail - Id used as idx  #as.numeric(brokenname[4]);
   strGroupID <- brokenname[2]
   ageDPF <-as.numeric(gsub("[^0-9]","",brokenname[3]) );
   testCond <- brokenname[4]

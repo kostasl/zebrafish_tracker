@@ -83,7 +83,7 @@ strCondR  <- "*.csv";
 
 ### LOAD Imported Data Sets - Starting From firstDataSet
   ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
-  firstDataSet = NROW(strDataSetDirectories)-14
+  firstDataSet = NROW(strDataSetDirectories)#-14
   lastDataSet = NROW(strDataSetDirectories)
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   ##Load All Tracked Frames into datAllFrames data frame ##
@@ -143,33 +143,33 @@ source("plotMotionStat.r")
 source("HuntingEventAnalysis_lib.r")
   ##Assumes datHuntEvent contains all groups
  datHuntStat <- makeHuntStat(datHuntEvent)  
-#  
-# lHuntStat <- list()
-# groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]] ##Load the groupsrcdatListPerDataSetFile
-# strCondTags <- names(groupsrcdatList)
-# for (i in strCondTags)
-# {
-#   message(paste("#### ProcessGroup ",i," ###############"))
-#   strDataFileName <- paste("out/setn",NROW(dataSetsToProcess),"HuntEvents",i,sep="-") ##To Which To Save After Loading
-#   message(paste(" Loading Hunt Events: ",strDataFileName))
-#   ##ExPORT 
-#   load(file=paste(strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-#   
-#   datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
-#   ##Filter Hunt Events ##
-#   datHuntEventFilt <- datHuntEvent[datHuntEvent$huntScore != "NA" &
-#                                    datHuntEvent$huntScore != "Not_HuntMode/Delete" &
-#                                    datHuntEvent$huntScore != "Out_Of_Range" & 
-#                                    datHuntEvent$huntScore != "Duplicate/Overlapping" &
-#                                    datHuntEvent$huntScore != "Near-Hunt State" |
-#                                    datHuntEvent$eventID   == 0 , ] ##Keep THose EventID 0 so as to identify All experiments - even those with no events
-#   
-#   
-#   lHuntStat[[i]] <- calcHuntStat3(datHuntEventFilt)
-# }
-# 
-# datHuntStat = do.call(rbind,lHuntStat)#
-################
+
+lHuntStat <- list()
+groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]] ##Load the groupsrcdatListPerDataSetFile
+strCondTags <- names(groupsrcdatList)
+for (i in strCondTags)
+{
+  message(paste("#### ProcessGroup ",i," ###############"))
+  strDataFileName <- paste("/setn",NROW(dataSetsToProcess),"HuntEvents",i,sep="-") ##To Which To Save After Loading
+  message(paste(" Loading Hunt Events: ",strDataFileName))
+  ##ExPORT
+  load(file=paste(strDatDir,strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
+
+  datHuntEvent$huntScore <- factor(x=datHuntEvent$huntScore,levels=c(0,1,2,3,4,5,6,7,8,9,10,11,12,13),labels=vHuntEventLabels )##Set To NoTHuntMode
+  ##Filter Hunt Events ##
+  datHuntEventFilt <- datHuntEvent[datHuntEvent$huntScore != "NA" &
+                                   datHuntEvent$huntScore != "Not_HuntMode/Delete" &
+                                   datHuntEvent$huntScore != "Out_Of_Range" &
+                                   datHuntEvent$huntScore != "Duplicate/Overlapping" &
+                                   datHuntEvent$huntScore != "Near-Hunt State" |
+                                   datHuntEvent$eventID   == 0 , ] ##Keep THose EventID 0 so as to identify All experiments - even those with no events
+
+
+  lHuntStat[[i]] <- calcHuntStat3(datHuntEventFilt)
+}
+
+datHuntStat = do.call(rbind,lHuntStat)#
+###############
 
 
 

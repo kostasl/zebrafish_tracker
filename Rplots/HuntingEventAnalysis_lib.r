@@ -140,7 +140,7 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
     stopifnot(DataSetID >= 0 )
     DataSetID             <- ifelse(any(is.na(DataSetID)),G_DATASETPALLETSIZE+1,DataSetID ) 
     
-    vEventID = unique((datLarvaFramesRaw$eventID))
+    vEventID = unique((datLarvaFramesRaw$eventID)) ## +1 To Account for 0 event
     groupID <- unique((datLarvaFramesRaw$group))
     larvaID = unique((datLarvaFramesRaw$larvaID))
     

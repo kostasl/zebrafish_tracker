@@ -11,12 +11,12 @@ output:
   bibliography: ForagingStateAnalysis.bib
 ---
 
-The exploration patterns of zerafish larvae are thusfar considered fixed having a robust statistical structure which can nevertheless be modulated by temperature - resulting in a thermophobic behavior - mainly via changin the sampling statistics of the distribution.  This is also shown to be modulated by time  (1h later traj. becomes longer-range which could be a  result of hunger)  
+The exploration patterns of zebrafish larvae are so far considered fixed having a robust statistical structure which can nevertheless be modulated by temperature - resulting in a thermophobic behavior - mainly via changing the sampling statistics of the distribution.  This is also shown to be modulated by time  (1h later traj. becomes longer-range which could be a  result of hunger)  
 >We show that, for this simple animal model, five short-term kinematic parameters — interbout interval, turn amplitude, travelled distance, turn probability, and orientational flipping rate — (suffice) together control the long-term exploratory dynamics. We establish that the bath temperature consistently impacts the means of these parameters, but leave their pairwise covariance unchanged. These results indicate that the temperature merely controls the sampling statistics within a well-defined kinematic space delineated by this robust statistical structure. 
 ([@goc2021thermal])
 
 >These parameters however vary significantly over long time scales:
-their time modulation takes place over hun-dreds to thousands of bouts, indicative of a clear time-separation between the two different processes. ([@goc2021thermal])
+their time modulation takes place over hundreds to thousands of bouts, indicative of a clear time-separation between the two different processes. ([@goc2021thermal])
 
 However, exploration and food search strategies should be suited to the and informaed by the structure of the environment:  
 >For a forager searching for prey in a stable, unchanging environment, prior expectation of when and where to find items will inform a deterministic search pattern (Stephens & Krebs 1986; Houston & McNamara 1999)
