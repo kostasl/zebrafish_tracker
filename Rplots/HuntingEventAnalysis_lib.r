@@ -14,7 +14,7 @@
 
 ##Find Corresponding Video File to Track File###
 getVideofilePath <- function(x,strVideoFilePath,init="Auto",end="_tracks",postfix=".mp4"){
-  z=regexpr('Auto.*tracks',x,T)
+  z=regexpr('.*_tracks',x,T)
   
   z<-paste(substr(x,z,z+attr(z,"match.length")-1-nchar(end)),postfix,sep="")
   ##In lack of a better method to locate fullpaths of a filename list 
@@ -34,6 +34,7 @@ getVideofilePath <- function(x,strVideoFilePath,init="Auto",end="_tracks",postfi
     else
     {
       warning(paste("FILE NOT FOUND :",strfilepath) )
+      z <- x
     }
   }
   
@@ -110,8 +111,8 @@ mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLa
 ##Focus on extracting and Identifying Hunting events - Eye Vergence
 ##Return list of HuntEvents / With start and End Frame / and Video FileName
 ## TODO : Add Hysterisis in the ON/Off of Eye Vergence Event Detection
-detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
-{
+detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
+{  
   message("## Extract Hunting Events For Group ##")
   lGroupHunting    <- list()
   lHuntingEvents    <- list()
@@ -133,16 +134,19 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
   for (i in vexpID)
   {
     idx = idx+1;
-    datLarvaFramesRaw <- datAllFrames[which(datAllFrames$expID == i),]
+    datLarvaFramesRaw <- datAllGroupFrames[which(datAllGroupFrames$expID == i & datAllGroupFrames$testCond == ptestCond),]
     
     #Used to Identify Experimet Set From Which Data COmes from - Plotted AS different colour
     DataSetID             <- ifelse(any(names(datLarvaFramesRaw) == "dataSet"),unique(datLarvaFramesRaw$dataSet),0 )
     stopifnot(DataSetID >= 0 )
+    stopifnot(any(is.numeric(DataSetID ) ) )
     DataSetID             <- ifelse(any(is.na(DataSetID)),G_DATASETPALLETSIZE+1,DataSetID ) 
+    
     
     vEventID = unique((datLarvaFramesRaw$eventID)) ## +1 To Account for 0 event
     groupID <- unique((datLarvaFramesRaw$group))
     larvaID = unique((datLarvaFramesRaw$larvaID))
+    testCond = unique(datLarvaFramesRaw$testCond)
     
     ##Filter To Keep Only data in range ###
     datLarvaFrames <- datLarvaFramesRaw[which(datLarvaFramesRaw$REyeAngle > -G_THRESHCLIPEYEDATA & datLarvaFramesRaw$REyeAngle <  G_THRESHCLIPEYEDATA &
@@ -280,6 +284,7 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
                                                      dataSetID           = factor(DataSetID,levels=vdatasetID),
                                                      larvaID             = factor(larvaID,levels=seq(1:10)) , ##Identifies Larva Between Empty And Live Test Conditions
                                                      groupID             = groupID,
+                                                     testCond            = testCond, ##Latest Additions / Previous ExpID minor decimal indicated condition
                                                      fileIdx             = unique(datHuntFrames$fileIdx),
                                                      startFrame          = unlist(vHuntStartFrames),
                                                      endFrame            = unlist(vHuntEndFrames),
@@ -353,6 +358,7 @@ detectHuntEvents <- function(datAllFrames,vexpID,vdatasetID)
                                                  dataSetID  = factor(DataSetID,levels=vdatasetID),
                                                  larvaID    = factor(larvaID,levels=seq(1:4)),
                                                  groupID    = groupID,
+                                                 testCond   = testCond, ##Latest Additions 
                                                  fileIdx    = 0,
                                                  startFrame = 0,
                                                  endFrame   = 0,
@@ -707,18 +713,22 @@ writeHuntEventToFile <- function(datHuntEvent,dataSetsToProcess,groupsrcdatListP
     ## Recover The File names from fileIdxs
     ## Run It for Each DataSet Idx - Not Sure Of Better Way extracting the relevant filelist
     datHuntEvent$filenames = "." ##Create Field
+    tcond =  unique(datHuntEvent$testCond) #Test Condition
+    rgroup =  unique(datHuntEvent$groupID) #Test Condition
     for (d in idxDataSet)
     {
       
       ##Get Files Used for This DataSet, and this Condition
-      filelist <- getVideofilePath(unlist(groupsrcdatListPerDataSet[d][[1]][[i]][[1]]),strVideoFilePath)
+      
+      filelist <- getVideofilePath(unlist(groupsrcdatListPerDataSet[d][[1]][[tcond]][[1]]),strVideoFilePath)
+      ## Override 
+      #filelist <- groupsrcdatListPerDataSet[d][[1]][[tcond]][[1]] 
       
       ##Set File Name
-      
-      datHuntEvent[datHuntEvent$dataSet == d & datHuntEvent$fileIdx != 0,]$filenames <- filelist[ datHuntEvent[datHuntEvent$dataSet == d & datHuntEvent$fileIdx != 0,]$fileIdx ]
+      datHuntEvent[datHuntEvent$dataSet == d & datHuntEvent$fileIdx != 0,]$filenames <- filelist[ datHuntEvent[datHuntEvent$dataSet == d & datHuntEvent$fileIdx != 0 ,]$fileIdx ]
     }
     
-    strDataFileName <- paste("setn",NROW(dataSetsToProcess),"-D",dataSetsToProcess[1],"-",dataSetsToProcess[NROW(dataSetsToProcess)],"-HuntEvents-",i,sep="") ##To Which To Save After Loading
+    strDataFileName <- paste("setn",NROW(dataSetsToProcess),"-D",dataSetsToProcess[1],"-",dataSetsToProcess[NROW(dataSetsToProcess)],"-HuntEvents-",rgroup,"-",tcond,sep="") ##To Which To Save After Loading
     
     write.csv(datHuntEvent,file=paste(strDataExportDir,"/",strDataFileName,".csv",sep="" ) , row.names=FALSE ) 
     ###Save Hunt Event Data Frame

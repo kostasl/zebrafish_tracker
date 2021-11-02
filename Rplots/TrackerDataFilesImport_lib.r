@@ -595,7 +595,7 @@ extractFileNameParams_HungerExp_camB <- function(strFileName)
   #stopifnot(vexpDir[1] == brokenname[1])
   #strGroupID <- vexpDir[3]
   
-  fps = NA
+  fps = 40 # Fixed by Setup
   
   return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps,groupID=strGroupID,testCond=testCond,age=ageDPF) )
 }

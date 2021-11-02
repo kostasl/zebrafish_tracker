@@ -83,7 +83,7 @@ strCondR  <- "*.csv";
 
 ### LOAD Imported Data Sets - Starting From firstDataSet
   ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
-  firstDataSet = NROW(strDataSetDirectories)#-14
+  firstDataSet = 1#NROW(strDataSetDirectories)#-14
   lastDataSet = NROW(strDataSetDirectories)
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   ##Load All Tracked Frames into datAllFrames data frame ##
@@ -93,7 +93,7 @@ strCondR  <- "*.csv";
   #load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
   #load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
   
-  load(paste0(strDatDir,"datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep="/"))
+  load(paste0(strDatDir,"/datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
   load(paste0(strDatDir,"groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData"))
   
   load(file =paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
