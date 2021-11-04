@@ -666,7 +666,7 @@ getSpontaneousEvokedExperimentPairs <- function(datHuntStat)
 {
   lExpPairs <- list()
   i <- 1
-  strCondTags <- c("LE","LL","NE","NL","DE","DL")
+  strCondTags <-  rownames(datHuntStat) #c("LE","LL","NE","NL","DE","DL")
   
   ### Plot Connected Larva Event Counts - To Show Individual Behaviour In Spontaneous Vs Evoked Activity
   for (gIdx in seq(1,NROW(strCondTags),2)  ) ##Iterated Through LF DF And NF Groups

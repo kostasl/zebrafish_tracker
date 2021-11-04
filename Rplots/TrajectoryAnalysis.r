@@ -52,6 +52,13 @@ calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
   
   datDispersion <- data.frame()
   vexpID <- unique(datAllFrames$expID)
+  vtCondID <- "T" #Default - Use for Old Datasets where no test Condition was added to frame data
+  
+  if ("testCond" %in% names(datAllFrames))
+    vtCondID <- unique(datAllFrames$testCond)
+  else
+    datAllFrames$testCond = "T" ##Add Column if missing to stream line analysis between datasets
+  
   e <- vexpID[1]
   ##'Add new column
   datAllFrames$Dispersion <- NA
@@ -64,63 +71,76 @@ calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
   for (e in vexpID)
   {
     i = i + 1
+   
     message(i,". ExpID:",e)
     
     
     stopifnot(is.numeric(e) & e > 0)
     #stopifnot(i < 3) ##Test Run
     
-    vEventID = unique((datAllFrames[datAllFrames$expID == e,]$eventID))
-    
-    ##For Each Event
-    for (ev in vEventID)
+    for (t in vtCondID)
     {
-      datEventFrames <- datAllFrames[datAllFrames$expID == e & datAllFrames$eventID == ev & datAllFrames$posX != 0 ,]  
+      datFrameSubset <- datAllFrames[datAllFrames$expID == e & datAllFrames$testCond == t,]
+      vEventID = unique((datFrameSubset$eventID))
+      groupID = unique((datFrameSubset$groupID))
       
-      meanfps <-  head(datEventFrames$fps,1)
-      groupID <- as.character(unique(datEventFrames$groupID) )
-      message(paste("ExpID:",e,"EventID:",ev,"fps:",meanfps," nFrames:",NROW(datEventFrames)) )
-      #  We may Need to Identify TrackLet Units, Avoid speed calc errors due to fish going in and out of view
-      #  PROCESS TrackLets #
-      #vTracklets <- unique(datEventFrames$trackletID)
-      
-      if (NROW(datEventFrames) < 10)
-        next() ##No Frames In event - Move to next one
-      
-      lEventDispersionAndLength <- calcTrajectoryDispersionAndLength(datEventFrames,tsec_timeWindow) 
-      
-      datEventDispersion <- data.frame(expID=e,
-                                       eventID=ev,
-                                       Dispersion=(lEventDispersionAndLength$Dispersion), #Radius Encompassing tsec_timeWindow Trajectory
-                                       Dispersion_norm=(lEventDispersionAndLength$Dispersion), #Not Normed Yet
-                                       DispersionPathLength = lEventDispersionAndLength$DispersionPathLength, ##Length of path connecting the points that define the dispersion Circle
-                                       Length = lEventDispersionAndLength$Length, ##Total Distance Travelled
-                                       DisplacementSq = lEventDispersionAndLength$DisplacementSq, ##Total Distance Travelled
-                                       MSD = lEventDispersionAndLength$MSD, ##Total Distance Travelled
-                                       SD = lEventDispersionAndLength$SD, ##Total Distance Travelled
-                                       PreyCount = mean(datEventFrames$PreyCount), #Estimated Mean Prey Count in Time Period
-                                       frameRow= lEventDispersionAndLength$FrameRowID#as.integer(row.names( datEventFrames))
-      )
-      
-      ##Append to main Dispersion Data Frame
-      datDispersion <- rbind(datEventDispersion,datDispersion)
-      
-    }##For Each Event
+      ##For Each Event
+      for (ev in vEventID)
+      {
+        datEventFrames <- datFrameSubset[  datFrameSubset$expID == e & 
+                                           datFrameSubset$eventID == ev &
+                                           datFrameSubset$testCond == t &
+                                           datFrameSubset$posX != 0 ,]  
+        
+        meanfps <-  head(datEventFrames$fps,1)
+        groupID <- as.character(unique(datEventFrames$groupID) )
+        message(paste("GroupID:",groupID, "ExpID:",e," EventID:",ev," Test cond",t," fps:",meanfps," nFrames:",NROW(datEventFrames)) )
+        #  We may Need to Identify TrackLet Units, Avoid speed calc errors due to fish going in and out of view
+        #  PROCESS TrackLets #
+        #vTracklets <- unique(datEventFrames$trackletID)
+        
+        if (NROW(datEventFrames) < 10)
+          next() ##No Frames In event - Move to next one
+        
+        lEventDispersionAndLength <- calcTrajectoryDispersionAndLength(datEventFrames,tsec_timeWindow) 
+        
+        datEventDispersion <- data.frame(expID=e,
+                                         groupID=groupID,
+                                         eventID=ev,
+                                         testCond=t,
+                                         Dispersion=(lEventDispersionAndLength$Dispersion), #Radius Encompassing tsec_timeWindow Trajectory
+                                         Dispersion_norm=(lEventDispersionAndLength$Dispersion), #Not Normed Yet
+                                         DispersionPathLength = lEventDispersionAndLength$DispersionPathLength, ##Length of path connecting the points that define the dispersion Circle
+                                         Length = lEventDispersionAndLength$Length, ##Total Distance Travelled
+                                         DisplacementSq = lEventDispersionAndLength$DisplacementSq, ##Total Distance Travelled
+                                         MSD = lEventDispersionAndLength$MSD, ##Total Distance Travelled
+                                         SD = lEventDispersionAndLength$SD, ##Total Distance Travelled
+                                         PreyCount = mean(datEventFrames$PreyCount), #Estimated Mean Prey Count in Time Period
+                                         frameRow= lEventDispersionAndLength$FrameRowID#as.integer(row.names( datEventFrames))
+        )
+        
+        ##Append to main Dispersion Data Frame
+        datDispersion <- rbind(datEventDispersion,datDispersion)
+        
+      }##For Each Event
+    }## For each Test Condition
     
     ## \TODO Normalize Dispersion Per Larva Here - Dividing by the maximum dispersion
     datExpDisp <- datDispersion[datDispersion$expID == e,]
     range_Disp <- range(datExpDisp$Dispersion,na.rm=TRUE)
-    if (!is.na(range_Disp))
+    if (!any(is.na(range_Disp)))
       datDispersion[datDispersion$expID == e,]$Dispersion_norm <- datExpDisp$Dispersion/range_Disp[2]
     
     end.time <- Sys.time()
     time.taken <- end.time - start.time
+    
     print(time.taken)
     
   }#For Each Exp ID
   
   end.time <- Sys.time()
   time.taken <- end.time - start.time
+  #print(e)
   print(time.taken)
   
   datDispersion <- cbind(datDispersion,groupID=datAllFrames[datDispersion$frameRow,]$groupID)
