@@ -660,7 +660,8 @@ mergeHuntEventRecords <- function(strSrcDir,strExt = "*.RData")
 }
 
 ##
-## Returns dataframe with  Experiment ID that link the spontaneous and evoked test conditions coming from the same larva
+## Returns dataframe with  Experiment ID that link the spontaneous and evoked test conditions coming from the same larva - 
+## \Note: This Data organization has now been superseeded - Exp ID now remains the same between test conditions with the addition Of testCond Field Used to distinguish test conditions the 
 ##
 getSpontaneousEvokedExperimentPairs <- function(datHuntStat)
 {

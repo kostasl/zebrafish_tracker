@@ -108,6 +108,7 @@ calcTrajectoryDispersions <- function(datAllFrames,tsec_timeWindow = 5)
                                          groupID=groupID,
                                          eventID=ev,
                                          testCond=t,
+                                         age=datEventFrames$age,
                                          Dispersion=(lEventDispersionAndLength$Dispersion), #Radius Encompassing tsec_timeWindow Trajectory
                                          Dispersion_norm=(lEventDispersionAndLength$Dispersion), #Not Normed Yet
                                          DispersionPathLength = lEventDispersionAndLength$DispersionPathLength, ##Length of path connecting the points that define the dispersion Circle

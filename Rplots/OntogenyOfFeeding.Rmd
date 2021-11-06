@@ -130,7 +130,7 @@ G_APPROXFPS = 40
 ##Clustering
 Nclust <- 2
 nsubsampleInterval <- G_APPROXFPS/2
-vGroups <- c("LL","LE","NL","NE","DL","DE")
+#vGroups <- c("LL","LE","NL","NE","DL","DE")
 ## Load datAllFrames
 loaddatAllFrames <- function(forceReload = FALSE)
 {
@@ -373,13 +373,24 @@ datHuntEvents <- readRDS(file=paste(strDatDir,"/HB_allHuntEvents.rds",sep="" ))
 ##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
 ## Link Evoked and Spontaneous Trajectories
 datHuntStat <- makeHuntStat(datHuntEvents)
-datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
-datHEventDispersion <<- loadHuntEventMergedWithPathStat(5)
+#datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
+datHEventDispersion <<- loadHuntEventMergedWithPathStat(tsec_timeWindow)
 
 
 loadDispersionData_norm(tsec_timeWindow)
 ## Check for max Calc Error
 #datDispersion[datDispersion$Dispersion > datDispersion$max_Dispersion,]
+
+datExp8 <- datDispersion[datDispersion$age == 7,]
+datExp8NF0 <- datExp8[datExp8$groupID == "NF0" & datExp8$testCond == "LE",]
+datExp8LF1 <- datExp8[datExp8$groupID == "LF1" & datExp8$testCond == "LE",]
+datExp8LF2 <- datExp8[datExp8$groupID == "LF2" & datExp8$testCond == "LE",]
+datExp8LF3 <- datExp8[datExp8$groupID == "LF3" & datExp8$testCond == "LE",]
+
+mean(datExp8NF0$Dispersion,na.rm=T)
+mean(datExp8LF1$Dispersion,na.rm=T)
+mean(datExp8LF2$Dispersion,na.rm=T)
+mean(datExp8LF3$Dispersion,na.rm=T)
 ```
 
 
