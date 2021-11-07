@@ -358,10 +358,10 @@ loadDispersionData_norm <- function(tsec_timeWindow,forceReload=TRUE)
     datDispersion.Interval <<- tsec_timeWindow
   }
     ## Merge Max Dispersion on there - If it is not already there then Calculate and save 
-  if (!any(grepl("max_larval_Dispersion",names(datDispersion)) ) | 
-      !any(grepl("min_larval_Dispersion",names(datDispersion)) ) |
-      !any(grepl("Dispersion_larval_norm", names(datDispersion)) )  )
-    datDispersion <<- mergeRangeOfLarvalDispersionPerLarvaOntoDispersion(datDispersion,datExpPairs,tsec_timeWindow)
+  #if (!any(grepl("max_larval_Dispersion",names(datDispersion)) ) | 
+  #    !any(grepl("min_larval_Dispersion",names(datDispersion)) ) |
+  #    !any(grepl("Dispersion_larval_norm", names(datDispersion)) )  )
+  #  datDispersion <<- mergeRangeOfLarvalDispersionPerLarvaOntoDispersion(datDispersion,datExpPairs,tsec_timeWindow)
   
   return(datDispersion)
 }
@@ -374,23 +374,43 @@ datHuntEvents <- readRDS(file=paste(strDatDir,"/HB_allHuntEvents.rds",sep="" ))
 ## Link Evoked and Spontaneous Trajectories
 datHuntStat <- makeHuntStat(datHuntEvents)
 #datExpPairs <- getSpontaneousEvokedExperimentPairs(datHuntStat)
-datHEventDispersion <<- loadHuntEventMergedWithPathStat(tsec_timeWindow)
+#datHEventDispersion <<- loadHuntEventMergedWithPathStat(tsec_timeWindow)
 
 
-loadDispersionData_norm(tsec_timeWindow)
+loadDispersionData_norm(10)
 ## Check for max Calc Error
 #datDispersion[datDispersion$Dispersion > datDispersion$max_Dispersion,]
 
-datExp8 <- datDispersion[datDispersion$age == 7,]
-datExp8NF0 <- datExp8[datExp8$groupID == "NF0" & datExp8$testCond == "LE",]
-datExp8LF1 <- datExp8[datExp8$groupID == "LF1" & datExp8$testCond == "LE",]
-datExp8LF2 <- datExp8[datExp8$groupID == "LF2" & datExp8$testCond == "LE",]
-datExp8LF3 <- datExp8[datExp8$groupID == "LF3" & datExp8$testCond == "LE",]
+vGroup = unique(datDispersion$groupID)
+vAge = unique(datDispersion$age)
 
-mean(datExp8NF0$Dispersion,na.rm=T)
-mean(datExp8LF1$Dispersion,na.rm=T)
-mean(datExp8LF2$Dispersion,na.rm=T)
-mean(datExp8LF3$Dispersion,na.rm=T)
+datDispersion_Summary10 <- aggregate(datDispersion$Dispersion,by=list(expID=datDispersion$expID, age=datDispersion$age,groupID=datDispersion$groupID,datDispersion$testCond),mean,na.rm=T)
+
+for (a in vAge)
+{
+  datDispersion_SummaryAge <- datDispersion_Summary10[datDispersion_Summary10$age == a,]
+  # Lower to higher
+  medians <- reorder(datDispersion_SummaryAge$groupID, datDispersion_SummaryAge$x, median)
+  # medians <- with(chickwts, reorder(feed, weight, median)) # Equivalent
+  boxplot(datDispersion_SummaryAge$x ~ medians, las = 2, xlab = "", 
+          ylab = "",main=paste(a,"dpf tw:",datDispersion.Interval,"sec"),ylim=c(5,20))
+}
+#boxplot((groupID,  age) ~ x ,data=datDispersion_Summary)
+
+loadDispersionData_norm(5)
+datDispersion_Summary5 <- aggregate(datDispersion$Dispersion,by=list(expID=datDispersion$expID, age=datDispersion$age,groupID=datDispersion$groupID,datDispersion$testCond),mean,na.rm=T)
+
+for (a in vAge)
+{
+  datDispersion_SummaryAge <- datDispersion_Summary5[datDispersion_Summary5$age == a,]
+  # Lower to higher
+  medians <- reorder(datDispersion_SummaryAge$groupID, datDispersion_SummaryAge$x, median)
+  # medians <- with(chickwts, reorder(feed, weight, median)) # Equivalent
+  boxplot(datDispersion_SummaryAge$x ~ medians, las = 2, xlab = "", 
+          ylab = "",main=paste(a,"dpf tw:",datDispersion.Interval,"sec"),ylim=c(1,20))
+}
+#boxplot((groupID,  age) ~ x ,data=datDispersion_Summary)
+
 ```
 
 
