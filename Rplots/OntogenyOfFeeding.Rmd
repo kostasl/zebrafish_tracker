@@ -10,7 +10,7 @@ output:
   bibliography: ForagingStateAnalysis.bib
 ---
 
-
+## On development of Hunger state 
 
 ## Notes on foraging motion patterns 
 
@@ -116,7 +116,7 @@ source("TrajectoryAnalysis.r")
 source("HuntingEventAnalysis_lib.r")
 
 
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
 
 
 ## To compile to different destination run:
@@ -368,8 +368,7 @@ loadDispersionData_norm <- function(tsec_timeWindow,forceReload=TRUE)
 
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 #datHuntLabelledEventsSBMerged_fixed <- getLabelledHuntEventsSet() # readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-
-datHuntEvents <- readRDS(file=paste(strDatDir,"/HB_allHuntEvents.rds",sep="" ))
+datHuntEvents <- readRDS(file=paste0(strDatDir,"/HB_allHuntEvents.rds" ))
 ##Clear Warningss : assign("last.warning", NULL, envir = baseenv()
 ## Link Evoked and Spontaneous Trajectories
 datHuntStat <- makeHuntStat(datHuntEvents)
@@ -377,31 +376,20 @@ datHuntStat <- makeHuntStat(datHuntEvents)
 #datHEventDispersion <<- loadHuntEventMergedWithPathStat(tsec_timeWindow)
 
 
-loadDispersionData_norm(10)
+## Load 10 Sec Dispersion Data
+#loadDispersionData_norm(10)
 ## Check for max Calc Error
 #datDispersion[datDispersion$Dispersion > datDispersion$max_Dispersion,]
 
+# 
+# datDispersion_Summary10 <- aggregate(datDispersion$Dispersion,by=list(expID=datDispersion$expID, age=datDispersion$age,groupID=datDispersion$groupID,datDispersion$testCond),mean,na.rm=T)
+
+## Load 5 Sec window Dispersion Data
+loadDispersionData_norm(5)
 vGroup = unique(datDispersion$groupID)
 vAge = unique(datDispersion$age)
+datDispersion_Summary5 <- aggregate(datDispersion$Dispersion,by=list(expID=datDispersion$expID, age=datDispersion$age,groupID=datDispersion$groupID,testCond=datDispersion$testCond),mean,na.rm=T)
 
-datDispersion_Summary10 <- aggregate(datDispersion$Dispersion,by=list(expID=datDispersion$expID, age=datDispersion$age,groupID=datDispersion$groupID,datDispersion$testCond),mean,na.rm=T)
-
-for (a in vAge)
-{
-  datDispersion_SummaryAge <- datDispersion_Summary10[datDispersion_Summary10$age == a,]
-  # Lower to higher
-  medians <- reorder(datDispersion_SummaryAge$groupID, datDispersion_SummaryAge$x, median)
-  # medians <- with(chickwts, reorder(feed, weight, median)) # Equivalent
-  boxplot(datDispersion_SummaryAge$x ~ medians, las = 2, xlab = "", 
-          ylab = "",main=paste(a,"dpf tw:",datDispersion.Interval,"sec"),ylim=c(5,20))
-}
-#boxplot((groupID,  age) ~ x ,data=datDispersion_Summary)
-
-loadDispersionData_norm(5)
-datDispersion_Summary5 <- aggregate(datDispersion$Dispersion,by=list(expID=datDispersion$expID,                                                                   age=datDispersion$age,groupID=datDispersion$groupID,testCond=datDispersion$testCond),mean,na.rm=T)
-
-
-  
   for (a in vAge)
   {
     datDispersion_SummaryAge <- datDispersion_Summary5[datDispersion_Summary5$age == a,]
@@ -424,7 +412,7 @@ datDispersion_Summary5 <- aggregate(datDispersion$Dispersion,by=list(expID=datDi
   }
 
 #boxplot((groupID,  age) ~ x ,data=datDispersion_Summary)
-datDispersion_SummaryAge <- datDispersion_Summary5[datDispersion_Summary5$age == 6,]
+datDispersion_SummaryAge <- datDispersion_Summary5[datDispersion_Summary5$age == 7,]
 
 t.test(datDispersion_SummaryAge[datDispersion_SummaryAge$groupID == "LF1",]$x,
        datDispersion_SummaryAge[datDispersion_SummaryAge$groupID == "LF3",]$x)
