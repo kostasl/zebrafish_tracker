@@ -65,20 +65,21 @@ static cv::Mat loadImage(const std::string& name)
 /// \brief Defines search area region and runs template matching
 /// pt Cant be closer to image border than gFishBoundBoxSize - If it is it will fixed to this distance
 /// Returns Angle of Matched Template, centre of Detected Template and Match Score
-double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& iLastKnownGoodTemplateRow,int& iLastKnownGoodTemplateCol,int& detectedAngle,cv::Point& detectedPoint ,cv::Mat& frameOut )
+double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& iLastKnownGoodTemplateRow,int& iLastKnownGoodTemplateCol,
+                                  int& detectedAngle,cv::Point& detectedPoint ,cv::Mat& frameOut )
 {
     /// Fix Bounds For Search point such that search temaplte region is not smaller than template size
-    pt.x = (pt.x <= gTrackerState.gLastfishimg_template.cols)?(gTrackerState.gLastfishimg_template.cols/2): pt.x;
-    pt.x = (maskedImg_gray.cols-pt.x <= gTrackerState.gLastfishimg_template.cols/2)?maskedImg_gray.cols-gTrackerState.gLastfishimg_template.cols/2: pt.x;
+    pt.x = (pt.x <= gTrackerState.gszTemplateImg.width)?(gTrackerState.gszTemplateImg.width/2): pt.x;
+    pt.x = (maskedImg_gray.cols-pt.x <= gTrackerState.gszTemplateImg.width/2)?maskedImg_gray.cols-gTrackerState.gszTemplateImg.width/2: pt.x;
 
-    pt.y = (pt.y <= gTrackerState.gLastfishimg_template.rows/2)?(gTrackerState.gLastfishimg_template.rows/2): pt.y;
-    pt.y = (maskedImg_gray.rows-pt.y <= gTrackerState.gLastfishimg_template.rows/2)?maskedImg_gray.rows-gTrackerState.gLastfishimg_template.rows/2: pt.y;
+    pt.y = (pt.y <= gTrackerState.gszTemplateImg.height/2)?(gTrackerState.gszTemplateImg.height/2): pt.y;
+    pt.y = (maskedImg_gray.rows-pt.y <= gTrackerState.gszTemplateImg.height/2)?maskedImg_gray.rows-gTrackerState.gszTemplateImg.height/2: pt.y;
     ///
 
     double maxMatchScore =0; //
     cv::Point gptmaxLoc; //point Of Bestr Match
-    cv::Size szTempIcon(std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows),
-                        std::max(gTrackerState.gLastfishimg_template.cols,gTrackerState.gLastfishimg_template.rows));
+    cv::Size szTempIcon(std::max(gTrackerState.gszTemplateImg.width,gTrackerState.gszTemplateImg.height),
+                        std::max(gTrackerState.gszTemplateImg.width,gTrackerState.gszTemplateImg.height));
     assert(szTempIcon.width > 5 && szTempIcon.height> 5);
     cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
     ///
@@ -91,11 +92,11 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     /// BOUND SEARCH REGION ///
     // Small Search Region When A Match has already been found
     cv::Point pBound1,pBound2;
-    int iSearchRegionSize = 0.5*gTrackerState.gFishBoundBoxSize;
+    int iSearchRegionSize = 0.2*gTrackerState.gFishBoundBoxSize;
 
     //Expand the Search Region If Fish Tracking Has been lost
     if (iLastKnownGoodTemplateRow ==0 && iLastKnownGoodTemplateCol == 0)
-       iSearchRegionSize = 1*gTrackerState.gFishBoundBoxSize;
+       iSearchRegionSize = 0.2*gTrackerState.gFishBoundBoxSize;
 
 
     pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-iSearchRegionSize)), std::max(0,std::min(maskedImg_gray.rows,pt.y-iSearchRegionSize)));

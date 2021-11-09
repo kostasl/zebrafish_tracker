@@ -1159,6 +1159,22 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         if (pfish->zfishBlob.overlap(pfish->zfishBlob,*fishblob) > 0 ||
                 minL1 < gTrackerState.gDisplacementLimitPerFrame)
         {
+
+            int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
+            int iTemplCol = 0;
+            int bestAngle = fishblob->angle;
+            cv::Point ptSearch = fishblob->pt;
+            float maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptSearch,frameOut);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
+
+            //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
+            if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
+            {
+                fishblob->angle = bestAngle;
+                fishblob->pt = ptSearch;
+            }
+                //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
+                  //User Click Sets Response to > 10
+
            if (!gTrackerState.bPaused)
                 pfish->updateState(fishblob,
                                    //fishblob->angle,
@@ -1196,7 +1212,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     { //For Each Blob //
         fishblob = &(*it);
         //Check Template Match Score
-        cv::Point2f ptSearch = fishblob->pt;
+        cv::Point ptSearch = fishblob->pt;
         // Ignore Already Paired Blobs
         if (fishblob->octave == 10)
             continue;
@@ -1204,12 +1220,18 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         pwindow_main->LogEvent("No Fish model found for blob");
         cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
 
-        float maxMatchScore = fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptbcentre,frameOut);
         int bestAngle = fishblob->angle;
+        int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
+        int iTemplCol = 0;
+        float maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptSearch,frameOut);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
+
         //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
-        if (maxMatchScore >= gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
-            )  //User Click Sets Response to > 10
+        if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)  //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
+              //User Click Sets Response to > 10
         {
+            // Update to template Matched Angle and positio
+            fishblob->angle = bestAngle;
+            fishblob->pt =ptSearch; //
             //Make new fish Model
            fishModel* fish= new fishModel(*fishblob,bestAngle,ptSearch);
            fish->ID = ++gTrackerState.gi_MaxFishID;
