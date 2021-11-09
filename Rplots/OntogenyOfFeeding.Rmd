@@ -388,7 +388,7 @@ datHuntStat <- makeHuntStat(datHuntEvents)
 loadDispersionData_norm(5)
 vGroup = unique(datDispersion$groupID)
 vAge = unique(datDispersion$age)
-datDispersion_Summary5 <- aggregate(datDispersion$Dispersion,by=list(expID=datDispersion$expID, age=datDispersion$age,groupID=datDispersion$groupID,datDispersion$testCond),mean,na.rm=T)
+datDispersion_Summary5 <- aggregate(datDispersion$Dispersion,by=list(expID=datDispersion$expID, age=datDispersion$age,groupID=datDispersion$groupID,testCond=datDispersion$testCond),mean,na.rm=T)
 
   for (a in vAge)
   {
@@ -412,7 +412,7 @@ datDispersion_Summary5 <- aggregate(datDispersion$Dispersion,by=list(expID=datDi
   }
 
 #boxplot((groupID,  age) ~ x ,data=datDispersion_Summary)
-datDispersion_SummaryAge <- datDispersion_Summary5[datDispersion_Summary5$age == 6,]
+datDispersion_SummaryAge <- datDispersion_Summary5[datDispersion_Summary5$age == 7,]
 
 t.test(datDispersion_SummaryAge[datDispersion_SummaryAge$groupID == "LF1",]$x,
        datDispersion_SummaryAge[datDispersion_SummaryAge$groupID == "LF3",]$x)
