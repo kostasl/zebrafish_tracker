@@ -398,18 +398,39 @@ for (a in vAge)
 #boxplot((groupID,  age) ~ x ,data=datDispersion_Summary)
 
 loadDispersionData_norm(5)
-datDispersion_Summary5 <- aggregate(datDispersion$Dispersion,by=list(expID=datDispersion$expID, age=datDispersion$age,groupID=datDispersion$groupID,datDispersion$testCond),mean,na.rm=T)
+datDispersion_Summary5 <- aggregate(datDispersion$Dispersion,by=list(expID=datDispersion$expID,                                                                   age=datDispersion$age,groupID=datDispersion$groupID,testCond=datDispersion$testCond),mean,na.rm=T)
 
-for (a in vAge)
-{
-  datDispersion_SummaryAge <- datDispersion_Summary5[datDispersion_Summary5$age == a,]
-  # Lower to higher
-  medians <- reorder(datDispersion_SummaryAge$groupID, datDispersion_SummaryAge$x, median)
-  # medians <- with(chickwts, reorder(feed, weight, median)) # Equivalent
-  boxplot(datDispersion_SummaryAge$x ~ medians, las = 2, xlab = "", 
-          ylab = "",main=paste(a,"dpf tw:",datDispersion.Interval,"sec"),ylim=c(1,20))
-}
+
+  
+  for (a in vAge)
+  {
+    datDispersion_SummaryAge <- datDispersion_Summary5[datDispersion_Summary5$age == a,]
+    datDispersion_SummaryCnt <- aggregate(datDispersion_SummaryAge$groupID,by=list(groupID=datDispersion_SummaryAge$groupID,                                                                  age=datDispersion_SummaryAge$age,datDispersion_SummaryAge$testCond),length)
+  
+    # Lower to higher
+    medians <- reorder(datDispersion_SummaryAge$groupID, datDispersion_SummaryAge$x, median)
+    # medians <- with(chickwts, reorder(feed, weight, median)) # Equivalent
+    boundaries <- boxplot(datDispersion_SummaryAge$x ~ medians, las = 2, xlab = "", 
+            ylab = "",main=paste(a,"dpf tw:",datDispersion.Interval,"sec"),ylim=c(1,20))
+    
+      
+    # Add sample size on top
+    nbGroup <- nlevels(medians)
+    text( 
+      x=c(1:nbGroup), 
+      y=boundaries$stats[nrow(boundaries$stats),] + 0.5,
+      paste0("n = ",table(medians))  
+    )
+  }
+
 #boxplot((groupID,  age) ~ x ,data=datDispersion_Summary)
+datDispersion_SummaryAge <- datDispersion_Summary5[datDispersion_Summary5$age == 6,]
+
+t.test(datDispersion_SummaryAge[datDispersion_SummaryAge$groupID == "LF1",]$x,
+       datDispersion_SummaryAge[datDispersion_SummaryAge$groupID == "LF3",]$x)
+
+t.test(datDispersion_SummaryAge[datDispersion_SummaryAge$groupID == "NF0",]$x,
+       datDispersion_SummaryAge[datDispersion_SummaryAge$groupID == "LF3",]$x)
 
 ```
 
