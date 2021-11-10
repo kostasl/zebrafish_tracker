@@ -30,7 +30,9 @@ std::vector<cv::Mat> loadTemplatesFromDirectory(QString strDir);
 void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStepDeg);
 //int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol);
 int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch);
-double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& iLastKnownGoodTemplateRow,int& iLastKnownGoodTemplateCol,int& detectedAngle,cv::Point& detectedPoint ,cv::Mat& frameOut );
+double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& iLastKnownGoodTemplateRow,
+                                  int& iLastKnownGoodTemplateCol,int& detectedAngle, cv::Point& detectedPoint,
+                                  cv::Mat& frameOut );
 
 ///
 /// \brief addTemplateToCache Expands the Cache with all the fish body image templates by one row

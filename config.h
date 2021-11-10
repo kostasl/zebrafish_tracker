@@ -251,7 +251,7 @@ class trackerState
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
       bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
       bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked FG Fish Image and not the full frame- (Masks can lose fine features)
-      bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (diff temaplte images)- speeding up search + fail - Rows still Randomly Switch between attempts
+      bool bTemplateSearchThroughRows           = true; /// Stops TemplateFind to Scan Through All Rows (diff template images)- speeding up search + fail - Rows still Randomly Switch between attempts
       bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
       bool bUseGPU                              = false;
       bool bUseOpenCL                           = true;
@@ -305,11 +305,11 @@ class trackerState
       int gEyeTemplateAngleSteps      = 5;
 
       double eyeStepIncrement         = 0.1;
-      double gTemplateMatchThreshold  = 0.70; //This is applied After Fish Net
+      double gTemplateMatchThreshold  = 0.70; //Template Matching is tested After Fish Net Classifier Has passed-
       double gTemplateMatchThreshold_LowLimit = 0.65;
       double gTemplateMatchThreshold_UpLimit = 0.95;
 
-      int gFishBoundBoxSize               = 100; /// 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
+      int gFishBoundBoxSize               = 40; ///100 For HRes Top CamB 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
       int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*4; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState

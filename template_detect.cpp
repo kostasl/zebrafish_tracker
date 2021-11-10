@@ -66,7 +66,7 @@ static cv::Mat loadImage(const std::string& name)
 /// pt Cant be closer to image border than gFishBoundBoxSize - If it is it will fixed to this distance
 /// Returns Angle of Matched Template, centre of Detected Template and Match Score
 double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& iLastKnownGoodTemplateRow,int& iLastKnownGoodTemplateCol,
-                                  int& detectedAngle,cv::Point& detectedPoint ,cv::Mat& frameOut )
+                                  int& detectedAngle,cv::Point& detectedPoint , cv::Mat& frameOut )
 {
     /// Fix Bounds For Search point such that search temaplte region is not smaller than template size
     pt.x = (pt.x <= gTrackerState.gszTemplateImg.width)?(gTrackerState.gszTemplateImg.width/2): pt.x;
@@ -92,11 +92,11 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     /// BOUND SEARCH REGION ///
     // Small Search Region When A Match has already been found
     cv::Point pBound1,pBound2;
-    int iSearchRegionSize = 0.2*gTrackerState.gFishBoundBoxSize;
+    int iSearchRegionSize = 1.0*gTrackerState.gFishBoundBoxSize;
 
     //Expand the Search Region If Fish Tracking Has been lost
-    if (iLastKnownGoodTemplateRow ==0 && iLastKnownGoodTemplateCol == 0)
-       iSearchRegionSize = 0.2*gTrackerState.gFishBoundBoxSize;
+    if (iLastKnownGoodTemplateRow == 0 && iLastKnownGoodTemplateCol == 0)
+       iSearchRegionSize = 1.0*gTrackerState.gFishBoundBoxSize;
 
 
     pBound1 = cv::Point(std::max(0,std::min(maskedImg_gray.cols,pt.x-iSearchRegionSize)), std::max(0,std::min(maskedImg_gray.rows,pt.y-iSearchRegionSize)));
@@ -112,6 +112,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1); //Ucomment to debug template search Region
     cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
+    cv::imshow("template Fish region",fishRegion);
 
     //If blob exists but No Fish Model yet then Search Through Cache to improve matching;
     //bool findBestMatch = (vfishmodels.size() == 0);
@@ -136,8 +137,11 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 
     detectedAngle =AngleIdx*gTrackerState.gFishTemplateAngleSteps;
 
+    //MaxLoc Coords Need inversion
+    //gptmaxLoc.x = fishRegion.cols - gptmaxLoc.x;
+    //gptmaxLoc.y = fishRegion.rows - gptmaxLoc.y;
     cv::Point top_left  = pBound1+gptmaxLoc; //Get top Left Corner Of Template Detected Region
-    detectedPoint = top_left + rotCentre; //Get Centre Of Template Detection Region - Used for Tracking
+    detectedPoint = top_left - rotCentre; //Get Centre Of Template Detection Region - Used for Tracking
 
     return maxMatchScore;
 }
@@ -335,6 +339,8 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 #else
          cv::matchTemplate(imgRegionIn,templ_rot,outMatchConv, CV_TM_CCORR_NORMED  ); // CV_TM_CCOEFF_NORMED ,TM_SQDIFF_NORMED
          //Find Min Max Location
+
+         cv::flip(outMatchConv,outMatchConv,-1); //Flip H and V
          cv::minMaxLoc(outMatchConv,&minVal,&maxVal,&ptminLoc,&ptmaxLoc);
 #endif         //Convolution  // CV_TM_SQDIFF_NORMED Poor Matching
 
@@ -414,14 +420,14 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 
      std::stringstream ss;
 //     // Log As Message //
-//     if (ibestMatchRow < gTrackerState.gnumberOfTemplatesInCache)
-//        ss << "Best row:" << ibestMatchRow << " but gives Low Match score:"<< maxGVal << ". Pick next Randomly ->"  << startRow;
-//     else
-//     {
-//         ss << "Reached End of Templates row:" << ibestMatchRow << " Start Over on next";
-//         startRow = 0;
-//     }
-//     pwindow_main->LogEvent(QString::fromStdString(ss.str()));
+     if (ibestMatchRow < gTrackerState.gnumberOfTemplatesInCache)
+        ss << "Best row:" << ibestMatchRow << " but gives Low Match score:"<< maxGVal << ". Pick next Randomly ->"  << startRow;
+     else
+     {
+         ss << "Reached End of Templates row:" << ibestMatchRow << " Start Over on next";
+         startRow = 0;
+     }
+     pwindow_main->LogEvent(QString::fromStdString(ss.str()));
 
  }else{ // If template matched then stay on the same template row
      startRow = ibestMatchRow;
@@ -434,7 +440,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
             //                                                 std::max(gTrackerState.gTemplateMatchThreshold_LowLimit, gTrackerState.gTemplateMatchThreshold));
             //pwindow_main->updateTemplateThres();
      }
-
+     cv::imshow("Templ Score",outMatchConv);
      gTrackerState.iTemplateMatchFailCounter = 0; //Reset Counter of Failed Attempts
 
  }
@@ -628,7 +634,7 @@ std::vector<cv::Mat> loadTemplatesFromDirectory(QString strDir)
       templFrame  = loadImage(filepath);
       //Save to Glogal List
       vTempl_mat.push_back(templFrame);
-      //addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+      addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
       fileCount++;
     }
 

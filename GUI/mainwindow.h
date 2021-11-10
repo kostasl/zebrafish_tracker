@@ -135,7 +135,7 @@ private slots:
 
     void on_spinBoxFishnetL1thres_textChanged(const QString &arg1);
 
-    void on_spinBoxFishnetL1thres_valueChanged(int arg1);
+   // void on_spinBoxFishnetL1thres_valueChanged(int arg1);
 
     void on_spinBoxFishnetClassifierthres_valueChanged(int arg1);
 
@@ -144,6 +144,8 @@ private slots:
     void on_spinBoxFishnetClassifierthres_valueChanged(double arg1);
 
     void on_spinBoxEyeMaskH_valueChanged(int arg1);
+
+    void on_spinBoxTemplatethres_valueChanged(int arg1);
 
 private:
     void reportUserMeasurement(cv::Point ptMouse);

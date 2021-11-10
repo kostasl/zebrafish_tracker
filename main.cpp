@@ -1160,18 +1160,18 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 minL1 < gTrackerState.gDisplacementLimitPerFrame)
         {
 
-            int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
-            int iTemplCol = 0;
-            int bestAngle = fishblob->angle;
-            cv::Point ptSearch = fishblob->pt;
-            float maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptSearch,frameOut);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
+//            int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
+//            int iTemplCol = fishblob->angle;
+//            int bestAngle = fishblob->angle;
+//            cv::Point ptSearch = fishblob->pt;
+//            float maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray, ptSearch,iTemplRow,iTemplCol,bestAngle, ptSearch,frameOut);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
 
-            //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
-            if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
-            {
-                fishblob->angle = bestAngle;
-                fishblob->pt = ptSearch;
-            }
+//            //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
+//            if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
+//            {
+//                fishblob->angle = bestAngle;
+//                //fishblob->pt = ptSearch;
+//            }
                 //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
                   //User Click Sets Response to > 10
 
@@ -1220,23 +1220,26 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         pwindow_main->LogEvent("No Fish model found for blob");
         cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
 
-        int bestAngle = fishblob->angle;
-        int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
-        int iTemplCol = 0;
-        float maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptSearch,frameOut);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
+//        int bestAngle = fishblob->angle;
+//        int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
+//        int iTemplCol = fishblob->angle;
+//        float maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptSearch,frameOut);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
 
-        //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
-        if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)  //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
-              //User Click Sets Response to > 10
-        {
-            // Update to template Matched Angle and positio
-            fishblob->angle = bestAngle;
-            fishblob->pt =ptSearch; //
+//        //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
+//        //If Template Match Succeeds then Update Blob.
+//        if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)  //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
+//        {
+//            // Update to template Matched Angle and positio
+//            fishblob->angle = bestAngle;
+//            fishblob->pt =ptSearch; //
+//        }
+        if (fishblob->response > gTrackerState.fishnet_classifier_thres){
             //Make new fish Model
-           fishModel* fish= new fishModel(*fishblob,bestAngle,ptSearch);
+           fishModel* fish= new fishModel(*fishblob,fishblob->angle,ptSearch);
            fish->ID = ++gTrackerState.gi_MaxFishID;
            fish->idxTemplateRow = 0;
-           fish->idxTemplateCol = 0;
+           fish->idxTemplateCol = fishblob->angle;
+           fish->matchScore = fishblob->response;
            fish->stepPredict(nFrame);
            fish->updateState(fishblob,ptSearch,nFrame,
                              gTrackerState.gFishTailSpineSegmentLength,0,0);
@@ -2976,12 +2979,12 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            {   std::stringstream ssMsg;
                //Obtain And Save Unmasked Image
                cv::Mat imgFishAnterior_Templ = fishdetector::getNormedTemplateImg(fullImgIn,fish->bodyRotBound); //fishRotAnteriorBox
-               //addTemplateToCache(imgFishAnterior,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+               addTemplateToCache(imgFishAnterior_Templ,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
                //Try This New Template On the Next Search
                gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
                //fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
                pwindow_main->saveTemplateImage(imgFishAnterior_Templ);
-               ssMsg << "Fish Template saved to disk - (No Cache update) #"<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
+               ssMsg << "Fish Template Added to Cache and saved to disk - "<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
                pwindow_main->LogEvent(QString::fromStdString(ssMsg.str() ));
                gTrackerState.bStoreThisTemplate = false;
            }
@@ -3142,7 +3145,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                }
 
                /// Main Method Uses Pixel Intensity //
-               cv::imshow("Spine Detect Img",maskedfishFeature_blur);
+               //cv::imshow("Spine Detect Img",maskedfishFeature_blur);
                fish->fitSpineToIntensity(maskedfishFeature_blur,gTrackerState.gFitTailIntensityScanAngleDeg);
                fish->drawSpine(fullImgOut);
 

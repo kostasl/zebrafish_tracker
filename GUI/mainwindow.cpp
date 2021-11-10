@@ -142,14 +142,15 @@ void MainWindow::createSpinBoxes()
 //    this->ui->spinBoxSpineSegSize->setValue(gFishTailSpineSegmentLength);
 
     //These spinBoxes Use Slots For Events
-    this->ui->spinBoxTemplateThres->setValue(gTrackerState.gTemplateMatchThreshold*100.0);
+    this->ui->spinBoxTemplateThres->setValue(gTrackerState.gTemplateMatchThreshold*100.0);//Duplicate To remove
+    this->ui->spinBoxTemplatethres->setValue(gTrackerState.gTemplateMatchThreshold*100.0);
 
     this->ui->spinBoxMOGBGRatio->setValue(gTrackerState.gdMOGBGRatio*100.0);
-
     this->ui->spinBoxFishNetSparseness->setValue(gTrackerState.fishnet_inputSparseness*100.0);
     //this->ui->spinBoxFishnetL1thres->setValue(gTrackerState.fishnet_L1_threshold);
     this->ui->spinBoxFishnetClassifierthres->setValue(gTrackerState.fishnet_classifier_thres);
     //this->connect(this->ui->spinBoxEyeThres, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this->ui->spinBoxEyeThres, &QSlider::setValue);
+
 
 //    QObject::connect(this->ui->spinBoxEyeThres,
 //                     static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
@@ -1303,10 +1304,10 @@ void MainWindow::on_spinBoxFishnetL1thres_textChanged(const QString &arg1)
 }
 
 
-void MainWindow::on_spinBoxFishnetL1thres_valueChanged(int arg1)
-{
-    //gTrackerState.fishnet_L1_threshold = (float)arg1/10.0;
-}
+//void MainWindow::on_spinBoxFishnetL1thres_valueChanged(int arg1)
+//{
+//    //gTrackerState.fishnet_L1_threshold = (float)arg1/10.0;
+//}
 
 ///\todo Slot no longer needed
 void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(int arg1)
@@ -1330,5 +1331,11 @@ void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(double arg1)
 void MainWindow::on_spinBoxEyeMaskH_valueChanged(int arg1)
 {
     gTrackerState.giHeadIsolationMaskVOffset = arg1;
+}
+
+
+void MainWindow::on_spinBoxTemplatethres_valueChanged(int arg1)
+{
+     gTrackerState.gTemplateMatchThreshold =  (float)arg1/100.0;
 }
 

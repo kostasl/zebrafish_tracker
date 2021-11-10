@@ -694,7 +694,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         /// \todo Here I could Use Shape Similarity Filtering - Through the CurveCSS header
         //Find Tail Point- As the one with the sharpest Angle
         // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
-         cv::Point2f ptSearch = kp.pt;
+         cv::Point ptSearch = kp.pt;
         int idxTail,idxHead ;
             idxTail = getMaxInflectionAndSmoothedContour(frameImg, fgMask, curve);
        if (idxTail >= 0 )
@@ -752,8 +752,21 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             //                                                       mask_fnetScore, QString::number(iHitCount).toStdString());
             //kp.angle = fishRotAnteriorBox.angle;
             //kp.response = fRR;
-
-
+            /// After Classifier Identifies Fish Then Add Template Matching - To correct Orientation
+            int bestAngle = kp.angle;
+            int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
+            int iTemplCol = kp.angle;
+            ptSearch = kp.pt;
+            float maxMatchScore = doTemplateMatchAroundPoint(frameImg,kp.pt,iTemplRow,iTemplCol,bestAngle,ptSearch,outFishMask);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
+            gTrackerState.iLastKnownGoodTemplateRow = iTemplRow;
+            kp.angle = bestAngle;
+            //If Template Match Succeeds then Update Blob To Correct Position And Orientation -
+            if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)  //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
+            {
+                // Update to template Matched Angle and positio
+                kp.pt = ptSearch; //Does not Work Accuratelly
+                qDebug() << "+Tmpl:" << maxMatchScore;
+            }
 
             //if (kp.response >= gTrackerState.fishnet_classifier_thres && pointIsInROI(kp.pt,2))
             {
@@ -787,7 +800,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         cv::circle(outFishMask, gptTail,4,CV_RGB(255,255,255),cv::FILLED);
         cv::circle(outFishMask, gptHead,6,CV_RGB(255,255,255),cv::FILLED);
           cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
-        cv::putText(outFishMask,strfRecScore.toStdString(), ptSearch +cv::Point2f(10,-10), gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(255,255,250));
+        cv::putText(outFishMask,strfRecScore.toStdString(), ptSearch + cv::Point(10,-10), gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(255,255,250));
         //cv::circle(outFishMask, ptHead - (ptHead-centroid)/2,5,CV_RGB(255,255,255),cv::FILLED);
     } //For Each Fish Contour
 
