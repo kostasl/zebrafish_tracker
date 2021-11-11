@@ -202,15 +202,17 @@ class trackerState
       uint gi_MaxFoodID; //Declared in Model Header Files
 
       QString outfilename;
-      std::string gstrwinName = "FishFrame";
+      std::string gstrwinName = "Fishtracker Frame";
 
      // Global Control Vars ///
      /// \brief bTracking
      ///// Option Flags //
       bool bAllowOnlyOneTrackedItem = false;
-      bool bshowMask; //True will show the BGSubstracted IMage/Processed Mask
-      bool bStartPaused;
-      bool bPaused            = false;
+      bool bshowMask                = false; //Debug option True will show the BGSubstracted IMage/Processed Mask
+      bool bshowDetectorDebugImg    = false; //Debug option  True will show the classifier scoring Masks and Extracted Fish Anterior Images
+
+      bool bStartPaused             = false; //Command line controlled
+      bool bPaused                  = false;
       bool bExiting;
       bool bTracking          = true;
       bool bTrackFood         = true;
@@ -246,6 +248,7 @@ class trackerState
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
+      bool bUseTemplateMatching                 = true; /// Use Template Matching Following DNN classifier Success
       bool bFitSpineToTail                      = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bUseContourToFitSpine                = false; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
@@ -270,7 +273,7 @@ class trackerState
       uint iSpineContourFitFramePeriod         = 20; //Check that Tail Fitting Matches Contour Every X Frames
 
       /// Segmentation / threshold  Params
-      int g_FGSegthresh             = 5;
+      int g_FGSegthresh;            //Default Set By Command Line Params
       int g_FGStaticMaskSegthresh   = g_FGSegthresh;//Applied On THe BG Substracted Image / Image Threshold to segment BG - Fish Segmentation uses a higher 2Xg_Segthresh threshold
       int g_SegFoodThesMin        = max(0,g_FGSegthresh-25); //Low thres For Food Detection / Doing Gradual Step Wise with SimpleBlob
       int g_SegFoodThesMax        = g_SegFoodThesMin+5; //Up thres Scan For Food Detection / Doing Gradual Step Wise with SimpleBlob
@@ -286,14 +289,15 @@ class trackerState
       int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int gthresEyeSeg                    = -23; //Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage
+      int gthresEyeSeg                    = -7; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+
       int gthresEyeSegL                   = 2;
       int gFishTailSpineSegmentLength     = 9;
       // Eye Masks //
-      int giHeadIsolationMaskVOffset     = 23; //Vertical Distance to draw  Mask and Threshold Sampling Arc in Fish Head Mask
+      int iEyeHMaskSepRadius                = 22; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
-      int iEyeMaskSepWidth               = 18; //5 px width vertical line separates the eyes for segmentation
-
+      int iEyeVMaskSepWidth               = 25; //5 px width vertical line separates the eyes for segmentation
+      int iEyeVMaskSepHeight              = 46;
 
       /// Fishnet Classifier params //
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output

@@ -368,7 +368,7 @@ if (not model_dir_invar is  None):
 print("~~~~~~~~~ Test Prediction on Non-fish and 2 fish samples ~~~~")
 testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/nonfish/non-fish.jpg")
 testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/fish.jpg")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/10796.png")
+#testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/10796.png")
 
 
 

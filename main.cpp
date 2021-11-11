@@ -167,9 +167,10 @@ int main(int argc, char *argv[])
         "{duration d | 0  | Number of frames to Track for starting from start frame}"
         "{logtofile l |    | Filename to save clog stream to }"
         "{ModelBG b | 1  | Initiate BG modelling by running over scattered video frames to obtain Foreground mask}"
-        "{BGThreshold bgthres | 18  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
-        "{HeadMaskW hmw | 17  | Head Vertical mask width that separates eyes}"
-        "{HeadMaskH hmh | 17  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
+        "{UseTemplateMatching T | 0  | After DNN Classifier, also use template matching to Detect orientation and position of larva (speed up if false)}" //bUseTemplateMatching
+        "{BGThreshold bgthres | 14  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
+        "{HeadMaskW hmw | 22  | Head Vertical mask width that separates eyes}"
+        "{HeadMaskH hmh | 33  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
@@ -229,9 +230,12 @@ int main(int argc, char *argv[])
     //Init MOG BG substractor
     initBGSubstraction();
 
-    int iLoadedTemplates = initDetectionTemplates();
-    pwindow_main->nFrame = 1;
-    pwindow_main->LogEvent(QString::number(iLoadedTemplates) + QString("# Templates Loaded "));
+    if (gTrackerState.bUseTemplateMatching){
+        pwindow_main->LogEvent(QString("<<Using Template matching along DNN classifier. Loading samples into cache:"));
+        int iLoadedTemplates = initDetectionTemplates();
+        pwindow_main->nFrame = 1;
+        pwindow_main->LogEvent(QString::number(iLoadedTemplates) + QString("# Templates Loaded "));
+    }
 
     /// Run Unit Tests ///
 //    qDebug() << "<<< fishDetector Tests >>>";
@@ -247,7 +251,7 @@ int main(int argc, char *argv[])
 //    vtimg.push_back(imageB);
 //    fishdetector::testTFModelPrediction(vtimg);
 //    qDebug() << "<<< fishDetector Tests Complete >>>";
-    cv::waitKey(1000);
+//    cv::waitKey(1000);
     // resize the image to fit the model's input:
 
 
@@ -535,7 +539,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
         /// Choose FG image prior to template matching
         /// \note this can fail badly if Mask is thick outline of larva/or a bad match hidding features
         if (gTrackerState.bApplyFishMaskBeforeFeatureDetection)
-            frame_gray.copyTo(fgFishImgMasked,fgMask); //fgMask / NOT fish Mask //Use Enhanced Mask
+            frame_gray.copyTo(fgFishImgMasked,fgFishMask); //fgMask allows prey to interfere with Eye detection //Use Enhanced Mask
         else
             frame_gray.copyTo(fgFishImgMasked);
 
@@ -1160,21 +1164,6 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                 minL1 < gTrackerState.gDisplacementLimitPerFrame)
         {
 
-//            int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
-//            int iTemplCol = fishblob->angle;
-//            int bestAngle = fishblob->angle;
-//            cv::Point ptSearch = fishblob->pt;
-//            float maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray, ptSearch,iTemplRow,iTemplCol,bestAngle, ptSearch,frameOut);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
-
-//            //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
-//            if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)
-//            {
-//                fishblob->angle = bestAngle;
-//                //fishblob->pt = ptSearch;
-//            }
-                //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
-                  //User Click Sets Response to > 10
-
            if (!gTrackerState.bPaused)
                 pfish->updateState(fishblob,
                                    //fishblob->angle,
@@ -1220,24 +1209,11 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
         pwindow_main->LogEvent("No Fish model found for blob");
         cv::circle(frameOut,ptSearch,3,CV_RGB(15,15,250),1); //Mark Where Search Is Done
 
-//        int bestAngle = fishblob->angle;
-//        int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
-//        int iTemplCol = fishblob->angle;
-//        float maxMatchScore = doTemplateMatchAroundPoint(maskedImg_gray,ptSearch,iTemplRow,iTemplCol,bestAngle,ptSearch,frameOut);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
-
-//        //If New Blob Looks Like A Fish - Or User Selected, and no existing model in vicinity Then Make  A New Model for blob
-//        //If Template Match Succeeds then Update Blob.
-//        if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)  //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
-//        {
-//            // Update to template Matched Angle and positio
-//            fishblob->angle = bestAngle;
-//            fishblob->pt =ptSearch; //
-//        }
         if (fishblob->response > gTrackerState.fishnet_classifier_thres){
             //Make new fish Model
            fishModel* fish= new fishModel(*fishblob,fishblob->angle,ptSearch);
            fish->ID = ++gTrackerState.gi_MaxFishID;
-           fish->idxTemplateRow = 0;
+           fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
            fish->idxTemplateCol = fishblob->angle;
            fish->matchScore = fishblob->response;
            fish->stepPredict(nFrame);
@@ -2110,6 +2086,11 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
     {
          std::cout << "Show Mask" << std::endl;
          gTrackerState.bshowMask = !gTrackerState.bshowMask;
+    }
+
+    if ((char)keyboard == 'c'){
+            std::cout << "Show Classifier and Template Images" << std::endl;
+            gTrackerState.bshowDetectorDebugImg = !gTrackerState.bshowDetectorDebugImg;
     }
 
     ///Flip Save Feature On - This Will last only for a single frame

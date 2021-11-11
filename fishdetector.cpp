@@ -288,7 +288,9 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
 
    imgFishAnterior = frame(fishRotAnteriorBox_Bound); // getNormedBoundedImg(frame,fishRotAnteriorBox);
-   cv::imshow("imgFishAnterior scoreBlobRegion",imgFishAnterior);
+   if (gTrackerState.bshowDetectorDebugImg)
+       cv::imshow("imgFishAnterior scoreBlobRegion",imgFishAnterior);
+
    if (szFishAnteriorNorm.area() < gTrackerState.gszTemplateImg.area())
        //Not Enough Space Abort
        return(0.0);

@@ -112,7 +112,8 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1); //Ucomment to debug template search Region
     cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
-    cv::imshow("template Fish region",fishRegion);
+    if (gTrackerState.bshowDetectorDebugImg)
+        cv::imshow("template Fish region",fishRegion);
 
     //If blob exists but No Fish Model yet then Search Through Cache to improve matching;
     //bool findBestMatch = (vfishmodels.size() == 0);
@@ -440,7 +441,8 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
             //                                                 std::max(gTrackerState.gTemplateMatchThreshold_LowLimit, gTrackerState.gTemplateMatchThreshold));
             //pwindow_main->updateTemplateThres();
      }
-     cv::imshow("Templ Score",outMatchConv);
+     if (gTrackerState.bshowDetectorDebugImg)
+        cv::imshow("Templ Score",outMatchConv);
      gTrackerState.iTemplateMatchFailCounter = 0; //Reset Counter of Failed Attempts
 
  }

@@ -639,7 +639,7 @@ return(0);
 std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::vector<cv::Point>& ellipseSample_pts,int& minVal,int& maxVal)
 {
         const int isampleN = EYE_SEG_SAMPLE_POINTS_COUNT;
-        const int voffset = gTrackerState.giHeadIsolationMaskVOffset+1;
+        const int voffset = gTrackerState.iEyeHMaskSepRadius+1;
 
         int iThresEyeSeg = 0;
         minVal = 255;
@@ -774,21 +774,21 @@ void drawEyeExtractionMasks(cv::Mat& mfishHead,cv::Point2f ptcentre)
 {
     cv::Point ptMaskCntr            = cv::Point(ptcentre.x,mfishHead.rows);//cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
     cv::RotatedRect rectMidEllipse  = cv::RotatedRect(ptMaskCntr,
-                                                     cv::Size2f(gTrackerState.iEyeMaskSepWidth,mfishHead.rows+26),0);
+                                                     cv::Size2f(gTrackerState.iEyeVMaskSepWidth,mfishHead.rows+26),0);
 
     //If Grey Scale then Draw Filled Black Masks
     if (mfishHead.channels() == 1)
     {
         //Add Thick Mid line to erase inner Eye Edges and artefacts
         cv::line(mfishHead,ptcentre,cv::Point(ptcentre.x,0),CV_RGB(0,0,0),2);//Split Eyes with line111
-        cv::circle(mfishHead,ptMaskCntr,gTrackerState.giHeadIsolationMaskVOffset, CV_RGB(0,0,0),CV_FILLED); //Mask Body
+        cv::circle(mfishHead,ptMaskCntr,gTrackerState.iEyeHMaskSepRadius, CV_RGB(0,0,0),CV_FILLED); //Mask Body
         //cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),CV_FILLED); //Mask Body
         cv::ellipse(mfishHead,rectMidEllipse,CV_RGB(0,0,0),CV_FILLED ) ; //Mask the body and between eye edges
     }else
     { // Show Mask borders using Coloured Lines
         //Add Thick Mid line to erase inner Eye Edges and artefacts
         cv::line(mfishHead,ptcentre,cv::Point(ptcentre.x,0),CV_RGB(0,250,50),1);//Split Eyes with line111
-        cv::circle(mfishHead,ptMaskCntr,gTrackerState.giHeadIsolationMaskVOffset, CV_RGB(0,250,50),1); //Mask Body
+        cv::circle(mfishHead,ptMaskCntr,gTrackerState.iEyeHMaskSepRadius, CV_RGB(0,250,50),1); //Mask Body
         //cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),CV_FILLED); //Mask Body
         cv::ellipse(mfishHead,rectMidEllipse,CV_RGB(0,250,250),1 ) ; //Mask the body and between eye edges
     }
@@ -842,7 +842,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/3+7);
     /// Make Mask regions to Separate Eyes //
     cv::Point ptMaskCntr = cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
-    cv::RotatedRect rectMidEllipse = cv::RotatedRect(ptMaskCntr,cv::Size2f(gTrackerState.iEyeMaskSepWidth,imgUpsampled_gray.rows+26),0);
+    cv::RotatedRect rectMidEllipse = cv::RotatedRect(ptMaskCntr,cv::Size2f(gTrackerState.iEyeVMaskSepWidth,imgUpsampled_gray.rows+gTrackerState.iEyeVMaskSepHeight),0);
 
     // Locate Eye Points //
     ///COVER Right Eye - Find Left EYE //

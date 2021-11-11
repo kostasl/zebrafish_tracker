@@ -118,7 +118,7 @@ void MainWindow::createSpinBoxes()
     this->ui->spinBoxFoodThresMax->setValue(gTrackerState.g_SegFoodThesMax);
     this->ui->spinBoxFoodThresMin->setValue(gTrackerState.g_SegFoodThesMin);
 
-    this->ui->spinBoxEyeMaskW->setValue(gTrackerState.iEyeMaskSepWidth);
+    this->ui->spinBoxEyeMaskW->setValue(gTrackerState.iEyeVMaskSepWidth);
 
 
     this->ui->spinBoxFishThres->installEventFilter(this);
@@ -1287,7 +1287,7 @@ void MainWindow::on_checkBoxHistEqualizer_stateChanged(int arg1)
 /// \brief Change the eye Mask Width betwee eyes
 void MainWindow::on_spinBoxEyeMaskW_valueChanged(int arg1)
 {
-    gTrackerState.iEyeMaskSepWidth = arg1;
+    gTrackerState.iEyeVMaskSepWidth = arg1;
 }
 
 
@@ -1330,7 +1330,7 @@ void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(double arg1)
 
 void MainWindow::on_spinBoxEyeMaskH_valueChanged(int arg1)
 {
-    gTrackerState.giHeadIsolationMaskVOffset = arg1;
+    gTrackerState.iEyeHMaskSepRadius = arg1;
 }
 
 

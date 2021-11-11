@@ -561,6 +561,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
     zftblobs vFishKeypoints_next;
     cv::Point2f ptHead,ptHead2,ptTail,ptTail2; //Traced Points for Tail and Head
+    cv::Point ptSearch; //Helper pt variable
     //Make Empty Canvas to Draw Fish Mask
     outFishMask = cv::Mat::zeros(frameImg.rows,frameImg.cols,CV_8UC1);
 
@@ -666,7 +667,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
         /// Fit Ellipse And Obtain Orientation and Focal Points //
         cv::RotatedRect boundEllipse = cv::fitEllipse(curve);
-        cv::ellipse(outFishMask,boundEllipse,CV_RGB(255,255,255),1,cv::LINE_8);
+        //cv::ellipse(outFishMask,boundEllipse,CV_RGB(255,255,255),1,cv::LINE_8);
         // Get  Ellipse Major/Minor Axis
         Point2f vertices[4];
         boundEllipse.points(vertices);
@@ -689,12 +690,10 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         zftblob kp(boundEllipse.center.x,boundEllipse.center.y,area,(int)(boundEllipse.angle+90)%360);
 
 
-
-
         /// \todo Here I could Use Shape Similarity Filtering - Through the CurveCSS header
         //Find Tail Point- As the one with the sharpest Angle
         // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
-         cv::Point ptSearch = kp.pt;
+        ptSearch = kp.pt;
         int idxTail,idxHead ;
             idxTail = getMaxInflectionAndSmoothedContour(frameImg, fgMask, curve);
        if (idxTail >= 0 )
@@ -727,79 +726,56 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             //Correct Angle - 0 is Vertical Up
             kp.angle = (int)(cv::fastAtan2(gptHead.y-gptTail.y,gptHead.x-gptTail.x)+90)%360;
         }
-         //else
-        //    gptHead.x = 0; gptHead.y = 0;
-
-
-
-        //kp.angle = (int)(theta*180.0/CV_PI+90)%360; //Degrees
-        //Move fishNet Detection towards Anterior of Blob
-
-
-//        if (bFishBlobFlowed) //Used With OpticFlow Tracking
-//            kp.response +=1.0f;
-
 
         QString strfRecScore = QString::number(kp.response,'g',3);
         iHitCount++;
         //qDebug() << "(" << kp.pt.x << "," << kp.pt.y << ")" << "R:" << strfRecScore;
 
         /// Add TO Filtered KP - IF keypoint is still within roi (moved by classifier) and Passes Classifier threshold
-        if (kp.response >= gTrackerState.fishnet_classifier_thres && pointIsInROI(kp.pt,2))
+        if (kp.response >= gTrackerState.fishnet_classifier_thres &&
+                pointIsInROI(kp.pt,2))
         {
 
-            //float fRR = gTrackerState.fishnet.scoreBlobOrientation(frameImg, kp, imgFishAnterior_NetNorm,
-            //                                                       mask_fnetScore, QString::number(iHitCount).toStdString());
-            //kp.angle = fishRotAnteriorBox.angle;
-            //kp.response = fRR;
             /// After Classifier Identifies Fish Then Add Template Matching - To correct Orientation
-            int bestAngle = kp.angle;
-            int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
-            int iTemplCol = kp.angle;
             ptSearch = kp.pt;
-            float maxMatchScore = doTemplateMatchAroundPoint(frameImg,kp.pt,iTemplRow,iTemplCol,bestAngle,ptSearch,outFishMask);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
-            gTrackerState.iLastKnownGoodTemplateRow = iTemplRow;
-            kp.angle = bestAngle;
-            //If Template Match Succeeds then Update Blob To Correct Position And Orientation -
-            if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)  //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
-            {
-                // Update to template Matched Angle and positio
-                kp.pt = ptSearch; //Does not Work Accuratelly
-                qDebug() << "+Tmpl:" << maxMatchScore;
-            }
+            if (gTrackerState.bUseTemplateMatching){
+                int bestAngle = kp.angle;
+                int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
+                int iTemplCol = kp.angle;
+                float maxMatchScore = doTemplateMatchAroundPoint(frameImg,kp.pt,iTemplRow,iTemplCol,bestAngle,ptSearch,outFishMask);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
+                gTrackerState.iLastKnownGoodTemplateRow = iTemplRow;
+                kp.angle            = bestAngle;
+                //If Template Match Succeeds then Update Blob To Correct Position And Orientation -
+                if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)  //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
+                {
+                    // Update to template Matched Angle and positio
+                    kp.pt = ptSearch; //Does not Work Accuratelly
+                    qDebug() << "+Tmpl:" << maxMatchScore;
+                }
+            }//If template Matching is used
 
-            //if (kp.response >= gTrackerState.fishnet_classifier_thres && pointIsInROI(kp.pt,2))
-            {
-                ptFishblobs.push_back(kp);
-                /// \todo Conditionally add this Contour to output if it matches template.
-                vFilteredFishbodycontours.push_back(curve);
+            ptFishblobs.push_back(kp);
+            /// \todo Conditionally add this Contour to output if it matches template.
+            vFilteredFishbodycontours.push_back(curve);
 
-                ///  COMBINE - DRAW CONTOURS
-                ///\bug drawContours produces freezing sometimes
-                //Draw New Smoothed One - the idx should be the last one in the vector
-                //cv::drawContours( outFishMask, vFilteredFishbodycontours, (int)vFilteredFishbodycontours.size()-1, CV_RGB(255,255,255), 3,cv::FILLED); //
-                cv::drawContours(outFishMask, fishbodycontours, kk, Scalar(255,255,255),1, cv::LINE_8,fishbodyhierarchy,2);
-            }
-
-
+            ///  COMBINE - DRAW CONTOURS
+            ///\bug drawContours produces freezing sometimes
+            //Draw New Smoothed One - the idx should be the last one in the vector
+            cv::drawContours( outFishMask, vFilteredFishbodycontours, 0, CV_RGB(255,255,255), cv::FILLED); //
+            //cv::drawContours(outFishMask, fishbodycontours, kk, Scalar(255,255,255),cv::FILLED,cv::LINE_8,fishbodyhierarchy,2); // cv::LINE_8
 
             /// DEBUG - Show imgs
-            if (!imgFishAnterior_NetNorm.empty()){
+            if (!imgFishAnterior_NetNorm.empty() && gTrackerState.bshowDetectorDebugImg){
                 cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
                 cv::normalize(mask_fnetScore, mask_fnetScore, 1, 0, cv::NORM_MINMAX);
                 cv::imshow((QString("FishNet ScoreRegion (Norm)") + QString::number(iHitCount)).toStdString(), mask_fnetScore);
-            }
+            } //If ImgAnt Exists
+        } //If DNN classifier Success
 
-
-        }
-        //else
-        //    qDebug() << "Classif. Failed ";
-
-
-         //Add Trailing Expansion to the mask- In Case End bit of tail is not showing (ptTail-ptHead)/30+
+        //Add Trailing Expansion to the mask- In Case End bit of tail is not showing (ptTail-ptHead)/30+
         cv::circle(outFishMask, gptTail,4,CV_RGB(255,255,255),cv::FILLED);
-        cv::circle(outFishMask, gptHead,6,CV_RGB(255,255,255),cv::FILLED);
-          cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
+        cv::circle(outFishMask, gptHead,8,CV_RGB(255,255,255),cv::FILLED);
+        cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
         cv::putText(outFishMask,strfRecScore.toStdString(), ptSearch + cv::Point(10,-10), gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(255,255,250));
         //cv::circle(outFishMask, ptHead - (ptHead-centroid)/2,5,CV_RGB(255,255,255),cv::FILLED);
     } //For Each Fish Contour
