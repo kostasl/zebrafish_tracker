@@ -135,7 +135,7 @@ class trackerState
       enum state {PAUSED,TRACKING,DIST_MEASURE,SAVING,EXITING};
 
       /// VIDEO AND BACKGROUND PROCESSING //
-      float gfVidfps                  = 400;
+      float gfVidfps                   = 400;
       uint frame_pxwidth               = 640; //Video Frame pixel Dimensions/ Default Changed when Video Is opened
       uint frame_pxheight              = 480;
 
@@ -247,8 +247,8 @@ class trackerState
       bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
-      bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
-      bool bUseTemplateMatching                 = true; /// Use Template Matching Following DNN classifier Success
+      bool bApplyFishMaskBeforeFeatureDetection = false; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
+      bool bUseTemplateMatching                 = false; /// Cmd Line Param Use Template Matching Following DNN classifier Success
       bool bFitSpineToTail                      = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bUseContourToFitSpine                = false; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
@@ -289,12 +289,12 @@ class trackerState
       int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int gthresEyeSeg                    = -7; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int gthresEyeSeg                    = -15; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
 
       int gthresEyeSegL                   = 2;
       int gFishTailSpineSegmentLength     = 9;
       // Eye Masks //
-      int iEyeHMaskSepRadius                = 22; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
+      int iEyeHMaskSepRadius                = 18; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
       int iEyeVMaskSepWidth               = 25; //5 px width vertical line separates the eyes for segmentation
       int iEyeVMaskSepHeight              = 46;
@@ -303,6 +303,11 @@ class trackerState
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
       float fishnet_classifier_thres  = 0.85f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
       float fishnet_inputSparseness = 0.1f; //Ratio of Active Pixels in Binarized input Image
+
+      // BackProp YAML model - DEpecrated
+      string strBackPropModelYMLFile        = "/home/kostasl/workspace/zebrafishtrack/Rplots/fishNet.yml";
+      string strDNNTensorFlowModelFile      = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/";
+      std::string strDNNTensorFlowVerticalModelFile = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir/";
 
       ///Fish Features Detection Params
       int gFishTemplateAngleSteps     = 1;
@@ -313,7 +318,7 @@ class trackerState
       double gTemplateMatchThreshold_LowLimit = 0.65;
       double gTemplateMatchThreshold_UpLimit = 0.95;
 
-      int gFishBoundBoxSize               = 40; ///100 For HRes Top CamB 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
+      int gFishBoundBoxSize               = 250; ///100 For HRes Top CamB 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
       int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*4; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
@@ -341,7 +346,6 @@ class trackerState
       double dGaussContourKernelSigma = 6.0;
       int dGaussContourKernelSize = static_cast<int>(round((18.0*dGaussContourKernelSigma +1.0) / 2.0)) * 2 - 1; //Gaussian Kernel Size
 
-
       // List of ROIs
       ltROIlist vRoi;
       //list of template images
@@ -349,7 +353,6 @@ class trackerState
 
       cv::Point ptROI1,ptROI2,ptROI3,ptROI4;
       fishdetector fishnet;
-
 
       cv::Mat mMOGMask;
       cv::Mat mfgFishMask;

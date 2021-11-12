@@ -377,11 +377,11 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
     if (parser.has("BGThreshold"))
          g_FGSegthresh = parser.get<int>("BGThreshold");
 
-    if (parser.has("HeadMaskW"))
-         iEyeVMaskSepWidth = parser.get<int>("HeadMaskW");
+    if (parser.has("HeadMaskVW"))
+         iEyeVMaskSepWidth = parser.get<int>("HeadMaskVW");
 
-    if (parser.has("HeadMaskH"))
-         iEyeHMaskSepRadius = parser.get<int>("HeadMaskH");
+    if (parser.has("HeadMaskHR"))
+         iEyeHMaskSepRadius = parser.get<int>("HeadMaskHR");
 
 
     if (parser.has("FilterPixelNoise"))
@@ -457,7 +457,7 @@ void  trackerState::initROI(uint framewidth,uint frameheight)
       else //Make Default ROI Region
     {
         // CAMB ptROI2.x = (framewidth)/2-15; ptROI2.y = frameheight-10;//gTrackerState.gszTemplateImg.height/3;
-        ptROI2.x = (framewidth)/2-10; ptROI2.y = frameheight-5;//CamA
+        ptROI2.x = (framewidth)-5; ptROI2.y = frameheight;//CamA
         //Add Global Roi - Center - Radius
         //ltROI newROI(cv::Point(framewidth/2-5, (frameheight)/2-20),ptROI2);
         ltROI newROI(cv::Point(323, 263),ptROI2); //Suitable For CamA

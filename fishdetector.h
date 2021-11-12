@@ -29,7 +29,8 @@ public:
     float netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
     float netDNNDetect_normedfish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
 
-    float scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedRect boundEllipse,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,std::string regTag);
+    float scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedRect boundEllipse,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,
+                          int boundingBoxSize, int iSlidePx_H_step, int iSlidePx_V_step,std::string regTag);
     float scoreBlobOrientation(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,std::string regTag);
 
     float fL1_activity_thres = 10; //# Number of INput that need to be active for KC to fire/Activate
@@ -49,10 +50,10 @@ private:
     // the model will try to infer the input and output layer names automatically
     // (only use if it's a simple "one-input -> one-output" model
     bool m_inferInputOutput = false;
-    const std::string mSavedModelPath_localization_model = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/";
+
+
     tf_image::TF_Model m_TFmodel_loc; // Model Used to Localize Larva in img region (rotation invariant)
 
-    const std::string mSavedModelPath_direction_model = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir/";
     tf_image::TF_Model m_TFmodel_dir; // Model Used to Localize Larva in img region (rotation invariant)
 
 

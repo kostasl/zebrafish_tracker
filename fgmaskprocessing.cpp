@@ -708,8 +708,14 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
            ptSearch  = (ptHead-ptHead2)/2.0f+ptHead2; //Classifier search focused between candidate Ellipse head point And  Contour Head POint
 
            kp.pt = ptSearch;
+           //1st Pass
            float fRH = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore, QString::number(iHitCount).toStdString());
+                                                            mask_fnetScore,gTrackerState.gFishBoundBoxSize,7,7, QString::number(iHitCount).toStdString());
+
+           if (fRH >= gTrackerState.fishnet_classifier_thres) //2nd Pass
+                fRH = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                            mask_fnetScore,10,2,2, QString::number(iHitCount).toStdString()+"B");
+
             // Fix Orientation against Head Point detected by classifier
            // Carefull Cause sometime the fitted ellipse is too long anteriorly making distance wise appear as the tail
            if (cv::norm(ptHead2-kp.pt)>cv::norm(ptTail2 - kp.pt)){
@@ -749,7 +755,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
                 if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)  //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
                 {
                     // Update to template Matched Angle and positio
-                    kp.pt = ptSearch; //Does not Work Accuratelly
+                    //kp.pt = ptSearch; //Does not Work Accuratelly
                     qDebug() << "+Tmpl:" << maxMatchScore;
                 }
             }//If template Matching is used
@@ -767,8 +773,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             /// DEBUG - Show imgs
             if (!imgFishAnterior_NetNorm.empty() && gTrackerState.bshowDetectorDebugImg){
                 cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
-                cv::normalize(mask_fnetScore, mask_fnetScore, 1, 0, cv::NORM_MINMAX);
-                cv::imshow((QString("FishNet ScoreRegion (Norm)") + QString::number(iHitCount)).toStdString(), mask_fnetScore);
+
             } //If ImgAnt Exists
         } //If DNN classifier Success
 

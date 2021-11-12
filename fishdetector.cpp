@@ -64,7 +64,8 @@ static cv::Mat loadImage(const std::string& name)
 
 fishdetector::fishdetector()
 {
-    String sDir = std::string("/home/kostasl/workspace/zebrafishtrack/Rplots/fishNet.yml");
+
+    String sDir = std::string(gTrackerState.strBackPropModelYMLFile);
 
     FileStorage fsNet;
     fsNet.open( sDir, FileStorage::READ,String("UTF-8"));
@@ -101,14 +102,14 @@ fishdetector::fishdetector()
 
     /// DNN tensorflow - There is py tool to get
     /// Load  Direction Agnostic model - used to detection position of fish in image region
-    m_TFmodel_loc.loadModel(mSavedModelPath_localization_model ,m_gpu_memory_fraction , m_inferInputOutput );//"graph_im2vec.pb"
+    m_TFmodel_loc.loadModel( gTrackerState.strDNNTensorFlowModelFile, m_gpu_memory_fraction , m_inferInputOutput );//"graph_im2vec.pb"
     ///  You can obtain input/ouput names using saved_model_cli show --dir {mobilenet_save_path} --tag_set serve or by looking at the model name in python training script
     /// and then assume "serving_default_<model name>_input"
     m_TFmodel_loc.setInputs( { "serving_default_sequential_input" } );
     m_TFmodel_loc.setOutputs( { "StatefulPartitionedCall" } );
 
     /// Load  Directional model - used to detection correct up-right image of fish in image region - used for direction detection
-    m_TFmodel_dir.loadModel(mSavedModelPath_direction_model ,m_gpu_memory_fraction , m_inferInputOutput );//"graph_im2vec.pb"
+    m_TFmodel_dir.loadModel(gTrackerState.strDNNTensorFlowVerticalModelFile ,m_gpu_memory_fraction , m_inferInputOutput );//"graph_im2vec.pb"
     m_TFmodel_dir.setInputs( { "serving_default_sequential_1_input" } );
     m_TFmodel_dir.setOutputs( { "StatefulPartitionedCall" } );
 
@@ -133,8 +134,6 @@ cv::Mat fishdetector::getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect 
 
     //Threshold The Match Check Bounds Within Image
     cv::Rect imgBounds(0,0,frame.cols,frame.rows);
-
-
 
     if (!( //Check IMage Bounds contain the whole bounding box//
         imgBounds.contains(fishBoundingRect.br()) &&
@@ -243,7 +242,7 @@ cv::Mat sparseBinarize(cv::Mat& imgRegion,float targetdensity)
 /// @outframeAnterior_Norm returns image of isolated head centered at best detection point by the DNN and oriented according to blob angle
 
 float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedRect fishRotAnteriorBox,cv::Mat& outframeAnterior_Norm,
-                                    cv::Mat& outmaskRegionScore,string regTag="0")
+                                    cv::Mat& outmaskRegionScore, int iSlidepxLim = 40,int iSlidePx_H_step = 10, int iSlidePx_V_step = 10,string regTag="0")
 {
   cv::Mat imgFishAnterior,imgFishAnterior_bin,imgFishAnterior_Norm_tmplcrop;
   cv::Mat imgFishAnterior_Norm_bin_dense; //Used to Find Contours
@@ -288,8 +287,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
 
    imgFishAnterior = frame(fishRotAnteriorBox_Bound); // getNormedBoundedImg(frame,fishRotAnteriorBox);
-   if (gTrackerState.bshowDetectorDebugImg)
-       cv::imshow("imgFishAnterior scoreBlobRegion",imgFishAnterior);
+
 
    if (szFishAnteriorNorm.area() < gTrackerState.gszTemplateImg.area())
        //Not Enough Space Abort
@@ -307,15 +305,13 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
 
   /// SliDing Window Scanning
-  int iSlidepxLim = gTrackerState.gFishBoundBoxSize;
-  int iSlidePx_H_step = 2;
-  int iSlidePx_H_begin = std::max(0, (int)ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - iSlidepxLim);//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = min(imgFishAnterior_bin.cols-gTrackerState.gszTemplateImg.width, iSlidePx_H_begin+2*iSlidepxLim);  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidePx_H_begin = std::max(0, (int)ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - iSlidepxLim/2);//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = min(imgFishAnterior_bin.cols-gTrackerState.gszTemplateImg.width, iSlidePx_H_begin+iSlidepxLim);  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
-  int iSlidePx_V_step = 2;
-  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-iSlidepxLim); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = min(imgFishAnterior_bin.rows-gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 2*iSlidepxLim);//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
+
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-iSlidepxLim/2); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = min(imgFishAnterior_bin.rows-gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + iSlidepxLim);//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
 
   float scoreFish,scoreNonFish,dscore,max_dscore = 0.0f; //Recognition Score tested in both Vertical Directions
@@ -420,6 +416,13 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     /// Set Mark Point For Eye Detection ///
     //if (gTrackerState.bAdaptEyeMaskVOffset)
     //    gTrackerState.giHeadIsolationMaskVOffset = min(maxpt.y,imgFishAnterior_Norm.rows);//ptmax.y
+//    if (gTrackerState.bshowDetectorDebugImg)
+
+    if (gTrackerState.bshowDetectorDebugImg){
+        cv::normalize(outmaskRegionScore, outmaskRegionScore, 1, 0, cv::NORM_MINMAX);
+        cv::imshow(("FishNet ScoreRegion (Norm)") + regTag, outmaskRegionScore);
+        cv::imshow("imgFishAnterior scoreBlobRegion",imgFishAnterior);
+    }
 
 
 
