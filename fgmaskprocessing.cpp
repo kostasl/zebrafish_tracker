@@ -718,7 +718,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
            if (fRH >= gTrackerState.fishnet_classifier_thres) //3nd Pass
                 fRH = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,5,1,1, QString::number(iHitCount).toStdString()+"C");
+                                                            mask_fnetScore,10,1,1, QString::number(iHitCount).toStdString()+"C");
 
 
             // Fix Orientation against Head Point detected by classifier
