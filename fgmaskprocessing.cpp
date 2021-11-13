@@ -710,11 +710,16 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
            kp.pt = ptSearch;
            //1st Pass
            float fRH = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,gTrackerState.gFishBoundBoxSize,7,7, QString::number(iHitCount).toStdString());
+                                                            mask_fnetScore,gTrackerState.gFishBoundBoxSize,8,8, QString::number(iHitCount).toStdString());
 
            if (fRH >= gTrackerState.fishnet_classifier_thres) //2nd Pass
                 fRH = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,10,2,2, QString::number(iHitCount).toStdString()+"B");
+                                                            mask_fnetScore,30,3,3, QString::number(iHitCount).toStdString()+"B");
+
+           if (fRH >= gTrackerState.fishnet_classifier_thres) //3nd Pass
+                fRH = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                            mask_fnetScore,5,1,1, QString::number(iHitCount).toStdString()+"C");
+
 
             // Fix Orientation against Head Point detected by classifier
            // Carefull Cause sometime the fitted ellipse is too long anteriorly making distance wise appear as the tail

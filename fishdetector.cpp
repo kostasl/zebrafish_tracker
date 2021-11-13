@@ -296,7 +296,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
   // Use the FG Image to extract Head Frame
   //frame(fishRotAnteriorBox.boundingRect()).copyTo(imgFishAnterior);
   // Find point Center Coords of Image Region Of Search
-  cv::Point2f ptRotCenter = fishRotAnteriorBox.center - fishRotAnteriorBox.boundingRect2f().tl();
+  cv::Point2f ptRotCenter = fishblob.pt - fishRotAnteriorBox.boundingRect2f().tl();//fishRotAnteriorBox.center- fishRotAnteriorBox.boundingRect2f().tl();
 
   //Binarize Input To set Specific Sparseness/Density
   //imgFishAnterior_Norm_bin = sparseBinarize(imgFishAnterior_Norm,gTrackerState.fishnet_inputSparseness);
@@ -304,13 +304,13 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
   //cv::imshow(std::string("BIN_N") + regTag,imgFishAnterior_Norm_bin);
 
 
-  /// SliDing Window Scanning
-  int iSlidePx_H_begin = std::max(0, (int)ptRotCenter.x- gTrackerState.gszTemplateImg.width/2 - iSlidepxLim/2);//max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  /// SliDing Window Scanning //- gTrackerState.gszTemplateImg.width/2
+  int iSlidePx_H_begin = std::max(0, (int)ptRotCenter.x);//- iSlidepxLim/2max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
   int iSlidePx_H_lim = min(imgFishAnterior_bin.cols-gTrackerState.gszTemplateImg.width, iSlidePx_H_begin+iSlidepxLim);  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
 
-  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)-iSlidepxLim/2); //(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_begin = std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2)); //-iSlidepxLim/2op(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
   int iSlidePx_V_lim = min(imgFishAnterior_bin.rows-gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + iSlidepxLim);//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
 
