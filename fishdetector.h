@@ -30,7 +30,7 @@ public:
     float netDNNDetect_normedfish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
 
     float scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedRect boundEllipse,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,
-                          int boundingBoxSize, int iSlidePx_H_step, int iSlidePx_V_step,std::string regTag);
+                          int boundingBoxSize, int iSlidePx_H_step, int iSlidePx_V_step,std::string regTag,bool bstopAtFirstMatch);
     float scoreBlobOrientation(cv::Mat frame,zftblob& fishblob,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,std::string regTag);
 
     float fL1_activity_thres = 10; //# Number of INput that need to be active for KC to fire/Activate
