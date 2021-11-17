@@ -720,11 +720,11 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
            //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
            if (fRH[0] >= gTrackerState.fishnet_classifier_thres) //2nd Pass
                 fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,10,1,1, QString::number(iHitCount).toStdString()+"B",false);
+                                                            mask_fnetScore,30,3,3, QString::number(iHitCount).toStdString()+"B",true);
            //cv::circle(outFishMask,kp.pt,3,CV_RGB(200,200,200),2);
-//           if (fRH[1]  > gTrackerState.fishnet_classifier_thres && fRH[1] > fRH[0]) //3nd Pass
-//                fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-//                                                            mask_fnetScore,12,1,1, QString::number(iHitCount).toStdString()+"C");
+           if (fRH[1]  > gTrackerState.fishnet_classifier_thres && fRH[1] > fRH[0]) //3nd Pass
+                fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                            mask_fnetScore,12,1,1, QString::number(iHitCount).toStdString()+"C",false);
            //cv::circle(outFishMask,kp.pt,1,CV_RGB(250,250,250),2);
 
             // Fix Orientation against Head Point detected by classifier

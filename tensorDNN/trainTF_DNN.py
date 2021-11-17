@@ -112,7 +112,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
             layers.experimental.preprocessing.RandomFlip("horizontal",
                                                          input_shape=(img_height, img_width, 1)),
             layers.experimental.preprocessing.RandomRotation(randRot),
-            layers.experimental.preprocessing.RandomTranslation((0, 0.15), 0, fill_mode="nearest"),
+            ##layers.experimental.preprocessing.RandomTranslation((0, 0.15), 0, fill_mode="nearest"),
             layers.experimental.preprocessing.RandomZoom(0.2),
         ]
     )
