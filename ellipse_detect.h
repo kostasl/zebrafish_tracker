@@ -195,7 +195,7 @@ typedef struct tDetectedEllipsoid{
         if (!isnan(rectEllipse.angle) )
             return (rectEllipse.angle);
         else
-            return (-1.0f);
+            return (std::numeric_limits<double>::quiet_NaN());
     }
 
 

@@ -510,7 +510,7 @@ int fishModel::updateEyeMeasurement(tEllipsoids& vLeftEll,tEllipsoids& vRightEll
     frightEyeTheta = mrightEye.getEyeAngle();
     //Incremental Update
     if (std::isnan(fleftEyeTheta) )
-        this->nFailedEyeDetectionCount++;
+        this->nFailedEyeDetectionCount++; //Do not Update Measurement
     else
     {
         this->leftEyeTheta  = this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
