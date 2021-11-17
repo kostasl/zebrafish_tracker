@@ -678,71 +678,64 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         cv::Point2f  ptEllFocus4 = (vertices[3] + vertices[0])/2.0;
         //Obtain Major axis  Based on Distances - Assign Head - Tail To Major Axis
         if (cv::norm(ptEllFocus1-ptEllFocus2)<cv::norm(ptEllFocus3-ptEllFocus4)){
-           ptHead = ptEllFocus3;
-           ptTail = ptEllFocus4;
+           gptHead = ptHead2 = ptHead = ptEllFocus3;
+           gptTail = ptTail2 = ptTail = ptEllFocus4;
         }else
         {
-            ptHead = ptEllFocus1; //Direction ignorant - Only Orientation is picked up
-            ptTail = ptEllFocus2;
+           gptHead = ptHead2 = ptHead = ptEllFocus1; //Direction ignorant - Only Orientation is picked up
+           gptTail = ptTail2 = ptTail = ptEllFocus2;
         }
 
-        // Make Blob / Keypoint//
+        /// Make Blob / Keypoint//
         zftblob kp(boundEllipse.center.x,boundEllipse.center.y,area,(int)(boundEllipse.angle+90)%360);
-
 
         /// \todo Here I could Use Shape Similarity Filtering - Through the CurveCSS header
         //Find Tail Point- As the one with the sharpest Angle
         // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
-        ptSearch = kp.pt;
-        int idxTail,idxHead ;
-            idxTail = getMaxInflectionAndSmoothedContour(frameImg, fgMask, curve);
+       ptSearch = kp.pt;
+       int idxTail,idxHead;
+       idxTail = getMaxInflectionAndSmoothedContour(frameImg, fgMask, curve);
        if (idxTail >= 0 )
-        {
-
+       {
            idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead2,ptTail2);
-
-           //cv::Mat frameMasked;
-           //frameImg.copyTo(frameMasked, fgMask);cv::imshow("FishMAsk frameMasked",frameMasked);
-
            // Classify Keypoint for fish  - Find Best Angle if 1st Pass Fails //
            ptSearch  = (ptHead-ptHead2)/2.0f+ptHead2; //Classifier search focused between candidate Ellipse head point And  Contour Head POint
-
            kp.pt = ptSearch;
-           //Make scanned image Bounds at least gFishBoundBoxSize each side
-           boundEllipse.size.height = max(gTrackerState.gFishBoundBoxSize, (int)boundEllipse.size.height);
-           boundEllipse.size.width  = max(gTrackerState.gFishBoundBoxSize, (int)boundEllipse.size.width);
-           std::vector<float> fRH(3);  //Score Array For Each Pass
-
-           kp.response = 0; //reinstate
-           //1st Pass
-           fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,60,5,5, QString::number(iHitCount).toStdString(),true);
-           //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
-           if (fRH[0] >= gTrackerState.fishnet_classifier_thres) //2nd Pass
-                fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,30,3,3, QString::number(iHitCount).toStdString()+"B",true);
-           //cv::circle(outFishMask,kp.pt,3,CV_RGB(200,200,200),2);
-           if (fRH[1]  > gTrackerState.fishnet_classifier_thres && fRH[1] > fRH[0]) //3nd Pass
-                fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,12,1,1, QString::number(iHitCount).toStdString()+"C",false);
-           //cv::circle(outFishMask,kp.pt,1,CV_RGB(250,250,250),2);
-
-            // Fix Orientation against Head Point detected by classifier
+           // Fix Orientation against Head Point detected by classifier
            // Carefull Cause sometime the fitted ellipse is too long anteriorly making distance wise appear as the tail
-           if (cv::norm(ptHead2-kp.pt)>cv::norm(ptTail2 - kp.pt)){
-               gptHead = kp.pt; //Hack To Get Head position to Classify fish image
-               gptTail = ptHead2; //On Curve Point
-           }else{
-               gptHead = kp.pt; //Hack To Get Head position to Classify fish image
-               gptTail = ptTail2; //On Curve Point
-           }
+       }
 
+       //Make scanned image Bounds at least gFishBoundBoxSize each side
+       boundEllipse.size.height = max(gTrackerState.gFishBoundBoxSize, (int)boundEllipse.size.height);
+       boundEllipse.size.width  = max(gTrackerState.gFishBoundBoxSize, (int)boundEllipse.size.width);
+       std::vector<float> fRH(3);  //Score Array For Each Pass
 
+       kp.response = 0; //reinstate
+       //1st Pass - blob position is updated to Detected Position
+       fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                        mask_fnetScore,60,5,5, QString::number(iHitCount).toStdString(),true);
+       //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
+       if (fRH[0] >= gTrackerState.fishnet_classifier_thres) //2nd Pass
+            fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                        mask_fnetScore,15,1,1, QString::number(iHitCount).toStdString()+"B",false);
+       else
+           continue; //Next Contour
+//           //cv::circle(outFishMask,kp.pt,3,CV_RGB(200,200,200),2);
+//           if (fRH[1]  > gTrackerState.fishnet_classifier_thres && fRH[1] > fRH[0]) //3nd Pass
+//                fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+//                                                            mask_fnetScore,12,1,1, QString::number(iHitCount).toStdString()+"C",false);
+       //cv::circle(outFishMask,kp.pt,1,CV_RGB(250,250,250),2);
 
-            //kp.pt = ptSearch; //Move Closer to Head
-            //Correct Angle - 0 is Vertical Up
-            kp.angle = (int)(cv::fastAtan2(gptHead.y-gptTail.y,gptHead.x-gptTail.x)+90)%360;
-        }
+       // Head Has been located by Classifier - Now Fix Orientation
+       //Correct Angle - 0 is Vertical Up
+       if (cv::norm(ptHead2-kp.pt)>cv::norm(ptTail2 - kp.pt)){
+          gptHead = kp.pt; //Hack To Get Head position to Classify fish image
+          gptTail = ptHead2; //On Curve Point
+       }else{
+          gptHead = kp.pt; //Hack To Get Head position to Classify fish image
+          gptTail = ptTail2; //On Curve Point
+       }
+       kp.angle = (int)(cv::fastAtan2(gptHead.y-gptTail.y,gptHead.x-gptTail.x)+90)%360;
 
         QString strfRecScore = QString::number(kp.response,'g',3);
         iHitCount++;

@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
         "{ModelBG b | 1  | Initiate BG modelling by running over scattered video frames to obtain Foreground mask}"
         "{UseTemplateMatching T | 0  | After DNN Classifier, also use template matching to Detect orientation and position of larva (speed up if false)}" //bUseTemplateMatching
         "{BGThreshold bgthres | 14  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
-        "{HeadMaskVW hmw | 22  | Head Vertical mask width that separates eyes}"
-        "{HeadMaskHR hmh | 18  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
+        "{HeadMaskVW hmw | 28  | Head Vertical mask width that separates eyes}"
+        "{HeadMaskHR hmh | 14  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
     cv::CommandLineParser parser(argc, argv, keys);
 
     stringstream ssMsg;
-    ssMsg<<"Zebrafish Behaviour Tracker"<< std::endl;
+    ssMsg<<"Zebrafish Behaviour Tracker V0.5 Using Trained DNN Classifier"<< std::endl;
     ssMsg<<"--------------------------" << std::endl;
     ssMsg<<"Author : Konstantinos Lagogiannis 2017, King's College London"<<std::endl;
     ssMsg<< "email: costaslag@gmail.com"<<std::endl;

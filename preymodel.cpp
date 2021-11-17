@@ -18,21 +18,20 @@ static int lastFoodID = 0;
 
 preyModel::preyModel()
 {
-lastFoodID++;
-inactiveFrames = 0;
-activeFrames = 0;
-blobMatchScore = 0;
+    lastFoodID++;
+    inactiveFrames = 0;
+    activeFrames = 0;
+    blobMatchScore = 0;
 
-muTurn = 0.0; //Mean Turn Angle De
-sigmaTurn = 15.0;
-muPropulsion = 1.0;
-sigmaPropulsion = 0.01;
-nLastUpdateFrame = gTrackerState.uiCurrentFrame;
-this->ID = lastFoodID;
-ROIID = 0;
-isTargeted = false; //Saves Location To Data File When True
-isNew = true;
-
+    muTurn = 0.0; //Mean Turn Angle De
+    sigmaTurn = 15.0;
+    muPropulsion = 1.0;
+    sigmaPropulsion = 0.01;
+    nLastUpdateFrame = gTrackerState.uiCurrentFrame;
+    this->ID = lastFoodID;
+    ROIID = 0;
+    isTargeted = false; //Saves Location To Data File When True
+    isNew = true;
 }
 
 preyModel::preyModel(zfdblob blob,zfdID ID):preyModel()

@@ -289,7 +289,7 @@ class trackerState
       int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int gthresEyeSeg                    = -15; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int gthresEyeSeg                    = -22; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
 
       int gthresEyeSegL                   = 2;
       int gFishTailSpineSegmentLength     = 9;
@@ -318,7 +318,7 @@ class trackerState
       double gTemplateMatchThreshold_LowLimit = 0.65;
       double gTemplateMatchThreshold_UpLimit = 0.95;
 
-      int gFishBoundBoxSize               = 80; ///100 For HRes Top CamB 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
+      int gFishBoundBoxSize               = 60; ///100 For HRes Top CamB 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
       int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*4; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState

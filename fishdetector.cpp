@@ -263,6 +263,19 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
   if (fishblob.pt.y - fishRotAnteriorBox.size.height/2 < 0 )
       fishRotAnteriorBox.center.y +=  fishRotAnteriorBox.size.height/2 - fishblob.pt.y; //Shift Centre  so box To Fits in Frame
 
+
+  if (fishRotAnteriorBox.size.width < gTrackerState.gszTemplateImg.width)
+  {
+        qDebug() << "scoreBlobRegion: fishRotAnteriorBox too narrow for templ";
+        return -1;
+  }
+  if (fishRotAnteriorBox.size.width < gTrackerState.gszTemplateImg.width)
+  {
+     qDebug() << "scoreBlobRegion: fishRotAnteriorBox too short for templ";
+     return -1;
+  }
+
+
   // Take bounding of blob,
   // get Rotated Box Centre Coords relative to the cut-out of the anterior Body - This we use to rotate the image
   // Allow Box Size to Adjust near Edges of Image
@@ -286,7 +299,6 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
    // Define SCore Canvas - Where we draw results from Recognition Scanning
    cv::Mat maskRegionScore_Norm((int)szFishAnteriorNorm.height, (int)szFishAnteriorNorm.width, CV_32FC1, cv::Scalar(0.001, 0.001, 0.001));
 
-
    /// To Check Bounds Within Image
    cv::Rect imgBounds(0,0,frame.cols,frame.rows);
 
@@ -299,8 +311,6 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
             return (-1); //This Fish Is out Of Bounds /
    }
    /// Check Minimum Size
-
-
    imgFishAnterior = frame(fishRotAnteriorBox_Bound); // getNormedBoundedImg(frame,fishRotAnteriorBox);
 
 

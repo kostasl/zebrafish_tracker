@@ -691,7 +691,6 @@ bool fishModel::stepPredict(unsigned int nFrame)
         this->leftEyeTheta   = mState.at<float>(7); // Eye Angle Left;
         this->rightEyeTheta   = mState.at<float>(8); // Eye Angle Right;
 
-
         bPredictedPosition = true;
 
         return (true);
@@ -804,8 +803,9 @@ bool fishModel::updateState(zftblob* fblob, cv::Point2f bcentre,unsigned int nFr
     this->ptRotCentre    = cv::Point2f(mCorrected.at<float>(0), mCorrected.at<float>(1)); //bcentre;
 
 
-    this->leftEyeTheta   = mCorrected.at<float>(6); // Eye Angle Left;
-    this->rightEyeTheta   = mCorrected.at<float>(7); // Eye Angle Right;
+
+    this->leftEyeTheta   = mCorrected.at<float>(7); // Eye Angle Left;
+    this->rightEyeTheta   = mCorrected.at<float>(8); // Eye Angle Right;
 
     //Update The Eye Ellipsoids
     this->leftEye.rectEllipse.angle = this->leftEyeTheta;
@@ -822,10 +822,18 @@ bool fishModel::updateState(zftblob* fblob, cv::Point2f bcentre,unsigned int nFr
     this->zTrack.effectiveDisplacement = cv::norm(this->ptRotCentre - this->zTrack.centroid);
     this->zTrack.centroid = this->ptRotCentre;//fblob->pt; //Or Maybe bcentre
     ///Optimization only Render Point If Displaced Enough from Last One
+    if (zTrack.pointStackRender.empty())
+        this->zTrack.pointStackRender.push_back(this->ptRotCentre); //Add 1st point to render pt list
+    else{
+        cv::Point2f ptlastRenderPt = zTrack.pointStackRender.back();
+        //Check If Render Track Points Needs updating since last point added
+        if ( (float)cv::norm(ptlastRenderPt - this->ptRotCentre) >  gTrackerState.gDisplacementThreshold)
+             this->zTrack.pointStackRender.push_back(this->ptRotCentre); //Only add Render point if Threshold distance from last point has been exceeded
+    }
+
     if (this->zTrack.effectiveDisplacement > gTrackerState.gDisplacementThreshold)
     {
-        this->zTrack.pointStackRender.push_back(this->ptRotCentre);
-        this->zTrack.active++;
+      this->zTrack.active++;
     }else {
         this->zTrack.inactive++;
     }
@@ -1249,7 +1257,6 @@ std::ostream& operator<<(std::ostream& out, const fishModel& h)
 {
 
     //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
-
 
     out << h.nLastUpdateFrame
         << "\t" << h.ID
