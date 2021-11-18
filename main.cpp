@@ -168,9 +168,9 @@ int main(int argc, char *argv[])
         "{logtofile l |    | Filename to save clog stream to }"
         "{ModelBG b | 1  | Initiate BG modelling by running over scattered video frames to obtain Foreground mask}"
         "{UseTemplateMatching T | 0  | After DNN Classifier, also use template matching to Detect orientation and position of larva (speed up if false)}" //bUseTemplateMatching
-        "{BGThreshold bgthres | 14  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
-        "{HeadMaskVW hmw | 28  | Head Vertical mask width that separates eyes}"
-        "{HeadMaskHR hmh | 14  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
+        "{BGThreshold bgthres | 20  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
+        "{HeadMaskVW hmw | 25  | Head Vertical mask width that separates eyes}"
+        "{HeadMaskHR hmh | 23  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
@@ -3017,9 +3017,6 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               }
               //else
                   //gTrackerState.bStoreThisTemplate = true; //Save FishLike Templates
-
-
-
 
 
               //Copy Detected Ellipse Frame To The Output Frame

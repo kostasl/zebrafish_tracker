@@ -780,7 +780,7 @@ void drawEyeExtractionMasks(cv::Mat& mfishHead,cv::Point2f ptcentre)
     if (mfishHead.channels() == 1)
     {
         //Add Thick Mid line to erase inner Eye Edges and artefacts
-        cv::line(mfishHead,ptcentre,cv::Point(ptcentre.x,0),CV_RGB(0,0,0),2);//Split Eyes with line111
+        cv::line(mfishHead,ptcentre,cv::Point(ptcentre.x,0),CV_RGB(0,0,0),gTrackerState.eyeMaskVLineThickness);//Split Eyes with line111
         cv::circle(mfishHead,ptMaskCntr,gTrackerState.iEyeHMaskSepRadius, CV_RGB(0,0,0),CV_FILLED); //Mask Body
         //cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),CV_FILLED); //Mask Body
         cv::ellipse(mfishHead,rectMidEllipse,CV_RGB(0,0,0),CV_FILLED ) ; //Mask the body and between eye edges

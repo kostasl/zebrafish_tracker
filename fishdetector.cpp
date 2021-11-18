@@ -281,7 +281,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
         qDebug() << "scoreBlobRegion: fishRotAnteriorBox too narrow for templ";
         return -1;
   }
-  if (fishRotAnteriorBox.size.width < gTrackerState.gszTemplateImg.width)
+  if (fishRotAnteriorBox.size.height < gTrackerState.gszTemplateImg.height)
   {
      qDebug() << "scoreBlobRegion: fishRotAnteriorBox too short for templ";
      return -1;
