@@ -497,9 +497,9 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
                 {
 
                     //if (b > 2 ) accumulator[b-2]+=2;
-                    paccumulator[b-1] +=5; // (Make A "weighted" Band Of width 3)
+                    paccumulator[b-1] +=1; // (Make A "weighted" Band Of width 3)
                     paccumulator[b]   +=10; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
-                    paccumulator[b+1] +=5; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
+                    paccumulator[b+1] +=1; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
                     //if (b < accLength-2) accumulator[b+2]+=2; //increment x10 accumulator for this minor Axis = imgIn.at<uchar>(ptxy3)
 
 ///                 Add Intensity Density In the scoring - Eyes Are brighter Than Other features of the head

@@ -289,7 +289,7 @@ class trackerState
       int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int gthresEyeSeg                    = -27; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int gthresEyeSeg                    = -18; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
 
       int gthresEyeSegL                   = 2;
       int gFishTailSpineSegmentLength     = 9;
@@ -298,7 +298,7 @@ class trackerState
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
       int iEyeVMaskSepWidth               = 25; //5 px width vertical line separates the eyes for segmentation
       int iEyeVMaskSepHeight              = 46;
-      int eyeMaskVLineThickness           = 4; //Width Vertical Midline Separating The eyes
+      int eyeMaskVLineThickness           = 8; //Width Vertical Midline Separating The eyes
 
       /// Fishnet Classifier params //
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
