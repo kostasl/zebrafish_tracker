@@ -113,7 +113,7 @@ public:
   //cvb::CvLabel blobLabel; //Legacy BlobLabel
 
   std::vector<cv::Point> contour;
-  std::vector<cv::Point> coreHull; /// core Body shape- no tail
+  //std::vector<cv::Point> coreHull; /// core Body shape- no tail
   //std::vector<cv::Point> coreTriangle; /// Core Body triangle Approximation
 
   // State Flags

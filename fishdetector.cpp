@@ -16,7 +16,7 @@
 ///
 
 //#include <config.h>
-//#include "larvatrack.h"
+#include "larvatrack.h"
 
 //#include "fishmodel.h"
 
@@ -115,14 +115,17 @@ fishdetector::fishdetector()
 
 }
 
+
+
 /// \brief Utility function takes img contained in rotated rect and returns the contained image region
 /// rotated up-right (orthonormal ) - Used to obtain templates to train classifier
-cv::Mat fishdetector::getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox)
+/// Uses Contour To find and Correct Body Angle deviation IN Rotated Box
+cv::Mat fishdetector::getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox, bool correctOrientation = false)
 {
-    cv::Mat imgFishAnterior, imgFishAnterior_Norm;
-
-//    std::vector<std::vector<cv::Point> > fishAnteriorcontours;
-//    std::vector<cv::Vec4i> fishAnteriorhierarchy;
+    cv::Mat imgFishAnterior, imgFishAnterior_Norm,imgFishAnterior_bin;
+    cv::Mat imgContourDBG;
+    std::vector<std::vector<cv::Point> > fishAnteriorcontours;
+    std::vector<cv::Vec4i> fishAnteriorhierarchy;
 
     /// Size Of Norm Head Image
     cv::Rect fishBoundingRect = fishRotAnteriorBox.boundingRect();
@@ -143,29 +146,38 @@ cv::Mat fishdetector::getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect 
     // Use the FG Image to extract Head Frame
     frame(fishBoundingRect).copyTo(imgFishAnterior);
 
-//    cv::findContours( imgFishAnterior, fishAnteriorcontours,fishAnteriorhierarchy, cv::RETR_CCOMP,
-//                      cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-//    if (fishAnteriorcontours.size() > 0)
-//    {
-//        if (fishAnteriorcontours[0].size() > 5)
-//        {
-//            cv::RotatedRect boundEllipse = cv::fitEllipse(fishAnteriorcontours[0]);
-//            int DAngle = getAngleDiff(fishRotAnteriorBox.angle,boundEllipse.angle); //Correct Angle
-//            if (abs(DAngle) < 90){
-//                fishRotAnteriorBox.angle += DAngle;
-//                qDebug() << "Th.Fix:" << DAngle;
-//            }
-//        }
-//    }
+    if (correctOrientation)//If Correction Flag Is set
+    {
+        imgContourDBG = cv::Mat::zeros(imgFishAnterior.rows,imgFishAnterior.cols,imgFishAnterior.type());
+        //Uses FG MASKED Image With Very High threshold To Find Swim Bladder Orientation
+        cv::threshold(gTrackerState.mfgFishFrame(fishBoundingRect),imgFishAnterior_bin,max(30,gTrackerState.g_FGSegthresh*6),255,THRESH_BINARY);
+        //cv::imshow("getNormedBoundedImg",imgFishAnterior_bin);
+        cv::findContours( imgFishAnterior_bin, fishAnteriorcontours,fishAnteriorhierarchy, cv::RETR_CCOMP,
+                          cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+        int fishidx  = findMatchingContour(fishAnteriorcontours,fishAnteriorhierarchy,cv::Point(imgFishAnterior_bin.cols/2,imgFishAnterior_bin.rows/2),-1 );
+        if (fishAnteriorcontours.size() > 0)
+        {
+            //drawContours(imgContourDBG,fishAnteriorcontours,fishidx,CV_RGB(255,255,255));
+            //cv::imshow("getNormedBoundedImg_COntour",imgContourDBG);
 
-    /// Make Rotation MAtrix About Centre Of Cropped Image
-    cv::Point2f ptRotCenter = fishRotAnteriorBox.center - fishRotAnteriorBox.boundingRect2f().tl();
+            if (fishAnteriorcontours[fishidx].size() > 5)
+            {
+                cv::RotatedRect boundEllipse = cv::fitEllipse(fishAnteriorcontours[fishidx]);
+                int DAngle = getAngleDiff(fishRotAnteriorBox.angle,boundEllipse.angle); //Correct Angle
+                if (abs(DAngle) < 90){
+                    fishRotAnteriorBox.angle += DAngle;
+                    qDebug() << "Th.Fix:" << DAngle;
+                }
+            }
+        }
 
-    cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter, fishRotAnteriorBox.angle,1.0); //Rotate Upwards
-
-    ///Make Rotation Transformation
-    //Need to fix size of Upright/Normed Image
-    cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
+        /// Make Rotation MAtrix About Centre Of Cropped Image
+        cv::Point2f ptRotCenter = fishRotAnteriorBox.center - fishRotAnteriorBox.boundingRect2f().tl();
+        cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter, fishRotAnteriorBox.angle,1.0); //Rotate Upwards
+        ///Make Rotation Transformation
+        //Need to fix size of Upright/Normed Image
+        cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
+    } //If Correction Flag Is set
 
     //Make Sure Normed Template Fits in Bounded Region
     //assert(imgFishAnterior_Norm.cols >= fishRotAnteriorBox.size.width);
@@ -175,7 +187,7 @@ cv::Mat fishdetector::getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect 
 }
 
 /// Extracts a template sized image region contained in rotatedRect and returns the image Vert orientated - Normalized Template IMg
-cv::Mat fishdetector::getNormedTemplateImg(const cv::Mat& frame, cv::RotatedRect& fishRotAnteriorBox)
+cv::Mat fishdetector::getNormedTemplateImg(const cv::Mat& frame, cv::RotatedRect& fishRotAnteriorBox,bool correctOrientation = false)
 {
     cv::Size szFishAnteriorNorm = fishRotAnteriorBox.boundingRect().size();
     cv::Mat imgFishAnterior_Norm;
@@ -190,7 +202,7 @@ cv::Mat fishdetector::getNormedTemplateImg(const cv::Mat& frame, cv::RotatedRect
 
     cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate,szTemplateImg);
 
-    cv::Mat imgBoundedNorm = getNormedBoundedImg(frame, fishRotAnteriorBox);
+    cv::Mat imgBoundedNorm = getNormedBoundedImg(frame, fishRotAnteriorBox,correctOrientation);
 
     // RETURN EMPTY If FishAnterior Image is too small (Near boundary case)
     if ((rectFishTemplateBound.width + rectFishTemplateBound.x) > imgBoundedNorm.cols)
@@ -500,7 +512,7 @@ float fishdetector::scoreBlobOrientation(cv::Mat frame,zftblob& fishblob,cv::Mat
                  imgBounds.contains(fishRotAnteriorBox.boundingRect().tl())))
                   continue; //This Fish Is out Of Bounds /
         // Get Oriented image of fish Anterior
-        imgFishAnterior_Norm =  getNormedTemplateImg(frame,fishRotAnteriorBox);
+        imgFishAnterior_Norm =  getNormedTemplateImg(frame,fishRotAnteriorBox,false);
         // Check if Upright fish is detected within box
         fRR = netDNNDetect_normedfish(imgFishAnterior_Norm,scoreFish,scoreNonFish);
 

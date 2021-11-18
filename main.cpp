@@ -2945,9 +2945,9 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            tEllipsoids vellLeft;
            tEllipsoids vellRight;
 
-           //ShortCut
 
-           imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(maskedfishImg_gray,fish->bodyRotBound); //fishRotAnteriorBox
+           ///GEt Anterior/Head IMg And Correct Orientation of Fish
+           imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(maskedfishImg_gray,fish->bodyRotBound,true); //fishRotAnteriorBox
            // Check empty in case of an Error In extraction - due to boundary conditions
            if (imgFishAnterior_Norm.empty())
            {
@@ -2959,7 +2959,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            if (gTrackerState.bStoreThisTemplate)
            {   std::stringstream ssMsg;
                //Obtain And Save Unmasked Image
-               cv::Mat imgFishAnterior_Templ = fishdetector::getNormedTemplateImg(fullImgIn,fish->bodyRotBound); //fishRotAnteriorBox
+               cv::Mat imgFishAnterior_Templ = fishdetector::getNormedTemplateImg(fullImgIn,fish->bodyRotBound,true); //fishRotAnteriorBox
                addTemplateToCache(imgFishAnterior_Templ,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
                //Try This New Template On the Next Search
                gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
@@ -3096,51 +3096,53 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               /// \note two methods
               if (contours_body.size() > 0 && gTrackerState.bFitSpineToTail  )
               {
-               /// Use Contour Variational Fitting to distance from spine - Adjusts spine segment length to tail contour length
-               /// \note If done on all frames is converges on Local Minima where the tail is fit in the body contour.
-               if (gTrackerState.bUseContourToFitSpine && (pwindow_main->nFrame == gTrackerState.uiStartFrame || (pwindow_main->nFrame % gTrackerState.iSpineContourFitFramePeriod  ) == 0))//((uint)gfVidfps/4)
-               {
-                   //Do not Use Hierarchy
-                   int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,-1);
-                   if (idxFish>=0)
+                   /// Use Contour Variational Fitting to distance from spine - Adjusts spine segment length to tail contour length
+                   /// \note If done on all frames is converges on Local Minima where the tail is fit in the body contour.
+                   if (gTrackerState.bUseContourToFitSpine && (pwindow_main->nFrame == gTrackerState.uiStartFrame || (pwindow_main->nFrame % gTrackerState.iSpineContourFitFramePeriod  ) == 0))//((uint)gfVidfps/4)
                    {
-                      double err_sp0 = fish->fitSpineToContour2(frame_gray,contours_body,0,idxFish);
+                       //Do not Use Hierarchy
+                       int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,-1);
+
+                       if (idxFish>=0)
+                       {
+                          //fish Contour var is set by this call
+                          double err_sp0 = fish->fitSpineToContour2(frame_gray,contours_body,0,idxFish);
+                       }
+                       //gTrackerState.gFishTailSpineSegmentLength <- fish->c_spineSegL;
+                       pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
+                       //qDebug() << "Spine Tail Fit Error :" << fish->lastTailFitError;
                    }
-                   //gTrackerState.gFishTailSpineSegmentLength <- fish->c_spineSegL;
-                   pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
-                   //qDebug() << "Spine Tail Fit Error :" << fish->lastTailFitError;
-               }
 
-               //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
-               //Best To reset Spine and Start Over Next Time
-               /// \todo Make this parameter threshold formal
-               if (abs(fish->lastTailFitError) > fish->c_fitErrorPerContourPoint)
-               {
-//                 gTrackerState.gFishTailSpineSegmentLength = gTrackerState.gc_FishTailSpineSegmentLength_init;
-//                 fish->c_spineSegL = gTrackerState.gFishTailSpineSegmentLength ;
-//                 pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
-                   pwindow_main->LogEvent(QString("[warning] lastTailFitError ") + QString::number(fish->lastTailFitError) + QString(" > c_fitErrorPerContourPoint") );
-                   fish->resetSpine(); //No Solution Found So Reset
-                   //pwindow_main->LogEvent("[info] Reset Spine");
-                   fish->lastTailFitError = 0;
-               }
+                   //If Convergece TimedOut Then likely the fit is stuck with High Residual and no gradient
+                   //Best To reset Spine and Start Over Next Time
+                   /// \todo Make this parameter threshold formal
+                   if (abs(fish->lastTailFitError) > fish->c_fitErrorPerContourPoint)
+                   {
+    //                 gTrackerState.gFishTailSpineSegmentLength = gTrackerState.gc_FishTailSpineSegmentLength_init;
+    //                 fish->c_spineSegL = gTrackerState.gFishTailSpineSegmentLength ;
+    //                 pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
+                       pwindow_main->LogEvent(QString("[warning] lastTailFitError ") + QString::number(fish->lastTailFitError) + QString(" > c_fitErrorPerContourPoint") );
+                       fish->resetSpine(); //No Solution Found So Reset
+                       //pwindow_main->LogEvent("[info] Reset Spine");
+                       fish->lastTailFitError = 0;
+                   }
 
-               /// Main Method Uses Pixel Intensity //
-               //cv::imshow("Spine Detect Img",maskedfishFeature_blur);
-               fish->fitSpineToIntensity(maskedfishFeature_blur,gTrackerState.gFitTailIntensityScanAngleDeg);
-               fish->drawSpine(fullImgOut);
+                   /// Main Method Uses Pixel Intensity //
+                   //cv::imshow("Spine Detect Img",maskedfishFeature_blur);
+                   fish->fitSpineToIntensity(maskedfishFeature_blur,gTrackerState.gFitTailIntensityScanAngleDeg);
+                   fish->drawSpine(fullImgOut);
 
 
-#if defined(_DEBUG)
-               //Show Contour against Which We are fitting the tail
-               int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
-               if (idxFish>=0)
-                   cv::drawContours(fullImgOut,contours_body,idxFish,CV_RGB(200,0,60),1,8,hierarchy_body);
-#endif
+    #if defined(_DEBUG)
+                   //Show Contour against Which We are fitting the tail
+                   int idxFish = findMatchingContour(contours_body,hierarchy_body,centre,2);
+                   if (idxFish>=0)
+                       cv::drawContours(fullImgOut,contours_body,idxFish,CV_RGB(200,0,60),1,8,hierarchy_body);
+    #endif
 
-#if defined(_DEBUG)
-                cv::imshow("BlurredFish",maskedfishFeature_blur);
-#endif
+    #if defined(_DEBUG)
+                    cv::imshow("BlurredFish",maskedfishFeature_blur);
+    #endif
               }
 
              /// END OF Fit Spine ////

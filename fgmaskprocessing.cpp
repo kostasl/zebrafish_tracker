@@ -710,16 +710,33 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
        boundEllipse.size.width  = max(gTrackerState.gFishBoundBoxSize, (int)boundEllipse.size.width);
        std::vector<float> fRH(3);  //Score Array For Each Pass
 
-       kp.response = 0; //reinstate
-       //1st Pass - blob position is updated to Detected Position
-       fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                        mask_fnetScore,60,5,5, QString::number(iHitCount).toStdString(),true);
-       //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
-       if (fRH[0] >= gTrackerState.fishnet_classifier_thres) //2nd Pass
-            fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                        mask_fnetScore,15,1,1, QString::number(iHitCount).toStdString()+"B",false);
-       else
-           continue; //Next Contour
+        kp.response = 0;
+       //Check If kp Belogs to Existing Model Fish - Update position To tracked Head Pt
+       for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
+       {
+             fishModel* fish = (*it).second;
+             if (cv::norm(fish->ptRotCentre-kp.pt) < gTrackerState.gDisplacementLimitPerFrame)//(fish->bodyRotBound.boundingRect().contains(kp.pt))
+             {
+               kp.pt = fish->ptRotCentre; //Search Very Near Last Known Fish Position
+               kp.response = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                                mask_fnetScore,10,1,1, QString::number(iHitCount).toStdString(),false);
+              if (kp.response > gTrackerState.fishnet_classifier_thres)
+                  break;
+             }
+       }
+       ///If Fish No longer on the same position - Scan Region Around Blob to Find precise Head point - using Classifier
+       if (kp.response < gTrackerState.fishnet_classifier_thres)
+       {
+           //1st Pass - blob position is updated to Detected Position
+           fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                            mask_fnetScore,60,5,5, QString::number(iHitCount).toStdString(),true);
+           //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
+           if (fRH[0] >= gTrackerState.fishnet_classifier_thres) //2nd Pass
+                fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                            mask_fnetScore,15,1,1, QString::number(iHitCount).toStdString()+"B",false);
+           else
+               continue; //Next Contour
+       }
 //           //cv::circle(outFishMask,kp.pt,3,CV_RGB(200,200,200),2);
 //           if (fRH[1]  > gTrackerState.fishnet_classifier_thres && fRH[1] > fRH[0]) //3nd Pass
 //                fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
@@ -823,8 +840,10 @@ void enhanceMasks(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,
 
     // Check this Again / What is it doing?
     getPreyMask(frameImg,fgMask,outFoodMask);
+    gTrackerState.mfgPreyMask = outFoodMask;
     vFilteredFishbodycontours = getFishMask(frameImg,fgMask,outFishMask,ptFishblobs);
-
+    gTrackerState.mfgFishMask  = outFishMask; //Save MAsk globally
+    frameImg.copyTo(gTrackerState.mfgFishFrame,outFishMask);//Apply Mask and Save FG Image Globally
     //Write The fish contour Mask on Food Mask To erase isolated fish Pixels by Using Smoothed Contour
     // Can invert Fish Mask And Apply on to Food Mask
     // Fish Mask Is Only Outline And So it Does not Erase fish

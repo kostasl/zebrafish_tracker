@@ -23,8 +23,8 @@ class fishdetector
 public:
     fishdetector();
     float netNeuralTF(float a);
-    static cv::Mat getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox); //Normed Bounded region of Rotated Rect
-    static cv::Mat getNormedTemplateImg(const cv::Mat& frame, cv::RotatedRect& fishRotAnteriorBox); // Normed Rot Rect Image
+    static cv::Mat getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox,bool correctOrientation); //Normed Bounded region of Rotated Rect
+    static cv::Mat getNormedTemplateImg(const cv::Mat& frame, cv::RotatedRect& fishRotAnteriorBox,bool correctOrientation); // Normed Rot Rect Image
     float netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
     float netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
     float netDNNDetect_normedfish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);

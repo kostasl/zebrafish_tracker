@@ -887,7 +887,7 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
 
     ///Compute Error terms for all data points/obtain local quadratic approx of fsd
     //For each contour Point
-    std::vector<cv::Point> contour = contours_body[idxOuterContour];
+    this->contour = contours_body[idxOuterContour];
     t_fishspline tmpspline = this->spline;
     t_fishspline dsSpline; //Variational Spline
 
@@ -899,16 +899,17 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
 
     double dTemp = 1.0; //Anealling Temperature
     /// \todo Optimize - Make Fish Contour Size Fixed - Then Allocate this as a buffer on the heap and reuse
-    static double dJacobian[cFitSpinePointsCount][cntParam];//Vector of \nabla d for error functions
+    double dJacobian[cFitSpinePointsCount][cntParam];//Vector of \nabla d for error functions
     memset(dJacobian,0.0,cFitSpinePointsCount*(cntParam)*sizeof(double));
 
-    static double dGradf[cntParam];//Vector of Grad F per param
+    double dGradf[cntParam];//Vector of Grad F per param
     memset(dGradf,0.0,cntParam*sizeof(double));
 
-    static double dGradi[cntParam];//Vector of Grad Intensity per SPine POint param
+
+    double dGradi[cntParam];//Vector of Grad Intensity per SPine POint param
     memset(dGradi,0.0,cntParam*sizeof(double));
 
-    static double dResiduals[cFitSpinePointsCount];//Vector of \nabla d for error functions
+    double dResiduals[cFitSpinePointsCount];//Vector of \nabla d for error functions
     memset(dResiduals,0.0,cFitSpinePointsCount*sizeof(double));
 
     int cntpass     = 0;
