@@ -265,16 +265,19 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
  // Adapt Bounding Box size near image edges - Box Centrered at fishblob
   fishRotAnteriorBox.center = fishblob.pt;
-  if ((fishblob.pt.x + fishRotAnteriorBox.size.width/2) > frame.cols)
-        fishRotAnteriorBox.size.width = frame.cols - fishRotAnteriorBox.center.x;
-  if (fishblob.pt.x - fishRotAnteriorBox.size.width/2 < 0)
-     fishRotAnteriorBox.center.x += fishRotAnteriorBox.size.width/2-fishblob.pt.x; //Shift Centre So BoundBox Fits in Frame
+  cv::Rect fishRotAnteriorBox_Bound = fishRotAnteriorBox.boundingRect();
 
-  if ((fishblob.pt.y + fishRotAnteriorBox.size.height/2) > frame.rows)
-      fishRotAnteriorBox.size.height = frame.rows - fishRotAnteriorBox.center.y;
-  if (fishblob.pt.y - fishRotAnteriorBox.size.height/2 < 0 )
-      fishRotAnteriorBox.center.y +=  fishRotAnteriorBox.size.height/2 - fishblob.pt.y; //Shift Centre  so box To Fits in Frame
+  if ((fishblob.pt.x + fishRotAnteriorBox_Bound.size().width/2) > frame.cols)
+        fishRotAnteriorBox.size.width = (int)(frame.cols - fishRotAnteriorBox.center.x)*0.75;
+  if (fishRotAnteriorBox_Bound.tl().x < 0)
+     fishRotAnteriorBox.center.x += abs(fishRotAnteriorBox_Bound.tl().x); //Shift Centre So BoundBox Fits in Frame
 
+  if ((fishblob.pt.y + fishRotAnteriorBox_Bound.size().height/2) > frame.rows)
+      fishRotAnteriorBox.size.height = (int)(frame.rows - fishRotAnteriorBox.center.y)*0.75;
+  if (fishRotAnteriorBox_Bound.tl().y < 0)
+      fishRotAnteriorBox.center.y +=  abs(fishRotAnteriorBox_Bound.tl().y); //Shift Centre  so box To Fits in Frame
+
+  fishRotAnteriorBox_Bound = fishRotAnteriorBox.boundingRect();
 
   if (fishRotAnteriorBox.size.width < gTrackerState.gszTemplateImg.width)
   {
@@ -298,7 +301,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
 
    /// Size Of Norm Head Image
-   cv::Rect fishRotAnteriorBox_Bound = fishRotAnteriorBox.boundingRect();
+
    cv::Size szFishAnteriorNorm = fishRotAnteriorBox_Bound.size();// (min(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4,                              max(fishRotAnteriorBox.size.width,fishRotAnteriorBox.size.height)+4);
 
 

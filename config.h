@@ -207,7 +207,7 @@ class trackerState
      // Global Control Vars ///
      /// \brief bTracking
      ///// Option Flags //
-      bool bAllowOnlyOneTrackedItem = false;
+      bool bAllowOnlyOneTrackedItem = true;
       bool bshowMask                = false; //Debug option True will show the BGSubstracted IMage/Processed Mask
       bool bshowDetectorDebugImg    = false; //Debug option  True will show the classifier scoring Masks and Extracted Fish Anterior Images
 
@@ -319,7 +319,7 @@ class trackerState
       double gTemplateMatchThreshold_LowLimit = 0.65;
       double gTemplateMatchThreshold_UpLimit = 0.95;
 
-      int gFishBoundBoxSize               = 60; ///100 For HRes Top CamB 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
+      int gFishBoundBoxSize               = 100; ///100 For HRes Top CamB 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
       int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*4; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
@@ -349,10 +349,12 @@ class trackerState
 
       // List of ROIs
       ltROIlist vRoi;
+      cv::Point ptROI1,ptROI2,ptROI3,ptROI4;
+      int iROIRadius               = 320;
+
       //list of template images
       std::vector<cv::Mat> vTemplImg;
 
-      cv::Point ptROI1,ptROI2,ptROI3,ptROI4;
       fishdetector fishnet;
 
       cv::Mat mMOGMask;

@@ -794,9 +794,12 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             /// DEBUG - Show imgs
             if (!imgFishAnterior_NetNorm.empty() && gTrackerState.bshowDetectorDebugImg){
                 cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
-
             } //If ImgAnt Exists
+
+          if (gTrackerState.bAllowOnlyOneTrackedItem)
+              break; //Found A blob Exit Loop //Otherwise I need to Cluster Nearby Blobs so I don get double hits
         } //If DNN classifier Success
+
 
         //Add Trailing Expansion to the mask- In Case End bit of tail is not showing (ptTail-ptHead)/30+
         cv::circle(outFishMask, gptTail,4,CV_RGB(255,255,255),cv::FILLED);

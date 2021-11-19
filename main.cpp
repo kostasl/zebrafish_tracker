@@ -27,7 +27,7 @@
  ///    * E Manually Set Eye Angles
  ///    * F Manually set prey position (which is then tracked)
  ///    * q Exit Quit application
- ///*
+ ///*Ε
  ///*
 
 ///
@@ -173,6 +173,7 @@ int main(int argc, char *argv[])
         "{HeadMaskHR hmh | 23  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
+        "{CircleROIRadius cr | 315  | px radius for default centred ROI}"
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
         "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking (Note:This has major perf impact so use only when necessary due to pixel noise. BGProcessing does it by default)}"
         "{DisableOpenCL ocl | 0  | Disabling the use of OPENCL can avoid some SEG faults hit when running multiple trackers in parallel}"

@@ -374,6 +374,9 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
     if (parser.has("PolygonROI"))
          bMakeCustomROIRegion = (parser.get<int>("PolygonROI") == 1)?true:false;
 
+    if (parser.has("CircleROIRadius"))
+        iROIRadius = parser.get<int>("CircleROIRadius");
+
     if (parser.has("BGThreshold"))
          g_FGSegthresh = parser.get<int>("BGThreshold");
 
@@ -457,10 +460,12 @@ void  trackerState::initROI(uint framewidth,uint frameheight)
       else //Make Default ROI Region
     {
         // CAMB ptROI2.x = (framewidth)/2-15; ptROI2.y = frameheight-10;//gTrackerState.gszTemplateImg.height/3;
-        ptROI2.x = (framewidth)-15; ptROI2.y = frameheight/2;//CamA
+        gTrackerState.ptROI1   = cv::Point(framewidth/2, frameheight/2);
+        gTrackerState.ptROI2.x = gTrackerState.ptROI1.x + gTrackerState.iROIRadius;
+        gTrackerState.ptROI2.y = gTrackerState.ptROI1.y;//CamA
         //Add Global Roi - Center - Radius
         //ltROI newROI(cv::Point(framewidth/2-5, (frameheight)/2-20),ptROI2);
-        ltROI newROI(cv::Point(323, 263),ptROI2); //Suitable For CamA
+        ltROI newROI(gTrackerState.ptROI1, gTrackerState.ptROI2); //Suitable For CamA
 
         addROI(newROI);
     }
