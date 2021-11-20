@@ -40,8 +40,8 @@ nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 batch_size = 32
 img_height = 38
 img_width = 28
-epochs = 100
-bResetModelTraining = False  ## Do Not Incremental Train / Reset And Start over
+epochs = 150
+bResetModelTraining = True  ## Do Not Incremental Train / Reset And Start over
 
 ## Had To run x3 times with a validation split 0.3 - 0.5 before I got good filtering of entire scene - as tested by testModel
 def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
