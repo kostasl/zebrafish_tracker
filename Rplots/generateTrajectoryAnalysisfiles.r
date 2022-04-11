@@ -29,3 +29,4 @@ generate_DispersionFiles <- function(timePointSequence = seq(2,30,2))
 }
 
 generate_DispersionFiles(1)
+generate_DispersionFiles(3)
