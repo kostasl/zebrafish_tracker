@@ -89,13 +89,25 @@ The tracker produces N files Vn_XXX.csv - one for each ROI n defined by the orde
 
 *Note:* The package of source files contains example MATLAB scripts that can process these output files, plot and extract statistics.
 
-## Fish detection
+## Fish detection and tracking 
 
-A set of templates is included in the resources / img project subdirectory.
+Two methods are used, the first step uses a Deep Neural Network and the second (optional) step uses template matching to accurate detect orientation of the larva's head.
+The DNN is trained using a python script called _trainTF_DNN.py_ over a set of prelabelled images found in the tensorDNN/img subirectory.
+The labels are taken from the directory names where each set of images is stored. For now I have included 2 sets for fish labels, one is small scale as in early behavioural videos, and the other is large fish - as in my latest recordings (lower fps).
+Images for training are extracted from videos by double click on fish to create new Box, and pressing CTRL+T to save as pgm file in the templates subdirectory. Make sure that fish training samples are accuratelly positioned fish anterior box (manually oriented using "[" and "]" keys)
+You may also want to save false positives (error templates) to train the classifier on non-fish objects too.
+Convert pgm to jpg prior to copying new samples in the training folder by running :
+<code>
+mogrify -format jpg *.pgm && rm *.pgm
+</code>
+
+For the template matching, the tracker uses small set  (<10) images included in the executables resources as default, but also loads the templates found in the templates subdirectory of the tracking output folder. 
+This allows to the user to save a few templates that are specific to the video being tracked.
 All templates need to be of the same size - (rows,columns) and the the size of the 1st loaded template defines the 
 
+Tracking of fish position is assisted by a Kalman Filter - these preditions and measurements appear as blue and yello box marking position of fish's anterior.
 
-## Prey detection
+## Prey detection and tracking
 
 I used an G-H filter to track the motion of the prey items.
 This simple position filtering technique (G-H Filter) improves tracking between subsequent frames 
@@ -103,6 +115,7 @@ This simple position filtering technique (G-H Filter) improves tracking between 
 
 The filter params where adjusted against prey motion data, and these need to be scaled based on 
 video scaling spatial (field of view/resolution)  and time (fps). I have added crude scaling to the video fps and assume the video frame contains a 35 mm circular arena.
+
 
 
 ### Contribution guidelines ###

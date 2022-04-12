@@ -967,11 +967,11 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
             dResiduals[i] = -pointPolygonTest(contour, cv::Point2f(tmpspline[i].x,tmpspline[i].y), true );
 
             //Add Extra Grad Info/Cost for small segLength / thus pulling to longer spine length
-            dResiduals[i] -= (0.05)*c_MaxSpineLengthLimit/tmpspline[i].spineSegLength;
+           // dResiduals[i] -= (0.05)*c_MaxSpineLengthLimit/tmpspline[i].spineSegLength;
 
             // Push to get Tail Pt Coincide with Last spine point
             double distToTailTip = cv::norm( gptTail - cv::Point(tmpspline[tmpspline.size()-1].x,tmpspline[tmpspline.size()-1].y) );
-            dResiduals[i] -= (0.05)*distToTailTip ;
+            dResiduals[i] += (0.05)*distToTailTip ;
            // double penalty = dResiduals[i]*0.10; //Calc Scaled Penalty
            // for (int s=0;s<tmpspline.size();s++)
            // {
