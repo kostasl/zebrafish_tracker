@@ -64,7 +64,9 @@ The directory where the data csv files are exported must have  format EXP_N_YYYY
     - GSL dev 2.4
         -Random number generator library
     - QT4 or above
+    - tensorflow
     - GCC
+    
 
 ```
 sudo apt-get install git libopencv-dev qt5-default g++ libgsl-dev

@@ -22,6 +22,9 @@ from tensorflow.keras.callbacks import EarlyStopping
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 
+# To Batch convert from pgm to jpg use mogrify :
+# mogrify -format jpg *.pgm
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     print('FishNet TensorFlow Model Training')

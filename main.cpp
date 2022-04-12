@@ -167,8 +167,8 @@ int main(int argc, char *argv[])
         "{duration d | 0  | Number of frames to Track for starting from start frame}"
         "{logtofile l |    | Filename to save clog stream to }"
         "{ModelBG b | 1  | Initiate BG modelling by running over scattered video frames to obtain Foreground mask}"
-        "{UseTemplateMatching T | 0  | After DNN Classifier, also use template matching to Detect orientation and position of larva (speed up if false)}" //bUseTemplateMatching
-        "{BGThreshold bgthres | 20  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
+        "{UseTemplateMatching T | 1  | After DNN Classifier, also use template matching to Detect orientation and position of larva (speed up if false)}" //bUseTemplateMatching
+        "{BGThreshold bgthres | 2  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
         "{HeadMaskVW hmw | 25  | Head Vertical mask width that separates eyes}"
         "{HeadMaskHR hmh | 23  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
@@ -494,7 +494,8 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
 
     if (gTrackerState.bMeasure2pDistance)
         drawUserDefinedPoints(outframe);
-    //Redraw ROI Mask
+
+    /// DRAW ROI Mask
     if (gTrackerState.bROIChanged)
     {
         bgROIMask = cv::Mat::zeros(frame.rows,frame.cols,CV_8UC1);
@@ -528,14 +529,19 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
         else
             extractFGMask(frame_gray,bgStaticMask,fgMask,fgImgFrame,gTrackerState.dactiveMOGLearningRate); //Applies MOG if BGModelling Flag is set
 
+        /// Use ROI MASK For All FG
+        if (!fgMask.empty())
+            cv::bitwise_and(bgROIMask,fgMask,fgMask);
 
         //Generates separate masks for Fish/Prey and Draws Fish Contourmask
         // Returns Fish Locations/Keypoints
         enhanceMasks(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours,vfishblobs_pt);
 
-        //Combine Roi Mask Only For The foodMask
-        if (!fgFoodMask.empty())
-            cv::bitwise_and(bgROIMask,fgFoodMask,fgFoodMask);
+        // Combine Roi Mask Only For The foodMask
+        //if (!fgFoodMask.empty())
+        //    cv::bitwise_and(bgROIMask,fgFoodMask,fgFoodMask);
+
+
 
         /// Choose FG image prior to template matching
         /// \note this can fail badly if Mask is thick outline of larva/or a bad match hidding features
@@ -1273,7 +1279,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
     {
         pfish = ft->second;
         // If this is not the Best One
-        if (pfishBest != pfish ) //&& pfishBest != 0
+        if (pfishBest != pfish && !pfish->binFocus ) //&& pfishBest != 0
         {
             //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
 
@@ -2773,6 +2779,20 @@ void drawAllROI(cv::Mat& frame)
     }
 }
 
+
+void drawAllROIMasks(cv::Mat& frame)
+{
+    //frameCpy.copyTo(frame); //Restore Original IMage
+    for (std::vector<ltROI>::iterator it = gTrackerState.vRoi.begin(); it != gTrackerState.vRoi.end(); ++it)
+    {
+
+        ltROI iroi = (ltROI)(*it);
+         //cv::rectangle(frame,iroi,cv::Scalar(0,0,250));
+        iroi.draw(frame);
+
+    }
+}
+
 /// Draws all paired points found in the vMeasureLines vector - where user defined points are stored by the user when
 /// in measuremode .
 void drawUserDefinedPoints(cv::Mat& frame)
@@ -2947,8 +2967,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            tEllipsoids vellRight;
 
 
-           ///GEt Anterior/Head IMg And Correct Orientation of Fish
-           imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(maskedfishImg_gray,fish->bodyRotBound,true); //fishRotAnteriorBox
+           ///GEt Anterior/Head IMg And Correct Orientation of Fish - Do not Use Masked Image for this maskedfishImg_gray
+           imgFishAnterior_Norm = fishdetector::getNormedTemplateImg(fullImgIn,fish->bodyRotBound,false); //fishRotAnteriorBox
            // Check empty in case of an Error In extraction - due to boundary conditions
            if (imgFishAnterior_Norm.empty())
            {
@@ -3120,7 +3140,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
     //                 fish->c_spineSegL = gTrackerState.gFishTailSpineSegmentLength ;
     //                 pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
                        pwindow_main->LogEvent(QString("[warning] lastTailFitError ") + QString::number(fish->lastTailFitError) + QString(" > c_fitErrorPerContourPoint") );
-                       fish->resetSpine(); //No Solution Found So Reset
+                       //fish->resetSpine(); //No Solution Found So Reset
                        //pwindow_main->LogEvent("[info] Reset Spine");
                        fish->lastTailFitError = 0;
                    }

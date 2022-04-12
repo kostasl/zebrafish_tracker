@@ -259,10 +259,12 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
   cv::Mat threshold_output;
 
  ////  Obtain FG IMage: Substract MOG Extracted BG Image //
- if (gTrackerState.bUseBGModelling)
-  fgFrameOut = frameImg_gray - gframeBGImage; //Remove BG Image
- else
-  fgFrameOut  = frameImg_gray;
+ if (gTrackerState.bUseBGModelling && !gframeBGImage.empty()) {
+    fgFrameOut = frameImg_gray - gframeBGImage; //Remove BG Image
+ }else{
+    std::clog << " [Warning] Missing background model image " << std::endl;
+    fgFrameOut  = frameImg_gray;
+ }
 
  //If We are during the Static Mask Accumulation phase ie (fgStaticMaskIn.type() !=  CV_8U) then Produce the Threshold Image
  // The threshold mask is blended with OR with the MOG mask.
@@ -353,6 +355,9 @@ void extractFGMask(cv::Mat& frameImg_gray,cv::Mat fgStaticMaskIn,cv::Mat& fgMask
              threshold_output.copyTo(fgMaskInOut);
       } //Threshold Only Available
 
+      // REMOVE Items Outside ROI
+
+
       // Show Masks for Debuging purposes
       if (gTrackerState.bshowMask && !fgStaticMaskIn.empty())
         cv::imshow("StaticMask",fgStaticMaskIn);
@@ -419,7 +424,7 @@ int getMaxInflectionAndSmoothedContour(const cv::Mat& frameImg, cv::Mat& fgMask,
     ptSharp = curve[idxMin]; //Most Likely Tail Point
     ptSharp2 = curve[idxMin2]; //This Could Be Head
 
-    //Simplify Points if contour Curve Too long
+    //Only Simplify Points if contour Curve Too long
     if ((int)curve.size() > (2*gTrackerState.gcFishContourSize))
     {
         ResampleCurve(smoothx,smoothy,resampledcurveX,resampledcurveY,gTrackerState.gcFishContourSize,false);
@@ -566,9 +571,9 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     outFishMask = cv::Mat::zeros(frameImg.rows,frameImg.cols,CV_8UC1);
 
     //Shring-Grow -Erase Thin Border Lines
-    cv::morphologyEx(fgMask,fgMask,cv::MORPH_DILATE, kernelOpenfish,cv::Point(-1,-1),1);
+    cv::morphologyEx(fgMask,fgMask,cv::MORPH_DILATE, kernelDilateMOGMask,cv::Point(-1,-1),4);
     //cv::morphologyEx(fgMask,fgMask, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
-    cv::morphologyEx(fgMask,fgMask, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),1);
+    cv::morphologyEx(fgMask,fgMask, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),3);
 
     //Make Hollow Mask Directly - Broad Approximate -> Grows outer boundary
     cv::morphologyEx(fgMask,fgEdgeMask, cv::MORPH_GRADIENT, kernelOpenfish,cv::Point(-1,-1),1);
@@ -581,7 +586,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     //Then Use ThresholdImage TO Trace More detailed Contours
     //cv::dilate(threshold_output_COMB,threshold_output_COMB_fish,kernelOpenfish,cv::Point(-1,-1),4);
     assert(!fgEdgeMask.empty());
-    //cv::imshow("FishMAsk Edge",fgEdgeMask);
+
 
     ptFishblobs.clear();
 
@@ -591,9 +596,9 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
     {
         fishModel* pfish = ft->second;
         //circle(outFishMask,pfish->bodyRotBound.center,50,CV_RGB(255,255,255),CV_FILLED);
-        drawContours(fgEdgeMask,pfish->contour,0,CV_RGB(255,255,255),CV_FILLED);
+       // drawContours(fgEdgeMask,pfish->contour,0,CV_RGB(255,255,255),CV_FILLED);
     }
-
+    //cv::imshow("FishMAsk Edge",fgEdgeMask);
     cv::findContours( fgEdgeMask, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,
                       cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
@@ -692,7 +697,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         /// \todo Here I could Use Shape Similarity Filtering - Through the CurveCSS header
         //Find Tail Point- As the one with the sharpest Angle
         // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
-       ptSearch = kp.pt;
+       ptSearch = gptHead;// kp.pt;
        int idxTail,idxHead;
        idxTail = getMaxInflectionAndSmoothedContour(frameImg, fgMask, curve);
        if (idxTail >= 0 )
@@ -701,7 +706,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
            // Classify Keypoint for fish  - Find Best Angle if 1st Pass Fails //
            ptSearch  = (ptHead-ptHead2)/2.0f+ptHead2; //Classifier search focused between candidate Ellipse head point And  Contour Head POint
            kp.pt = ptSearch;
-           // Fix Orientation against Head Point detected by classifier
+           // Fix Orientation against Head Point detected by classifierkp
            // Carefull Cause sometime the fitted ellipse is too long anteriorly making distance wise appear as the tail
        }
 
@@ -723,13 +728,14 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
               if (kp.response > gTrackerState.fishnet_classifier_thres)
                   break;
              }
-       }
+       } //Existing FishModel
+
        ///If Fish No longer on the same position - Scan Region Around Blob to Find precise Head point - using Classifier
        if (kp.response < gTrackerState.fishnet_classifier_thres)
        {
            //1st Pass - blob position is updated to Detected Position
            fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,60,5,5, QString::number(iHitCount).toStdString(),true);
+                                                            mask_fnetScore,100,10,10, QString::number(iHitCount).toStdString(),true);
            //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
            if (fRH[0] >= gTrackerState.fishnet_classifier_thres) //2nd Pass
                 fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
@@ -789,7 +795,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
             ///\bug drawContours produces freezing sometimes
             //Draw New Smoothed One - the idx should be the last one in the vector
             cv::drawContours( outFishMask, vFilteredFishbodycontours, 0, CV_RGB(255,255,255), cv::FILLED); //
-            //cv::drawContours(outFishMask, fishbodycontours, kk, Scalar(255,255,255),cv::FILLED,cv::LINE_8,fishbodyhierarchy,2); // cv::LINE_8
+            cv::drawContours( outFishMask, vFilteredFishbodycontours, 0, CV_RGB(255,255,255),2,cv::LINE_AA); //
+
 
             /// DEBUG - Show imgs
             if (!imgFishAnterior_NetNorm.empty() && gTrackerState.bshowDetectorDebugImg){
@@ -802,7 +809,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
 
         //Add Trailing Expansion to the mask- In Case End bit of tail is not showing (ptTail-ptHead)/30+
-        cv::circle(outFishMask, gptTail,4,CV_RGB(255,255,255),cv::FILLED);
+        cv::circle(outFishMask, gptTail,5,CV_RGB(255,255,255),cv::FILLED);
         cv::circle(outFishMask, gptHead,8,CV_RGB(255,255,255),cv::FILLED);
         cv::circle(outFishMask,ptSearch,3,CV_RGB(255,255,255),2);
         cv::putText(outFishMask,strfRecScore.toStdString(), ptSearch + cv::Point(10,-10), gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(255,255,250));
@@ -1061,7 +1068,7 @@ int getFishBlobCentreAndOrientation(cv::Mat imgFishAnterior,cv::Point2f ptCentre
         if  ((iAngleOffset) < -90) iAngleOffset+=180;
 
         //Debug Show Shape Centre //
-        cv::circle(imgFishAnterior,rectBody.center,3,100,1);
+        //cv::circle(imgFishAnterior,rectBody.center,3,100,1);
         //Correct For Centre Offset
 
         ptCentreCorrection.x = ptCentre.x - rectBody.center.x;

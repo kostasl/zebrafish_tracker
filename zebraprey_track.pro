@@ -133,8 +133,12 @@ FORMS += \
 
 DISTFILES += \
     README.md \
+    img/fish_templ_large-hunting.pgm \
+    img/fish_templ_large.pgm \
+    img/fishbody_tmp10.pgm \
     img/fishbodyb_tmp.pgm \
     tensorDNN/main.py \
+    tensorDNN/trainTF_DNN.py \
     zebraprey_track.supp \
     img/fishbody_tmp9.pgm
 

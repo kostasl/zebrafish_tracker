@@ -126,9 +126,11 @@ cv::Mat fishdetector::getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect 
     cv::Mat imgContourDBG;
     std::vector<std::vector<cv::Point> > fishAnteriorcontours;
     std::vector<cv::Vec4i> fishAnteriorhierarchy;
-
-    /// Size Of Norm Head Image
     cv::Rect fishBoundingRect = fishRotAnteriorBox.boundingRect();
+    double rotationNormAngle;// = fishRotAnteriorBox.angle;
+    cv::Point2f ptRotCenter;// = cv::Point2f(fishBoundingRect.tl()) - fishRotAnteriorBox.center;
+    /// Size Of Norm Head Image
+
     // fishBoundingRect.width  +=2; fishBoundingRect.height +=2;
     cv::Size szFishAnteriorNorm = cv::Size(max (fishBoundingRect.size().width,fishBoundingRect.size().height),
                                            max (fishBoundingRect.size().width,fishBoundingRect.size().height));//
@@ -169,15 +171,18 @@ cv::Mat fishdetector::getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect 
                     qDebug() << "Th.Fix:" << DAngle;
                 }
             }
-        }
+        }  //If Correction Flag Is set.. otherwise just copy to output
+    }
 
-        /// Make Rotation MAtrix About Centre Of Cropped Image
-        cv::Point2f ptRotCenter = fishRotAnteriorBox.center - fishRotAnteriorBox.boundingRect2f().tl();
-        cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter, fishRotAnteriorBox.angle,1.0); //Rotate Upwards
-        ///Make Rotation Transformation
-        //Need to fix size of Upright/Normed Image
-        cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
-    } //If Correction Flag Is set
+    rotationNormAngle = fishRotAnteriorBox.angle;
+    ptRotCenter = fishRotAnteriorBox.center - fishRotAnteriorBox.boundingRect2f().tl();
+
+    /// Make Rotation MAtrix About Centre Of Cropped Image
+
+    cv::Mat Mrot = cv::getRotationMatrix2D( ptRotCenter, rotationNormAngle,1.0); //Rotate Upwards
+    ///Make Rotation Transformation
+    //Need to fix size of Upright/Normed Image
+    cv::warpAffine(imgFishAnterior,imgFishAnterior_Norm,Mrot,szFishAnteriorNorm);
 
     //Make Sure Normed Template Fits in Bounded Region
     //assert(imgFishAnterior_Norm.cols >= fishRotAnteriorBox.size.width);
@@ -418,10 +423,10 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     {
         fishblob.response = max_dscore;
         fishblob.pt = ptmax+fishRotAnteriorBox_Bound.tl(); //Shift Blob Position To Max  To Max Recognition Point
-        cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(max_dscore,max_dscore,max_dscore),1);
+        //cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(max_dscore,max_dscore,max_dscore),1);
     }
 
-    //cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(255,255,255),2);
+
 
     // DEBUG IMG //
     //cv::circle(imgFishAnterior,ptmax,4,CV_RGB(250,200,210),2);
@@ -476,8 +481,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
     if (gTrackerState.bshowDetectorDebugImg){
         cv::normalize(outmaskRegionScore, outmaskRegionScore, 1, 0, cv::NORM_MINMAX);
-        cv::imshow(("FishNet ScoreRegion (Norm)") + regTag, outmaskRegionScore);
-        cv::imshow("imgFishAnterior scoreBlobRegion", imgFishAnterior);
+        cv::imshow(("FishNet ScoreRegion (Norm) ") + regTag, outmaskRegionScore);
+        cv::imshow("imgFishAnterior scoreBlobRegion "  + regTag, imgFishAnterior);
     }
 
 
@@ -681,8 +686,8 @@ float fishdetector::netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,fl
         //qDebug() << results[0][j] << "\t";
          //std::cout << std::fixed << std::setprecision(4) << results[0][j] << "\t";
       }
-
-       fFishClass = results[0][0]+results[0][2]; //Add Small and Large Fish Class Togetherresults[0][1] //Shifted
+       /// \TODO Exclude Small Fish From Here
+       fFishClass = results[0][0]; //+results[0][2]; //Add Small and Large Fish Class Togetherresults[0][1] //Shifted
        fNonFishClass = results[0][1];//1.0f - fFishClass;//results[0][2];
     }
     //std::cout << std::endl;

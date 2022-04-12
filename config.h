@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 
-#define ZTF_FISHCONTOURSIZE          42//40
+#define ZTF_FISHCONTOURSIZE          62//40
 #define ZTF_TAILFITMAXITERATIONS     200 //For Spine To Contour Tail Fitting
 #define ZTF_TAILSPINECOUNT          8
 #define EYE_SEG_SAMPLE_POINTS_COUNT 20
@@ -155,7 +155,7 @@ class trackerState
       const double dMeanBlobArea                  = 100; //Initial Value that will get updated
       const double dVarBlobArea                   = 20;
       const unsigned int gc_fishLength            = 100; //px Length Of Fish
-      const unsigned int thresh_fishblobarea      = 100; //Min area above which to Filter The fish blobs
+      const unsigned int thresh_fishblobarea      = 400; //Min area above which to Filter The fish blobs
       const unsigned int thresh_maxfishblobarea     = 3650; //Min area above which to Filter The fish blobs
       const unsigned int gthres_maxfoodblobarea     = thresh_fishblobarea/3;
 
@@ -169,7 +169,7 @@ class trackerState
       int gcMinFoodModelActiveFrames            = gfVidfps/20; //Min Number of consecutive frames it needs to be active  otherwise its deleted
       float gMaxClusterRadiusFoodToBlob           = 3; //Per Sec / This changes depending on FPS (setFPS)
       const int thActive                            = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
-      const int gc_FishTailSpineSegmentLength_init  = 9;
+      const int gc_FishTailSpineSegmentLength_init  = 16;
       int gFoodReportInterval                       = (int)gfVidfps;
       const int nTemplatesToLoad                    = 9; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
       const int gi_FoodModelNumberLimit             = 250; // Maximum Number of Food Objects /Prey To track
@@ -247,10 +247,10 @@ class trackerState
       bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
-      bool bApplyFishMaskBeforeFeatureDetection = false; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
-      bool bUseTemplateMatching                 = false; /// Cmd Line Param Use Template Matching Following DNN classifier Success
+      bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
+      bool bUseTemplateMatching                 = true; /// Cmd Line Param Use Template Matching Following DNN classifier Success
       bool bFitSpineToTail                      = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
-      bool bUseContourToFitSpine                = false; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
+      bool bUseContourToFitSpine                = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
       bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
       bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked FG Fish Image and not the full frame- (Masks can lose fine features)
@@ -264,7 +264,7 @@ class trackerState
 
       /// \todo Make this path relative or embed resource
       //string strTemplateImg = "/home/kostasl/workspace/cam_preycapture/src/zebraprey_track/img/fishbody_tmp.pgm";
-      std::string strTemplateImg = ":/img/fishbody_Ltmp"; ///Load From Resource
+      std::string strTemplateImg = ":/img/fish_template_"; ///Load From Resource
 
       ///Specific To the Tracked Video Options//
       uint uiCurrentFrame = 1;

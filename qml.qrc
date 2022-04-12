@@ -2,9 +2,12 @@
     <qresource prefix="/">
         <file>GUI/MainGUI.qml</file>
         <file>GUI/MainGUIForm.ui.qml</file>
-        <file>img/fishbody_Ltmp1.pgm</file>
-        <file>img/fishbody_tmp4.pgm</file>
-        <file>img/fishbody_tmp9.pgm</file>
-        <file>img/fishbody_Ltmp2.pgm</file>
+        <file>img/fish_template_3.pgm</file>
+        <file>img/fish_template_6.pgm</file>
+        <file>img/fish_template_7.pgm</file>
+        <file>img/fish_template_4.pgm</file>
+        <file>img/fish_template_1.pgm</file>
+        <file>img/fish_template_2.pgm</file>
+        <file>img/fish_template_5.pgm</file>
     </qresource>
 </RCC>
