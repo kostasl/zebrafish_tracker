@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
         "{HeadMaskHR hmh | 23  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
-        "{CircleROIRadius cr | 315  | px radius for default centred ROI}"
+        "{CircleROIRadius cr | 512  | px radius for default centred ROI}"
         "{ModelBGOnAllVids a | 1  | Only Update BGModel At start of vid when needed}"
         "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking (Note:This has major perf impact so use only when necessary due to pixel noise. BGProcessing does it by default)}"
         "{DisableOpenCL ocl | 0  | Disabling the use of OPENCL can avoid some SEG faults hit when running multiple trackers in parallel}"
@@ -3140,7 +3140,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
     //                 fish->c_spineSegL = gTrackerState.gFishTailSpineSegmentLength ;
     //                 pwindow_main->UpdateTailSegSizeSpinBox(fish->c_spineSegL);
                        pwindow_main->LogEvent(QString("[warning] lastTailFitError ") + QString::number(fish->lastTailFitError) + QString(" > c_fitErrorPerContourPoint") );
-                       //fish->resetSpine(); //No Solution Found So Reset
+                       fish->resetSpine(); //No Solution Found So Reset
                        //pwindow_main->LogEvent("[info] Reset Spine");
                        fish->lastTailFitError = 0;
                    }

@@ -398,10 +398,15 @@ void fishModel::setSplineParams(t_fishspline& inspline,std::vector<double>& inpa
         if (i==2) //Segment Size
         {
             dvarSpineSegLength = inparams[2];
-            inspline[0].spineSegLength = dvarSpineSegLength;
+            inspline[0].spineSegLength = min(c_MaxSpineLengthLimit,dvarSpineSegLength);
+            //assert(dvarSpineSegLength < 50);
         }
         if (i>2)
-            inspline[i-3].angleRad = inparams[i]; //Param 3 is actually 1st spine knot's angle
+        {
+            //Cap -Pi to Pi
+            inspline[i-3].angleRad = max(-CV_PI,min(CV_PI,(double)inparams[i])); //Param 3 is actually 1st spine knot's angle
+            //assert(inparams[i] >= -CV_PI && inparams[i] <= CV_PI);
+        }
     }
 
     //Readjust xi,yi (In variational terms calc x_i = f(q1,q2,q3..), y_i = f(q1,q2,q3..)
