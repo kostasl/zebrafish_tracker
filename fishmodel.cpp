@@ -971,7 +971,7 @@ double fishModel::fitSpineToContour2(cv::Mat& frameImg_grey, std::vector<std::ve
 
             // Push to get Tail Pt Coincide with Last spine point
             double distToTailTip = cv::norm( gptTail - cv::Point(tmpspline[tmpspline.size()-1].x,tmpspline[tmpspline.size()-1].y) );
-            dResiduals[i] += (0.05)*distToTailTip ;
+            dResiduals[i] += (0.1)*distToTailTip/cFitSpinePointsCount;
            // double penalty = dResiduals[i]*0.10; //Calc Scaled Penalty
            // for (int s=0;s<tmpspline.size();s++)
            // {
