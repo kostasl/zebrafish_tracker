@@ -716,17 +716,20 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
        std::vector<float> fRH(3);  //Score Array For Each Pass
 
         kp.response = 0;
-       //Check If kp Belogs to Existing Model Fish - Update position To tracked Head Pt
+       //Optimization 1 - Small Area Search Check If kp Belogs to Existing Model Fish - Update position To tracked Head Pt
        for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
        {
              fishModel* fish = (*it).second;
-             if (cv::norm(fish->ptRotCentre-kp.pt) < gTrackerState.gDisplacementLimitPerFrame)//(fish->bodyRotBound.boundingRect().contains(kp.pt))
+             if (cv::norm(fish->ptRotCentre-kp.pt) < 10)//(fish->bodyRotBound.boundingRect().contains(kp.pt))
              {
-               kp.pt = fish->ptRotCentre; //Search Very Near Last Known Fish Position
-               kp.response = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+               zftblob kpFishBlob = kp; //Search Very Near Last Known Fish Position
+               kpFishBlob.pt = fish->ptRotCentre;
+               kpFishBlob.response = gTrackerState.fishnet.scoreBlobRegion(frameImg, kpFishBlob,boundEllipse, imgFishAnterior_NetNorm,
                                                                 mask_fnetScore,10,1,1, QString::number(iHitCount).toStdString(),false);
-              if (kp.response > gTrackerState.fishnet_classifier_thres)
+              if (kpFishBlob.response > gTrackerState.fishnet_classifier_thres){
+                  kp = kpFishBlob;
                   break;
+              }
              }
        } //Existing FishModel
 
@@ -737,7 +740,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
            fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
                                                             mask_fnetScore,100,10,10, QString::number(iHitCount).toStdString(),true);
            //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
-           if (fRH[0] >= gTrackerState.fishnet_classifier_thres) //2nd Pass
+           if (fRH[0] >= gTrackerState.fishnet_classifier_thres/10.0) //2nd Pass
                 fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
                                                             mask_fnetScore,15,1,1, QString::number(iHitCount).toStdString()+"B",false);
            else
@@ -818,6 +821,9 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
     // Release Should is done automatically anyway
     //fgEdgeMask.release();
+
+    if (vFilteredFishbodycontours.size() == 0)
+        qDebug() << "No Fish Blob detected.";
 
     return (vFilteredFishbodycontours);
 
