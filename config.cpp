@@ -190,9 +190,12 @@ int initDetectionTemplates()
     int ifileCount =  gTrackerState.vTemplImg.size();
 
     //Make Mean Fish And Add to Cache
-     cv::Mat templFrame = makeMeanTemplateImage(gTrackerState.vTemplImg);
-     addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
-     gTrackerState.gLastfishimg_template = templFrame; //Set To Global
+    if (ifileCount > 0)
+    {
+        cv::Mat templFrame = makeMeanTemplateImage(gTrackerState.vTemplImg);
+        addTemplateToCache(templFrame,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+        gTrackerState.gLastfishimg_template = templFrame; //Set To Global
+    }
  #if defined(_DEBUG)
      cv::imshow("Template Cache",gFishTemplateCache);
 #endif

@@ -742,7 +742,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
        {
            //1st Pass - blob position is updated to Detected Position
            fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,100,10,10, QString::number(iHitCount).toStdString(),true);
+                                                            mask_fnetScore,80,5,5, QString::number(iHitCount).toStdString(),true);
            //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
            if (fRH[0] >= gTrackerState.fishnet_classifier_thres/10.0) //2nd Pass
                 fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
@@ -807,7 +807,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
             //Draw New Smoothed One - the idx should be the last one in the vector
             cv::drawContours( outFishMask, vFilteredFishbodycontours_classified, 0, CV_RGB(255,255,255), cv::FILLED); //
             cv::drawContours( outFishMask, vFilteredFishbodycontours_classified, 0, CV_RGB(255,255,255),2,cv::LINE_AA); //
-            cv::drawContours( outUserFrame, vFilteredFishbodycontours_classified, 0, CV_RGB(5,255,5),1,cv::LINE_AA); //
+            //cv::drawContours( outUserFrame, vFilteredFishbodycontours_classified, 0, CV_RGB(5,255,5),1,cv::LINE_AA); //
 
 
             /// DEBUG - Show imgs

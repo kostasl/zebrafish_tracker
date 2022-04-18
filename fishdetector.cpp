@@ -345,7 +345,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
   //frame(fishRotAnteriorBox.boundingRect()).copyTo(imgFishAnterior);
   // Find point Center Coords of Image Region Of Search
   cv::Point2f ptRotCenter = fishblob.pt - fishRotAnteriorBox.boundingRect2f().tl();//fishRotAnteriorBox.center- fishRotAnteriorBox.boundingRect2f().tl();
-
+  cv::Point ptmin;
+  cv::Point ptmax = ptRotCenter; //Starting Assumption is that fish is located on Blob
   //Binarize Input To set Specific Sparseness/Density
   //imgFishAnterior_Norm_bin = sparseBinarize(imgFishAnterior_Norm,gTrackerState.fishnet_inputSparseness);
   imgFishAnterior.copyTo(imgFishAnterior_bin);
@@ -378,7 +379,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
           imgFishAnterior_bin(rectFishTemplateBound).copyTo(imgFishAnterior_Norm_tmplcrop);
 
           dscore = this->netDNNDetect_fish(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreNonFish);
-
+          // Overide with Fish Score Only - As frequently Fish is missed
+          dscore = scoreFish;
           ///Do Not Test Orientation - Blob Should Have the correct Angle
           //Check Both Vertical Orientations
           //cv::flip(imgFishAnterior_Norm_tmplcrop, imgFishAnterior_Norm_tmplcrop_vflip, 0);
@@ -388,7 +390,11 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
           maskRegionScore_Norm.at<float>(j + gTrackerState.gszTemplateImg.height/2, // , row
                                          i + gTrackerState.gszTemplateImg.width/2) = dscore;//col //max(0.0f,dscore);//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
           if (dscore > max_dscore)
+          {
               max_dscore = dscore;
+              ptmax.y = j + gTrackerState.gszTemplateImg.height/2;
+              ptmax.x = i + gTrackerState.gszTemplateImg.width/2;
+          }
 
           if (bstopAtFirstMatch && max_dscore > gTrackerState.fishnet_classifier_thres)
                break;
@@ -403,11 +409,10 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
     /// Find and Best scorring point ScoreMask - Along with Normed Fish Image centered at best-point
     //Need to Rotate Score Image Back to Original Orientiation to return Coordinates oF Best Match
-    /// Find Max Match Position In Non-Norm pic (original orientation)
-    double minL1, maxL1;
-    cv::Point ptmin, ptmax;
+    //- Removed  - Scores scaled too low Find Max Match Position In Non-Norm pic (original orientation)
+    //double minL1, maxL1;
     //cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(13,13),13,13);
-    cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
+    //cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
 
     // Rotate Max Point Back to Original Orientation
     //cv::Mat MrotInv = cv::getRotationMatrix2D( ptRotCenter, -fishblob.angle,1.0); //Rotate Upwarte Upwards
@@ -424,6 +429,14 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
         fishblob.response = max_dscore;
         fishblob.pt = ptmax+fishRotAnteriorBox_Bound.tl(); //Shift Blob Position To Max  To Max Recognition Point
         //cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(max_dscore,max_dscore,max_dscore),1);
+    }else
+    {
+        cv::circle(imgFishAnterior,ptmax,3,CV_RGB(250,250,250),1);
+        cv::imshow("imgFishAnterior scoreBlobRegion "  + regTag, imgFishAnterior);
+        cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, 1, 0, cv::NORM_MINMAX);
+        cv::imshow(("FishNet ScoreRegion (Norm) ") + regTag, maskRegionScore_Norm);
+
+        qDebug() << "scoreBlobRegion :" << max_dscore << " - Blob had higher class. score :" << fishblob.response ;
     }
 
 
@@ -479,7 +492,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     //    gTrackerState.giHeadIsolationMaskVOffset = min(maxpt.y,imgFishAnterior_Norm.rows);//ptmax.y
     //    if (gTrackerState.bshowDetectorDebugImg)
 
-    if (gTrackerState.bshowDetectorDebugImg){
+    if (gTrackerState.bshowDetectorDebugImg ){
         cv::normalize(outmaskRegionScore, outmaskRegionScore, 1, 0, cv::NORM_MINMAX);
         cv::imshow(("FishNet ScoreRegion (Norm) ") + regTag, outmaskRegionScore);
         cv::imshow("imgFishAnterior scoreBlobRegion "  + regTag, imgFishAnterior);
