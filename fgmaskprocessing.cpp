@@ -559,16 +559,17 @@ double ptangle_deg(const Point& v1, const Point& v2)
 
 /// \brief handles the processing of Fish Item Mask such that larval detection can be improved.
 ///  uses optic flow info to detect if blob belongs to a fishmodel so as to classify it correctly
-std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Mat& fgMask, cv::Mat& outFishMask, zftblobs& ptFishblobs)
+std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,const cv::Mat& outUserFrame, cv::Mat& fgMask, cv::Mat& outFishMask, zftblobs& ptFishblobs)
 {
     cv::Mat mask_fnetScore,imgFishAnterior_NetNorm; //For FishNet Detect
     cv::Mat fgEdgeMask;
     std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
+    std::vector<std::vector<cv::Point> > vFilteredFishbodycontours_classified;
     zftblobs vFishKeypoints_next;
     cv::Point2f ptHead,ptHead2,ptTail,ptTail2; //Traced Points for Tail and Head
     cv::Point ptSearch; //Helper pt variable
     //Make Empty Canvas to Draw Fish Mask
-    outFishMask = cv::Mat::zeros(frameImg.rows,frameImg.cols,CV_8UC1);
+    outFishMask = cv::Mat::zeros(frameImg_grey.rows,frameImg_grey.cols,CV_8UC1);
 
     //Shring-Grow -Erase Thin Border Lines
     cv::morphologyEx(fgMask,fgMask,cv::MORPH_DILATE, kernelDilateMOGMask,cv::Point(-1,-1),4);
@@ -699,7 +700,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         // Smooth Contour and Get likely Index of Tail point in contour, based on curvature sharpness / And
        ptSearch = gptHead;// kp.pt;
        int idxTail,idxHead;
-       idxTail = getMaxInflectionAndSmoothedContour(frameImg, fgMask, curve);
+       idxTail = getMaxInflectionAndSmoothedContour(frameImg_grey, fgMask, curve);
        if (idxTail >= 0 )
        {
            idxHead = findAntipodePointinContour(idxTail,curve,centroid,ptHead2,ptTail2);
@@ -713,6 +714,9 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
        //Make scanned image Bounds at least gFishBoundBoxSize each side
        boundEllipse.size.height = max(gTrackerState.gFishBoundBoxSize, (int)boundEllipse.size.height);
        boundEllipse.size.width  = max(gTrackerState.gFishBoundBoxSize, (int)boundEllipse.size.width);
+
+       vFilteredFishbodycontours.push_back(curve);
+
        std::vector<float> fRH(3);  //Score Array For Each Pass
 
         kp.response = 0;
@@ -724,7 +728,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
              {
                zftblob kpFishBlob = kp; //Search Very Near Last Known Fish Position
                kpFishBlob.pt = fish->ptRotCentre;
-               kpFishBlob.response = gTrackerState.fishnet.scoreBlobRegion(frameImg, kpFishBlob,boundEllipse, imgFishAnterior_NetNorm,
+               kpFishBlob.response = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kpFishBlob,boundEllipse, imgFishAnterior_NetNorm,
                                                                 mask_fnetScore,10,1,1, QString::number(iHitCount).toStdString(),false);
               if (kpFishBlob.response > gTrackerState.fishnet_classifier_thres){
                   kp = kpFishBlob;
@@ -737,14 +741,18 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
        if (kp.response < gTrackerState.fishnet_classifier_thres)
        {
            //1st Pass - blob position is updated to Detected Position
-           fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+           fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
                                                             mask_fnetScore,100,10,10, QString::number(iHitCount).toStdString(),true);
            //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
            if (fRH[0] >= gTrackerState.fishnet_classifier_thres/10.0) //2nd Pass
-                fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
+                fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
                                                             mask_fnetScore,15,1,1, QString::number(iHitCount).toStdString()+"B",false);
-           else
+           else{
+               //Show User Where Failed Contour Detection Happened
+               cv::circle(outUserFrame,kp.pt,4,CV_RGB(255,5,5),2,LINE_AA );
                continue; //Next Contour
+
+           }
        }
 //           //cv::circle(outFishMask,kp.pt,3,CV_RGB(200,200,200),2);
 //           if (fRH[1]  > gTrackerState.fishnet_classifier_thres && fRH[1] > fRH[0]) //3nd Pass
@@ -778,7 +786,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
                 int bestAngle = kp.angle;
                 int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
                 int iTemplCol = kp.angle;
-                float maxMatchScore = doTemplateMatchAroundPoint(frameImg,kp.pt,iTemplRow,iTemplCol,bestAngle,ptSearch,outFishMask);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
+                float maxMatchScore = doTemplateMatchAroundPoint(frameImg_grey,kp.pt,iTemplRow,iTemplCol,bestAngle,ptSearch,outFishMask);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
                 gTrackerState.iLastKnownGoodTemplateRow = iTemplRow;
                 kp.angle            = bestAngle;
                 //If Template Match Succeeds then Update Blob To Correct Position And Orientation -
@@ -792,13 +800,14 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 
             ptFishblobs.push_back(kp);
             /// \todo Conditionally add this Contour to output if it matches template.
-            vFilteredFishbodycontours.push_back(curve);
+            vFilteredFishbodycontours_classified.push_back(curve);
 
             ///  COMBINE - DRAW CONTOURS
             ///\bug drawContours produces freezing sometimes
             //Draw New Smoothed One - the idx should be the last one in the vector
-            cv::drawContours( outFishMask, vFilteredFishbodycontours, 0, CV_RGB(255,255,255), cv::FILLED); //
-            cv::drawContours( outFishMask, vFilteredFishbodycontours, 0, CV_RGB(255,255,255),2,cv::LINE_AA); //
+            cv::drawContours( outFishMask, vFilteredFishbodycontours_classified, 0, CV_RGB(255,255,255), cv::FILLED); //
+            cv::drawContours( outFishMask, vFilteredFishbodycontours_classified, 0, CV_RGB(255,255,255),2,cv::LINE_AA); //
+            cv::drawContours( outUserFrame, vFilteredFishbodycontours_classified, 0, CV_RGB(5,255,5),1,cv::LINE_AA); //
 
 
             /// DEBUG - Show imgs
@@ -819,11 +828,12 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
         //cv::circle(outFishMask, ptHead - (ptHead-centroid)/2,5,CV_RGB(255,255,255),cv::FILLED);
     } //For Each Fish Contour
 
-    // Release Should is done automatically anyway
-    //fgEdgeMask.release();
-
-    if (vFilteredFishbodycontours.size() == 0)
+    //Check If Any Contours Where Classified As Fish
+    if (vFilteredFishbodycontours_classified.size() == 0)
+    {
         qDebug() << "No Fish Blob detected.";
+        cv::drawContours( outUserFrame, vFilteredFishbodycontours, 0, CV_RGB(255,5,5),2,cv::LINE_AA); //
+    }
 
     return (vFilteredFishbodycontours);
 
@@ -842,7 +852,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg, cv::Ma
 /// \todo Cross Check Fish Contour With Model Position
 /// - Tracker Picks Up Wrong contour Although Template Matching Finds the fish!
 /// Note: Should Use MOG Mask for Blob Detect, But . But thresholded IMg For Countour FInding
-void enhanceMasks(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,
+void enhanceMasks(const cv::Mat& frameImg_grey, cv::Mat& fgMask,cv::Mat& outFishMask,cv::Mat& outFoodMask,cv::Mat& outUserFrame,
                   std::vector<std::vector<cv::Point> >& outfishbodycontours, zftblobs& ptFishblobs)
 {
 
@@ -851,15 +861,15 @@ void enhanceMasks(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFishMask,
     std::vector<std::vector<cv::Point> > vFilteredFishbodycontours;
     cv::Point ptHead,ptHead2,ptTail; //Traced Points for Tail and Head
 
-    frameImg.copyTo(frameImg_gray_masked,fgMask);
+    frameImg_grey.copyTo(frameImg_gray_masked,fgMask);
     //frameImg_gray = frameImg.clone();//frameImg.clone();
 
     // Check this Again / What is it doing?
-    getPreyMask(frameImg,fgMask,outFoodMask);
+    getPreyMask(frameImg_grey,fgMask,outFoodMask);
     gTrackerState.mfgPreyMask = outFoodMask;
-    vFilteredFishbodycontours = getFishMask(frameImg,fgMask,outFishMask,ptFishblobs);
+    vFilteredFishbodycontours = getFishMask(frameImg_grey,outUserFrame,fgMask,outFishMask,ptFishblobs);
     gTrackerState.mfgFishMask  = outFishMask; //Save MAsk globally
-    frameImg.copyTo(gTrackerState.mfgFishFrame,outFishMask);//Apply Mask and Save FG Image Globally
+    frameImg_grey.copyTo(gTrackerState.mfgFishFrame,outFishMask);//Apply Mask and Save FG Image Globally
     //Write The fish contour Mask on Food Mask To erase isolated fish Pixels by Using Smoothed Contour
     // Can invert Fish Mask And Apply on to Food Mask
     // Fish Mask Is Only Outline And So it Does not Erase fish
@@ -915,7 +925,7 @@ bool updateBGFrame(cv::Mat& frameImg_gray, cv::Mat& bgAcc, unsigned int nFrame,u
     //Update MOG,filter pixel noise and Combine Static Mask
     extractFGMask(frameImg_gray,bgAcc,bgMask,fgFrameImg,gTrackerState.dLearningRate); //Applies MOG if bUseBGModelling is on
     ///Enhance Mask With Fish Shape
-    enhanceMasks(fgFrameImg,bgMask,fgFishMask,fgFoodMask,fishbodycontours,ptFishblobs);
+    enhanceMasks(fgFrameImg,bgMask, fgFishMask, fgFoodMask,frameImg_gray, fishbodycontours, ptFishblobs);
 
     pwindow_main->showVideoFrame(bgMask,nFrame);
     //Accumulate things that look like food / so we can isolate the stationary ones

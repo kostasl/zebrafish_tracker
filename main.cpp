@@ -535,7 +535,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
 
         //Generates separate masks for Fish/Prey and Draws Fish Contourmask
         // Returns Fish Locations/Keypoints
-        enhanceMasks(frame_gray,fgMask,fgFishMask,fgFoodMask,fishbodycontours,vfishblobs_pt);
+        enhanceMasks(frame_gray,fgMask,fgFishMask,fgFoodMask,outframe,fishbodycontours,vfishblobs_pt);
 
         // Combine Roi Mask Only For The foodMask
         //if (!fgFoodMask.empty())
