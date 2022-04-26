@@ -280,7 +280,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
   //if ((fishblob.pt.y + fishRotAnteriorBox_Bound.size().height/2) > frame.rows)
   //    fishRotAnteriorBox.size.height = (int)(frame.rows - fishRotAnteriorBox.center.y)-1;
   if (fishRotAnteriorBox_Bound.br().y > frame.rows) //Clip
-      fishRotAnteriorBox.center.y -= (int)(fishRotAnteriorBox_Bound.br().y-frame.rows);
+      fishRotAnteriorBox.center.y -= (int)(fishRotAnteriorBox_Bound.br().y-frame.rows)+1;
 
   if (fishRotAnteriorBox_Bound.tl().y < 0) // Shift
       fishRotAnteriorBox.center.y +=  abs(fishRotAnteriorBox_Bound.tl().y); //Shift Centre  so box To Fits in Frame
