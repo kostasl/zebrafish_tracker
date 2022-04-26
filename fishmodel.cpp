@@ -846,7 +846,7 @@ bool fishModel::updateState(zftblob* fblob, cv::Point2f bcentre,unsigned int nFr
 
     /// Update Template Box Bound
     //int bestAngleinDeg = fish->bearingAngle;
-    cv::RotatedRect fishRotAnteriorBox(fblob->pt,gTrackerState.gszTemplateImg ,this->bearingAngle); //this->ptRotCentre
+    cv::RotatedRect fishRotAnteriorBox(this->ptRotCentre,gTrackerState.gszTemplateImg ,this->bearingAngle); //fblob->pt
     /// Save Anterior Bound
     this->bodyRotBound = fishRotAnteriorBox;
 
@@ -1110,7 +1110,7 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
     {
         colour = CV_RGB(250,250,0); //Yellow Measured-Filtered Position
         if (bPredictedPosition)
-            colour = CV_RGB(50,50,210); //Blue Predicted position
+            colour = CV_RGB(50,50,210); //Blue Predicted position - is usually Lagging
     }
 
 

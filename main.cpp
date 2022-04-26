@@ -565,7 +565,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
             //processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
 
             // Check Blobs With Template And Update Fish Model
-
+            UpdateFishModels(fgFishImgMasked, vfishmodels, vfishblobs_pt, nFrame, outframe);
 
             if (vfishmodels.size() > 0)
             {
@@ -580,7 +580,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
                 gTrackerState.rect_pasteregion.height = outframeHeadEyeDetected.rows;
             }
 
-            UpdateFishModels(fgFishImgMasked, vfishmodels, vfishblobs_pt, nFrame, outframe);
+
 
 
 
@@ -2893,7 +2893,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                 continue;
 
           //Draw A general Region Where the FIsh Is located,
-          cv::Point centre = fish->zfishBlob.pt; // Use unfiltered position //fish->ptRotCentre; //top_left + rotCentre;
+          cv::Point centre = fish->ptRotCentre;//fish->zfishBlob.pt; // Use unfiltered position // //top_left + rotCentre;
           //cv::Point centroid = fish->ptRotCentre ; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
           cv::Point pBound1 = cv::Point(max(0,min(frame_gray.cols,centre.x-gTrackerState.gFishBoundBoxSize)),
                                         max(0,min(frame_gray.rows,centre.y-gTrackerState.gFishBoundBoxSize)));
