@@ -40,7 +40,7 @@ fish = list(data_dir.glob('./fish/*.jpg'))
 nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 # PIL.Image.open(str(nonfish[0]))
 
-bResetModelTraining = False  ## Do Not Incremental Train / Reset And Start over
+bResetModelTraining = True  ## Do Not Incremental Train / Reset And Start over
 
 batch_size = 32
 img_height = 38

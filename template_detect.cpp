@@ -109,7 +109,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     #ifdef _ZTFDEBUG_
        cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1); //Ucomment to debug template search Region
     #endif
-    cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1); //Ucomment to debug template search Region
+    cv::rectangle(frameOut,rectFish,CV_RGB(200,0,0),1); //Ucomment to debug template search Region
     cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
     if (gTrackerState.bshowDetectorDebugImg)

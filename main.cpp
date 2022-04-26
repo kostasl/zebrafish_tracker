@@ -2893,7 +2893,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                 continue;
 
           //Draw A general Region Where the FIsh Is located,
-          cv::Point centre = fish->zfishBlob.pt; //fish->ptRotCentre; //top_left + rotCentre;
+          cv::Point centre = fish->zfishBlob.pt; // Use unfiltered position //fish->ptRotCentre; //top_left + rotCentre;
           //cv::Point centroid = fish->ptRotCentre ; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
           cv::Point pBound1 = cv::Point(max(0,min(frame_gray.cols,centre.x-gTrackerState.gFishBoundBoxSize)),
                                         max(0,min(frame_gray.rows,centre.y-gTrackerState.gFishBoundBoxSize)));
