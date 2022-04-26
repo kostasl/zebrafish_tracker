@@ -58,7 +58,10 @@
  /// \todo * Add Learning to exclude large detected blobs that fail to be detected as fish - so as to stop fish detection failures
  ///        :added fishdetector class
  ///
- /// \todo Use Kalman Filtering of Fish And Prey position
+ /// \remarks * Using Kalman Filtering of Fish and GL filtering for Prey position
+ ///          * Uses DNN trained model to classify blob as fish and locate head position - Template matching is the used to fix orientation of head inset for furtther feature detection
+ ///
+ ///
  ////////
 
 #include <config.h>  // Tracker Constant Defines
@@ -2974,18 +2977,16 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            {
                qDebug() << "getNormedTemplateImg: No image returned.";
                return;
-           }
-
-           /// \brief Store Norm Image as Template - If Flag Is set
-           if (gTrackerState.bStoreThisTemplate)
+           }else if (gTrackerState.bStoreThisTemplate) /// \brief Store Norm Image as Template - If Flag Is set
            {   std::stringstream ssMsg;
                //Obtain And Save Unmasked Image
-               cv::Mat imgFishAnterior_Templ = fishdetector::getNormedTemplateImg(fullImgIn,fish->bodyRotBound,true); //fishRotAnteriorBox
-               addTemplateToCache(imgFishAnterior_Templ,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+               //cv::Mat imgFishAnterior_Templ = fishdetector::getNormedTemplateImg(fullImgIn,fish->bodyRotBound,true); //fishRotAnteriorBox
+               addTemplateToCache(imgFishAnterior_Norm,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+               cv::imshow("imgFishAnterior_Norm",imgFishAnterior_Norm);
                //Try This New Template On the Next Search
                gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
                //fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
-               pwindow_main->saveTemplateImage(imgFishAnterior_Templ);
+               pwindow_main->saveTemplateImage(imgFishAnterior_Norm);
                ssMsg << "Fish Template Added to Cache and saved to disk - "<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
                pwindow_main->LogEvent(QString::fromStdString(ssMsg.str() ));
                gTrackerState.bStoreThisTemplate = false;

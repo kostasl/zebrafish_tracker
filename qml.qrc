@@ -9,5 +9,9 @@
         <file>img/fish_template_1.pgm</file>
         <file>img/fish_template_2.pgm</file>
         <file>img/fish_template_5.pgm</file>
+        <file>img/fish_template_8.pgm</file>
+        <file>img/fish_template_9.pgm</file>
+        <file>img/fish_templates_10.pgm</file>
+        <file>img/fish_templates_11.pgm</file>
     </qresource>
 </RCC>
