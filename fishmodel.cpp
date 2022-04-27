@@ -153,7 +153,8 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 //        // [ 0    0   0     0     0    Ea_v0  0]
           // [ 0    0   0     0     0    0   lE 0]
           // [ 0    0   0     0     0    0   0  rE]
-    cv::setIdentity(KF.processNoiseCov, cv::Scalar(1e-5)); // default is 1, for smoothing try 0.0001
+    // Setting processNoise Is critical To achieve Smoothing without excessive lagging when fish rapidly moves. - I found 1e-2 works well
+    cv::setIdentity(KF.processNoiseCov, cv::Scalar(1e-1)); // default is 1, for smoothing try 0.0001
     //Maybe Noise Suppression too high at 1e-3 , introduces lag in position
 //    KF.processNoiseCov.at<float>(0,0) = 1e-2;
 //    KF.processNoiseCov.at<float>(1,1) = 1e-2;
@@ -845,14 +846,14 @@ bool fishModel::updateState(zftblob* fblob, cv::Point2f bcentre,unsigned int nFr
 
     /// Update Template Box Bound
     //int bestAngleinDeg = fish->bearingAngle;
-    cv::RotatedRect fishRotAnteriorBox(fblob->pt,gTrackerState.gszTemplateImg ,this->bearingAngle); //this->ptRotCentre
+    cv::RotatedRect fishRotAnteriorBox(this->ptRotCentre,gTrackerState.gszTemplateImg ,this->bearingAngle); //fblob->pt
     /// Save Anterior Bound
     this->bodyRotBound = fishRotAnteriorBox;
 
     this->idxTemplateCol = TemplCol;
     this->idxTemplateRow = TemplRow;
 
-    //Set Spine Source to Rotation Centre
+    //Set Spine Source to - Corrected Position
     this->spline[0].x       = this->ptRotCentre.x;
     this->spline[0].y       = this->ptRotCentre.y;
     //this->spline[0].angleRad   = this->bearingRads+CV_PI; //+180 Degrees so it looks in Opposite Direction
@@ -1109,7 +1110,7 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
     {
         colour = CV_RGB(250,250,0); //Yellow Measured-Filtered Position
         if (bPredictedPosition)
-            colour = CV_RGB(50,50,210); //Blue Predicted position
+            colour = CV_RGB(50,50,210); //Blue Predicted position - is usually Lagging
     }
 
 

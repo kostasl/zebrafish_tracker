@@ -272,15 +272,19 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
   fishRotAnteriorBox.center = fishblob.pt;
   cv::Rect fishRotAnteriorBox_Bound = fishRotAnteriorBox.boundingRect();
 
-  if ((fishblob.pt.x + fishRotAnteriorBox_Bound.size().width/2) > frame.cols)
-        fishRotAnteriorBox.size.width = (int)(frame.cols - fishRotAnteriorBox.center.x)*0.75;
-  if (fishRotAnteriorBox_Bound.tl().x < 0)
-     fishRotAnteriorBox.center.x += abs(fishRotAnteriorBox_Bound.tl().x); //Shift Centre So BoundBox Fits in Frame
+  if (fishRotAnteriorBox_Bound.br().x > frame.cols) //Clip
+        fishRotAnteriorBox.size.width = (int)(frame.cols - fishRotAnteriorBox.center.x)-1;
+  if (fishRotAnteriorBox_Bound.tl().x < 0) // Shift
+      fishRotAnteriorBox.center.x += abs(fishRotAnteriorBox_Bound.tl().x); //Shift Centre So BoundBox Fits in Frame
 
-  if ((fishblob.pt.y + fishRotAnteriorBox_Bound.size().height/2) > frame.rows)
-      fishRotAnteriorBox.size.height = (int)(frame.rows - fishRotAnteriorBox.center.y)*0.75;
-  if (fishRotAnteriorBox_Bound.tl().y < 0)
+  //if ((fishblob.pt.y + fishRotAnteriorBox_Bound.size().height/2) > frame.rows)
+  //    fishRotAnteriorBox.size.height = (int)(frame.rows - fishRotAnteriorBox.center.y)-1;
+  if (fishRotAnteriorBox_Bound.br().y > frame.rows) //Clip
+      fishRotAnteriorBox.center.y -= (int)(fishRotAnteriorBox_Bound.br().y-frame.rows)+1;
+
+  if (fishRotAnteriorBox_Bound.tl().y < 0) // Shift
       fishRotAnteriorBox.center.y +=  abs(fishRotAnteriorBox_Bound.tl().y); //Shift Centre  so box To Fits in Frame
+
 
   fishRotAnteriorBox_Bound = fishRotAnteriorBox.boundingRect();
 
@@ -292,6 +296,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
   if (fishRotAnteriorBox.size.height < gTrackerState.gszTemplateImg.height)
   {
      qDebug() << "scoreBlobRegion: fishRotAnteriorBox too short for templ";
+     fishRotAnteriorBox.center.y = (int)(frame.rows -  gTrackerState.gszTemplateImg.height/2);
+     fishRotAnteriorBox.size.height = gTrackerState.gszTemplateImg.height;
      return -1;
   }
 

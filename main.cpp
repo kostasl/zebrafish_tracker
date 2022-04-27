@@ -58,7 +58,10 @@
  /// \todo * Add Learning to exclude large detected blobs that fail to be detected as fish - so as to stop fish detection failures
  ///        :added fishdetector class
  ///
- /// \todo Use Kalman Filtering of Fish And Prey position
+ /// \remarks * Using Kalman Filtering of Fish and GL filtering for Prey position
+ ///          * Uses DNN trained model to classify blob as fish and locate head position - Template matching is the used to fix orientation of head inset for furtther feature detection
+ ///
+ ///
  ////////
 
 #include <config.h>  // Tracker Constant Defines
@@ -562,7 +565,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
             //processFishBlobs(fgFishImgMasked,fgFishMask, outframe , ptFishblobs);
 
             // Check Blobs With Template And Update Fish Model
-
+            UpdateFishModels(fgFishImgMasked, vfishmodels, vfishblobs_pt, nFrame, outframe);
 
             if (vfishmodels.size() > 0)
             {
@@ -577,7 +580,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
                 gTrackerState.rect_pasteregion.height = outframeHeadEyeDetected.rows;
             }
 
-            UpdateFishModels(fgFishImgMasked, vfishmodels, vfishblobs_pt, nFrame, outframe);
+
 
 
 
@@ -2890,7 +2893,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                 continue;
 
           //Draw A general Region Where the FIsh Is located,
-          cv::Point centre = fish->zfishBlob.pt; //fish->ptRotCentre; //top_left + rotCentre;
+          cv::Point centre = fish->ptRotCentre;//fish->zfishBlob.pt; // Use unfiltered position // //top_left + rotCentre;
           //cv::Point centroid = fish->ptRotCentre ; // cv::Point2f(fish->track->centroid.x,fish->track->centroid.y);
           cv::Point pBound1 = cv::Point(max(0,min(frame_gray.cols,centre.x-gTrackerState.gFishBoundBoxSize)),
                                         max(0,min(frame_gray.rows,centre.y-gTrackerState.gFishBoundBoxSize)));
@@ -2974,18 +2977,16 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
            {
                qDebug() << "getNormedTemplateImg: No image returned.";
                return;
-           }
-
-           /// \brief Store Norm Image as Template - If Flag Is set
-           if (gTrackerState.bStoreThisTemplate)
+           }else if (gTrackerState.bStoreThisTemplate) /// \brief Store Norm Image as Template - If Flag Is set
            {   std::stringstream ssMsg;
                //Obtain And Save Unmasked Image
-               cv::Mat imgFishAnterior_Templ = fishdetector::getNormedTemplateImg(fullImgIn,fish->bodyRotBound,true); //fishRotAnteriorBox
-               addTemplateToCache(imgFishAnterior_Templ,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+               //cv::Mat imgFishAnterior_Templ = fishdetector::getNormedTemplateImg(fullImgIn,fish->bodyRotBound,true); //fishRotAnteriorBox
+               addTemplateToCache(imgFishAnterior_Norm,gFishTemplateCache,gTrackerState.gnumberOfTemplatesInCache);
+               cv::imshow("imgFishAnterior_Norm",imgFishAnterior_Norm);
                //Try This New Template On the Next Search
                gTrackerState.iLastKnownGoodTemplateRow = gTrackerState.gnumberOfTemplatesInCache-1;
                //fish->idxTemplateRow = gTrackerState.iLastKnownGoodTemplateRow;
-               pwindow_main->saveTemplateImage(imgFishAnterior_Templ);
+               pwindow_main->saveTemplateImage(imgFishAnterior_Norm);
                ssMsg << "Fish Template Added to Cache and saved to disk - "<<gTrackerState.gnumberOfTemplatesInCache << " NewRowIdx: " << gTrackerState.iLastKnownGoodTemplateRow;
                pwindow_main->LogEvent(QString::fromStdString(ssMsg.str() ));
                gTrackerState.bStoreThisTemplate = false;
