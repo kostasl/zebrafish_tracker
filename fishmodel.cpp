@@ -18,27 +18,27 @@ extern cv::Point gptTail,gptHead;
 
 fishModel::fishModel()
 {
-        bNewModel = true;
-        stepUpdate = 1.0; // with fast rate and slow down with updates
+        bNewModel                   = true;
+        stepUpdate                  = 1.0; // with fast rate and slow down with updates
         bearingAngle                = 0.0f;
         Delta_bearingAngle          = 0.0f; //last Change In bearing
         lastTailFitError            = 0.0;
-        matchScore               = 0.0;
+        matchScore                  = 0.0;
         nFailedEyeDetectionCount    = 0;
 
-        inactiveFrames              = 0;
+        inactiveFrames           = 0;
         matchScore               = 0;
         //coreTriangle.push_back(cv::Point());
         //coreTriangle.push_back(cv::Point());
         //coreTriangle.push_back(cv::Point());
 
-        this->mouthPoint.x = 0;
-        this->mouthPoint.y = 0;
+        this->mouthPoint.x     = 0;
+        this->mouthPoint.y     = 0;
         //this->leftEyeHull.clear();
         //this->rightEyeHull.clear();
-        this->ID    = 0;
-        zTrack.id   = this->ID;
-        zTrack.colour = CV_RGB(255,0,0);
+        this->ID              = 0;
+        zTrack.id             = this->ID;
+        zTrack.colour         = CV_RGB(255,0,0);
         leftEyeTheta          = 0; //In Degrees - A Value that looks wrong to show its not initialized
         rightEyeTheta         = 0; //In Degrees
         c_spineSegL           = gTrackerState.gFishTailSpineSegmentLength;
@@ -67,14 +67,14 @@ fishModel::fishModel()
 
 fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTemplateCenter):fishModel()
 {
-    stepUpdate = 1.0; // with fast rate and slow down with updates
-    inactiveFrames  = 0;
-    this->ID        = blob.hash() ;
+    stepUpdate          = 1.0; // with fast rate and slow down with updates
+    inactiveFrames      = 0;
+    this->ID            = blob.hash() ;
     //this->blobLabel = blob.hash();
 
-    zTrack.id       = this->ID;
+    zTrack.id           = this->ID;
 
-    this->zfishBlob = blob; //Copy Localy
+    this->zfishBlob     = blob; //Copy Localy
     //this->track     = NULL;
     this->bearingRads  = (float)bestTemplateOrientation*CV_PI/180.0;
     this->bearingAngle = (float)bestTemplateOrientation;
@@ -120,14 +120,14 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
         // [ 0 0 0  0  1 dT ]
         // [ 0 0 0  0  0 1 ]
     //qDebug() << "<<KF Init Transition M>>";
-    KF.transitionMatrix = cv::Mat::zeros(measSize, stateSize, type);
+    KF.transitionMatrix     = cv::Mat::zeros(measSize, stateSize, type);
     cv::setIdentity(KF.transitionMatrix,cv::Scalar::all(1.0f));
 
     // Measure Matrix H  [z_x, z_y, angle]
     // [ 1 0 0 0 0 0 ]
     // [ 0 1 0 0 0 0 ]
     // [ 0 0 0 0 1 0 ]
-    KF.measurementMatrix = cv::Mat::zeros(measSize, stateSize, CV_32FC1);
+    KF.measurementMatrix      = cv::Mat::zeros(measSize, stateSize, CV_32FC1);
     cv::setIdentity(KF.measurementMatrix,cv::Scalar::all(1.0f));
 
     mMeasurement.at<float>(0) = ptTemplateCenter.x;
