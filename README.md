@@ -64,12 +64,33 @@ The directory where the data csv files are exported must have  format EXP_N_YYYY
     - GSL dev 2.4
         -Random number generator library
     - QT4 or above
-    - tensorflow
-    - GCC
+    - tensorflow 
+    - GCC (buildtools)
     
 
 ```
 sudo apt-get install git libopencv-dev qt5-default g++ libgsl-dev
+```
+### Tensorflow
+Then follow instructions for [ install the tensorflow C library ](https://www.tensorflow.org/install/lang_c)
+ 
+Download & extract :
+
+    - Linux CPU only 	https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.7.0.tar.gz
+    - Linux GPU support 	https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-linux-x86_64-2.7.0.tar.gz
+
+On Linux and macOS, you may want to extract to /usr/local/lib:
+```
+FILENAME=libtensorflow-cpu-linux-x86_64-2.7.0.tar.gz
+wget -q --no-check-certificate https://storage.googleapis.com/tensorflow/libtensorflow/${FILENAME}
+sudo tar -C /usr/local -xzf ${FILENAME}
+```
+
+then 
+
+On Linux/macOS, if you extract the TensorFlow C library to a system directory, such as /usr/local, configure the linker with ldconfig:
+```
+sudo ldconfig /usr/local/lib
 ```
 
 * Building the tracker
