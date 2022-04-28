@@ -243,13 +243,13 @@ vector<int> ComputeCSSImageMaximas(const vector<double>& contourx_, const vector
 //            vector<vector<Point> > contours(1);
 //            PolyLineMerge(contours[0], smoothx, smoothy);
 //            contourimg = Vec3b(0,0,0);
-//            drawContours(contourimg, contours, 0, Scalar(255,255,255), CV_FILLED);
+//            drawContours(contourimg, contours, 0, Scalar(255,255,255), cv::FILLED);
 			
 			vector<int> crossings = FindCSSInterestPoints(kappa);
 			if (crossings.size() > 0) {
 				for (int c=0; c<crossings.size(); c++) {
 					img(i,crossings[c]) = Vec3b(255,0,0);
-                    //circle(contourimg, contours[0][crossings[c]], 3, Scalar(255,0,0), CV_FILLED);
+                    //circle(contourimg, contours[0][crossings[c]], 3, Scalar(255,0,0), cv::FILLED);
 					
 					if (c < crossings.size()-1) {
                         if (fabs(crossings[c] - crossings[c+1]) < 5.0) {
@@ -258,7 +258,7 @@ vector<int> ComputeCSSImageMaximas(const vector<double>& contourx_, const vector
 //#pragma omp critical
 							maximas[idx] = (maximas[idx] < sigma) ? sigma : maximas[idx];
 							
-							circle(img, Point(idx,i), 1, Scalar(0,0,255), CV_FILLED);
+							circle(img, Point(idx,i), 1, Scalar(0,0,255), cv::FILLED);
 						}
 					}
 				}

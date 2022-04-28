@@ -306,9 +306,10 @@ class trackerState
       float fishnet_inputSparseness = 0.1f; //Ratio of Active Pixels in Binarized input Image
 
       // BackProp YAML model - DEpecrated
-      string strBackPropModelYMLFile        = "/home/kostasl/workspace/zebrafishtrack/Rplots/fishNet.yml";
-      string strDNNTensorFlowModelFile      = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/";
-      std::string strDNNTensorFlowVerticalModelFile = "/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir/";
+      /// \todo Make this Relative Paths - Adjustable
+      string strBackPropModelYMLFile        = "/home/meyerlab/workspace/zebrafishtrack/Rplots/fishNet.yml";
+      string strDNNTensorFlowModelFile      = "/home/meyerlab/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/";
+      std::string strDNNTensorFlowVerticalModelFile = "/home/meyerlab/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir/";
 
       ///Fish Features Detection Params
       int gFishTemplateAngleSteps     = 1;
@@ -340,7 +341,7 @@ class trackerState
       //   CV_FONT_HERSHEY_DUPLEX, CV_FONT_HERSHEY_COMPLEX,
       //   CV_FONT_HERSHEY_TRIPLEX, CV_FONT_HERSHEY_COMPLEX_SMALL,
       //   CV_FONT_HERSHEY_SCRIPT_SIMPLEX, CV_FONT_HERSHEY_SCRIPT_COMPLEX
-      const int trackFnt = CV_FONT_HERSHEY_SIMPLEX;  //Font for Reporting - Tracking
+      const int trackFnt = cv::FONT_HERSHEY_SIMPLEX;  //Font for Reporting - Tracking
       const float trackFntScale = 0.4f;
       /// Contour Shaping Gaussian Kernels //
       std::vector<double> gGaussian,dgGaussian,d2gGaussian;

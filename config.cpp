@@ -200,6 +200,9 @@ int initDetectionTemplates()
      cv::imshow("Template Cache",gFishTemplateCache);
 #endif
 
+
+
+
     return (gTrackerState.gnumberOfTemplatesInCache);
     /// END OF FISH TEMPLATES ///
 }
@@ -250,7 +253,7 @@ void trackerState::loadState(std::string strFilename)
 
     /// Load Archived values if they Exists
     /// Load Saved Learned Behaviour
-     assert(strFilename > 0);
+     assert(strFilename.length() > 0);
      qDebug() << "Load tracker State:" << QString::fromStdString(strFilename);
      std::ifstream is(strFilename);
      if (is.is_open())

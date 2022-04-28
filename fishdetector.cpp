@@ -438,9 +438,9 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     }else
     {
         cv::circle(imgFishAnterior,ptmax,3,CV_RGB(250,250,250),1);
-        cv::imshow("imgFishAnterior scoreBlobRegion "  + regTag, imgFishAnterior);
+        //cv::imshow("imgFishAnterior scoreBlobRegion "  + regTag, imgFishAnterior);
         cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, 1, 0, cv::NORM_MINMAX);
-        cv::imshow(("FishNet ScoreRegion (Norm) ") + regTag, maskRegionScore_Norm);
+        //cv::imshow(("FishNet ScoreRegion (Norm) ") + regTag, maskRegionScore_Norm);
 
         qDebug() << "scoreBlobRegion :" << max_dscore << " - Blob had higher class. score :" << fishblob.response ;
     }
