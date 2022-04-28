@@ -161,7 +161,7 @@ void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, 
                           false, 			// draw open contour (i.e. joint end to start)
                           track.colour ,// colour RGB ordering (here = green)
                           1, 		        // line thickness
-                          CV_AA, 0);
+                          cv::LINE_AA, 0);
           //delete pts;
           //if (mTrack.u)
           //  qDebug() << "mTrack.u->refcount" << mTrack.u->refcount;

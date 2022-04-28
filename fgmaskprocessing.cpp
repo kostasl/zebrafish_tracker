@@ -137,7 +137,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
         }
 
         //Get Length of Video
-        uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
+        uint totFrames = capture.get(cv::CAP_PROP_FRAME_COUNT);
         //Do Not Overrun Vid Length In BG COmputation
         uint uiStopFrame = totFrames ; //std::min(totFrames,MOGhistoryLength);
         //read input data. ESC or 'q' for quitting
@@ -178,7 +178,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
 
                 assert(!frame.empty());
                 //Get Frame Position From Vid Sam
-                nFrame = capture.get(CV_CAP_PROP_POS_FRAMES) + startFrameCount;
+                nFrame = capture.get(cv::CAP_PROP_POS_FRAMES) + startFrameCount;
                 window_main.nFrame = nFrame; //Update Window
                 window_main.tickProgress();
 //              Check If FG Mask Has Been Created - And Make A new One
@@ -201,7 +201,7 @@ unsigned int getBGModelFromVideo(cv::Mat& bgMask,MainWindow& window_main,QString
            checkPauseRun(&window_main,keyboard,nFrame);
 
            //Jump To Next Frame To Learn
-           capture.set(CV_CAP_PROP_POS_FRAMES, nFrame+ skipFrames); //Move To Next So We Take MOGHistory Samples From the Video
+           capture.set(cv::CAP_PROP_POS_FRAMES, nFrame+ skipFrames); //Move To Next So We Take MOGHistory Samples From the Video
 
         } //main While loop
 
@@ -596,8 +596,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
     for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
     {
         fishModel* pfish = ft->second;
-        //circle(outFishMask,pfish->bodyRotBound.center,50,CV_RGB(255,255,255),CV_FILLED);
-       // drawContours(fgEdgeMask,pfish->contour,0,CV_RGB(255,255,255),CV_FILLED);
+        //circle(outFishMask,pfish->bodyRotBound.center,50,CV_RGB(255,255,255),cv::FILLED);
+       // drawContours(fgEdgeMask,pfish->contour,0,CV_RGB(255,255,255),cv::FILLED);
     }
     //cv::imshow("FishMAsk Edge",fgEdgeMask);
     cv::findContours( fgEdgeMask, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,
@@ -611,7 +611,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
         {
             if (boundEllipse.boundingRect().contains(vFishKeypoints_next[k].pt ))
             {
-                circle(outFishMask,vFishKeypoints_next[k].pt,20,CV_RGB(255,255,255),CV_FILLED);
+                circle(outFishMask,vFishKeypoints_next[k].pt,20,CV_RGB(255,255,255),cv::FILLED);
                 bFishBlobFlowed = true;
             }
         }
@@ -1066,7 +1066,7 @@ int getFishBlobCentreAndOrientation(cv::Mat imgFishAnterior,cv::Point2f ptCentre
     cv::adaptiveThreshold(imgFishAnterior_blur, imgFishAnterior_thres,255,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY,31,0); //Last Param Is const substracted from mean
 
     /// Find contours //
-    cv::findContours( imgFishAnterior_thres, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
+    cv::findContours( imgFishAnterior_thres, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
 
 
     int idxContour = 0;

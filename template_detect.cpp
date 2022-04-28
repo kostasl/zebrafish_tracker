@@ -188,7 +188,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
     //ADAPTIVE_THRESH_MEAN_C
 
     /// Find contours
-    cv::findContours( templ_thres, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
+    cv::findContours( templ_thres, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
 
     //Should be one contour
     if (contours.size() == 1)
@@ -338,7 +338,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 #if defined(USE_CUDA) && defined(USE_CUDA_FOR_TEMPLATE_MATCHING) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
         maxVal = gpu_matchTemplate(templ_rot,dimgRegionIn,ptmaxLoc);
 #else
-         cv::matchTemplate(imgRegionIn,templ_rot,outMatchConv, CV_TM_CCORR_NORMED  ); // CV_TM_CCOEFF_NORMED ,TM_SQDIFF_NORMED
+         cv::matchTemplate(imgRegionIn,templ_rot,outMatchConv, cv::TM_CCORR_NORMED  ); // CV_TM_CCOEFF_NORMED ,TM_SQDIFF_NORMED
          //Find Min Max Location
 
          //cv::flip(outMatchConv,outMatchConv,-1); //Flip H and V
@@ -543,7 +543,7 @@ int deleteTemplateRow(cv::Mat& imgTempl,cv::Mat& FishTemplateCache,int idxTempl)
     //\note RECT constructor takes starting point x,y, size_w, size_h)
     cv::Rect rectblankcv(0,mxDim*(idxTempl),FishTemplateCache.cols,mxDim);
     cv::Mat mFishTemplate_local;// = FishTemplateCache.getMat(cv::ACCESS_WRITE);
-    cv::rectangle(mFishTemplate_local,rectblankcv,CV_RGB(0,0,0),CV_FILLED); //Blank It OUt
+    cv::rectangle(mFishTemplate_local,rectblankcv,CV_RGB(0,0,0),cv::FILLED); //Blank It OUt
 
     if (idxTempl < 1)
     {

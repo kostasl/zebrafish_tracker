@@ -154,7 +154,7 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
           // [ 0    0   0     0     0    0   lE 0]
           // [ 0    0   0     0     0    0   0  rE]
     // Setting processNoise Is critical To achieve Smoothing without excessive lagging when fish rapidly moves. - I found 1e-2 works well
-    cv::setIdentity(KF.processNoiseCov, cv::Scalar(1e-1)); // default is 1, for smoothing try 0.0001
+    cv::setIdentity(KF.processNoiseCov, cv::Scalar(1e-2)); // default is 1, for smoothing try 0.0001
     //Maybe Noise Suppression too high at 1e-3 , introduces lag in position
 //    KF.processNoiseCov.at<float>(0,0) = 1e-2;
 //    KF.processNoiseCov.at<float>(1,1) = 1e-2;
@@ -1122,7 +1122,7 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
 
 #ifdef _ZTFDEBUG_
     QString strlbl("A: " + QString::number(bestAngleinDeg));
-    cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br()+cv::Point(-10,15),CV_FONT_NORMAL,0.4,colour,1);
+    cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br()+cv::Point(-10,15),cv::FONT_HERSHEY_PLAIN,0.4,colour,1);
 #endif
 
     ///Draw a center Point
@@ -1131,7 +1131,7 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
     ///Draw a Red Rotated Frame around Detected Body
     drawAnteriorBox(outframe,colour);
 
-    cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br()+cv::Point(-10,15),CV_FONT_NORMAL,0.4,colour,1);
+    cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br()+cv::Point(-10,15),cv::FONT_HERSHEY_PLAIN,0.4,colour,1);
 
 }
 

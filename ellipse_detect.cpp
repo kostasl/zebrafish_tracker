@@ -427,13 +427,15 @@ int detectEllipse(cv::Mat& imgEdgeIn,tEllipsoidEdges& vedgePoints_all, tRankQueu
         //if (vedgePoints_pair.size() == 0)
         //    cv::imshow("Failed Img",imgEdgeIn);
 
-        std::uniform_int_distribution<> distr(1, std::max(1,(int)vedgePoints_pair.size()-1) ); // define the range
+
 
         while (vedgePoints_pair.size() > 1)
         {
             tEllipsoidEdges::iterator it2 = vedgePoints_pair.begin();
-            it2 += distr(eng); //valgrind Suspect of mem corruption
-            ptxy2 = (*it2).ptEdge; //ValGrind: Invalid Read of size 4 -reported
+            std::uniform_int_distribution<> distr(1, std::max(1,(int)vedgePoints_pair.size()-1) ); // define the range
+
+            it2 += distr(eng); //Move to Random Localtion
+            ptxy2 = (*it2).ptEdge; //
             it2 = vedgePoints_pair.erase(it2);
 //            qDebug() << "detectEllipse vedgePoints_pair to obtain random pt pair";
 //            qDebug() << "End Random Pair 6";
@@ -781,15 +783,15 @@ void drawEyeExtractionMasks(cv::Mat& mfishHead,cv::Point2f ptcentre)
     {
         //Add Thick Mid line to erase inner Eye Edges and artefacts
         cv::line(mfishHead,ptcentre,cv::Point(ptcentre.x,0),CV_RGB(0,0,0),gTrackerState.eyeMaskVLineThickness);//Split Eyes with line111
-        cv::circle(mfishHead,ptMaskCntr,gTrackerState.iEyeHMaskSepRadius, CV_RGB(0,0,0),CV_FILLED); //Mask Body
-        //cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),CV_FILLED); //Mask Body
-        cv::ellipse(mfishHead,rectMidEllipse,CV_RGB(0,0,0),CV_FILLED ) ; //Mask the body and between eye edges
+        cv::circle(mfishHead,ptMaskCntr,gTrackerState.iEyeHMaskSepRadius, CV_RGB(0,0,0),cv::FILLED); //Mask Body
+        //cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),cv::FILLED); //Mask Body
+        cv::ellipse(mfishHead,rectMidEllipse,CV_RGB(0,0,0),cv::FILLED ) ; //Mask the body and between eye edges
     }else
     { // Show Mask borders using Coloured Lines
         //Add Thick Mid line to erase inner Eye Edges and artefacts
         cv::line(mfishHead,ptcentre,cv::Point(ptcentre.x,0),CV_RGB(0,250,50),1);//Split Eyes with line111
         cv::circle(mfishHead,ptMaskCntr,gTrackerState.iEyeHMaskSepRadius, CV_RGB(0,250,50),1); //Mask Body
-        //cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),CV_FILLED); //Mask Body
+        //cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),cv::FILLED); //Mask Body
         cv::ellipse(mfishHead,rectMidEllipse,CV_RGB(0,250,250),1 ) ; //Mask the body and between eye edges
     }
 }
@@ -850,18 +852,18 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::Mat imgEyeDiscover = imgUpsampled_gray.clone();
 
     /// Make Body Mask For bOth ///
-   // cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),gTrackerState.giHeadIsolationMaskVOffset, CV_RGB(0,250,50),CV_FILLED); //Mask Body
+   // cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),gTrackerState.giHeadIsolationMaskVOffset, CV_RGB(0,250,50),cv::FILLED); //Mask Body
     //Make Inner eye Mask, covering back edges for both - Place centre on edge of Body Mask vertically, and centre horizontally
-    //cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-gTrackerState.giHeadIsolationMaskVOffset), gTrackerState.giEyeIsolationMaskRadius, CV_RGB(0,250,50), CV_FILLED); //Mask Body
+    //cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-gTrackerState.giHeadIsolationMaskVOffset), gTrackerState.giEyeIsolationMaskRadius, CV_RGB(0,250,50), cv::FILLED); //Mask Body
     assert(!imgEyeDiscover.empty());
 
     /// Make Mask regions to Separate Eyes //
     /// \todo MAKE THIS MATCH THE VISUAL SEparators
     //Add Thick Mid line to erase inner Eye Edges and artefacts
     //cv::line(imgEyeDiscover,ptcentre,cv::Point(imgEyeDiscover.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes with line111
-    //cv::circle(imgEyeDiscover,cv::Point(imgEyeDiscover.cols/2,imgEyeDiscover.rows),gTrackerState.giHeadIsolationMaskVOffset, CV_RGB(0,0,0),CV_FILLED); //Mask Body
-    ////cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),CV_FILLED); //Mask Body
-    //cv::ellipse(imgEyeDiscover,rectMidEllipse,CV_RGB(0,0,0),CV_FILLED ) ; //Mask the body and between eye edges
+    //cv::circle(imgEyeDiscover,cv::Point(imgEyeDiscover.cols/2,imgEyeDiscover.rows),gTrackerState.giHeadIsolationMaskVOffset, CV_RGB(0,0,0),cv::FILLED); //Mask Body
+    ////cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),cv::FILLED); //Mask Body
+    //cv::ellipse(imgEyeDiscover,rectMidEllipse,CV_RGB(0,0,0),cv::FILLED ) ; //Mask the body and between eye edges
 
     drawEyeExtractionMasks(imgEyeDiscover,ptcentre);
 
@@ -930,9 +932,9 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 //    /// Make Mask regions to Separate Eyes //
 //    //Add Thick Mid line to erase inner Eye Edges and artefacts
 //    cv::line(imgEdge_local,ptcentre,cv::Point(imgEdge_local.cols/2,0),CV_RGB(0,0,0),2);//Split Eyes with line111
-//    cv::circle(imgEdge_local,cv::Point(imgEdge_local.cols/2,imgEdge_local.rows),gTrackerState.giHeadIsolationMaskVOffset, CV_RGB(0,0,0),CV_FILLED); //Mask Body
-//    //cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),CV_FILLED); //Mask Body
-//    cv::ellipse(imgEdge_local,rectMidEllipse,CV_RGB(0,0,0),CV_FILLED ) ; //Mask the body and between eye edges
+//    cv::circle(imgEdge_local,cv::Point(imgEdge_local.cols/2,imgEdge_local.rows),gTrackerState.giHeadIsolationMaskVOffset, CV_RGB(0,0,0),cv::FILLED); //Mask Body
+//    //cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),cv::FILLED); //Mask Body
+//    cv::ellipse(imgEdge_local,rectMidEllipse,CV_RGB(0,0,0),cv::FILLED ) ; //Mask the body and between eye edges
     /// Add Mask TO edge Local prior to contour finding
     drawEyeExtractionMasks(imgEdge_local,ptcentre);
     // Show Mask Outlines TO USER ///
@@ -1136,20 +1138,20 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
         //Draw Set Points
         if (min_idx_grad.y == b)
         {
-           cv::circle(hist_image,cv::Point(b, hist_height-sheight+ picoffset),6,CV_RGB(80,80,80),CV_FILLED);
-           cv::putText(hist_image,"L",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
+           cv::circle(hist_image,cv::Point(b, hist_height-sheight+ picoffset),6,CV_RGB(80,80,80),cv::FILLED);
+           cv::putText(hist_image,"L",cv::Point(b, hist_height-sheight+ picoffset),cv::FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
         }
 
         if (max_idx_grad.y == b)
         {
-           cv::circle(hist_image, cv::Point(b, hist_height-sheight+ picoffset),6,CV_RGB(100,100,100),CV_FILLED);
-           cv::putText(hist_image,"H",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
+           cv::circle(hist_image, cv::Point(b, hist_height-sheight+ picoffset),6,CV_RGB(100,100,100),cv::FILLED);
+           cv::putText(hist_image,"H",cv::Point(b, hist_height-sheight+ picoffset),cv::FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
         }
 
         if (gTrackerState.gthresEyeSeg == b)
         {
-           cv::circle(hist_image, cv::Point(b, hist_height-sheight+ picoffset),8,CV_RGB(150,150,150),CV_FILLED);
-           cv::putText(hist_image,"T",cv::Point(b, hist_height-sheight+ picoffset),CV_FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
+           cv::circle(hist_image, cv::Point(b, hist_height-sheight+ picoffset),8,CV_RGB(150,150,150),cv::FILLED);
+           cv::putText(hist_image,"T",cv::Point(b, hist_height-sheight+ picoffset),cv::FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
         }
 
         //Adaptive Threshold

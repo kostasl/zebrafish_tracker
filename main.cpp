@@ -156,7 +156,6 @@ int main(int argc, char *argv[])
     MainWindow window_main;
     pwindow_main = &window_main;
 
-    window_main.show();
 
     /// Handle Command Line Parameters //
     const cv::String keys =
@@ -202,6 +201,16 @@ int main(int argc, char *argv[])
     ssMsg << "-Make Sure QT can be found : use export LD_LIBRARY_PATH= path to Qt/5.11.1/gcc_64/lib/  " << std::endl;
     ssMsg << "Double click on food item to start tracking it. Dbl click on Fish head to adjust Template position." << std::endl;
     parser.about(ssMsg.str() );
+
+
+    if (parser.has("help") || parser.has("usage"))
+    {
+        parser.printMessage();
+        exit(0);
+    }
+
+
+    window_main.show();
 
     gTrackerState.initGlobalParams(parser,gTrackerState.inVidFileNames);
 
@@ -591,7 +600,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
             {
                 fishModel* pfish = ft->second;
                 assert(pfish);
-                zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, CV_FONT_HERSHEY_PLAIN, gTrackerState.trackFntScale+0.2 );
+                zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, cv::FONT_HERSHEY_PLAIN, gTrackerState.trackFntScale+0.2 );
                 //Draw KFiltered Axis
                 drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->leftEye,CV_RGB(200,250,200));
                 drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->rightEye,CV_RGB(200,250,200));
@@ -712,14 +721,14 @@ void drawFrameText(MainWindow& window_main, uint nFrame,uint nLarva,uint nFood,c
     static double vm, rss;
 
     cv::rectangle(outframe, cv::Point(10, 2), cv::Point(100,20),
-               CV_RGB(10,10,10), CV_FILLED,LINE_8);
+               CV_RGB(10,10,10), cv::FILLED,LINE_8);
     cv::putText(outframe, frameNumberString.toStdString(),  cv::Point(15, 15),
             gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(150,80,50));
 
     //Count on Original Frame
     std::stringstream strCount;
     strCount << "Nf:" << (nLarva) << " Nr:" << nFood;
-    cv::rectangle(outframe, cv::Point(10, 25), cv::Point(90,45), CV_RGB(10,10,10), CV_FILLED);
+    cv::rectangle(outframe, cv::Point(10, 25), cv::Point(90,45), CV_RGB(10,10,10), cv::FILLED);
     cv::putText(outframe, strCount.str(), cv::Point(15, 38),
            gTrackerState.trackFnt, gTrackerState.trackFntScale ,  CV_RGB(150,80,50));
 
@@ -776,11 +785,11 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     }
 
 
-    gTrackerState.setVidFps( capture.get(CAP_PROP_FPS) );
-    uint totFrames = capture.get(CV_CAP_PROP_FRAME_COUNT);
-    gTrackerState.frame_pxwidth = (uint)capture.get(CV_CAP_PROP_FRAME_WIDTH);
+    gTrackerState.setVidFps( capture.get(cv::CAP_PROP_FPS) );
+    uint totFrames = capture.get(cv::CAP_PROP_FRAME_COUNT);
+    gTrackerState.frame_pxwidth = (uint)capture.get(cv::CAP_PROP_FRAME_WIDTH);
     gTrackerState.rect_pasteregion.x = (gTrackerState.frame_pxwidth-gTrackerState.gszTemplateImg.width*3);
-    gTrackerState.frame_pxheight =  (uint)capture.get(CV_CAP_PROP_FRAME_HEIGHT);
+    gTrackerState.frame_pxheight =  (uint)capture.get(cv::CAP_PROP_FRAME_HEIGHT);
 
     //Default ROI
     gTrackerState.initROI(gTrackerState.frame_pxwidth,gTrackerState.frame_pxheight);
@@ -823,8 +832,8 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
     gTrackerState.outfilename = outdatafile.fileName();
 
-    capture.set(CV_CAP_PROP_POS_FRAMES,startFrameCount);
-    nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
+    capture.set(cv::CAP_PROP_POS_FRAMES,startFrameCount);
+    nFrame = capture.get(cv::CAP_PROP_POS_FRAMES);
     frameNumberString = QString("%1").arg(nFrame, 5, 10, QChar('0')); //QString::number(nFrame);
     window_main.nFrame = nFrame;
 
@@ -837,7 +846,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         if (gTrackerState.bStartFrameChanged)
         {
             nFrame = window_main.nFrame;
-            capture.set(CV_CAP_PROP_POS_FRAMES,window_main.nFrame);
+            capture.set(cv::CAP_PROP_POS_FRAMES,window_main.nFrame);
             gTrackerState.bPaused = true;
             gTrackerState.bTracking = gTrackerState.bTracking; //Do Not Change
             //bStartFrameChanged = false; //This is Reset Once The frame Is captured
@@ -848,7 +857,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
         if (!gTrackerState.bPaused  )
         {
-            nFrame = capture.get(CV_CAP_PROP_POS_FRAMES);
+            nFrame = capture.get(cv::CAP_PROP_POS_FRAMES);
             window_main.nFrame = nFrame; //Update The Frame Value Stored in Tracker Window
             window_main.tickProgress();
         }
@@ -906,7 +915,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
             std::cerr << gTimer.elapsed()/60000.0 << " [Error] reading frame " << nFrame << " skipping." << std::endl;
 
             if (nFrame < totFrames)
-                capture.set(CV_CAP_PROP_POS_FRAMES,nFrame+1);
+                capture.set(cv::CAP_PROP_POS_FRAMES,nFrame+1);
 
             nErrorFrames++;
             if (nErrorFrames > 20) //Avoid Getting Stuck Here
@@ -3087,16 +3096,16 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
                   ss.str(""); //Empty String
                   ss << "L:" << fish->leftEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45,pasteRegion.br().y+10),CV_FONT_NORMAL,0.4,colTxt,1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45,pasteRegion.br().y+10),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str(""); //Empty String
                   ss << "R:"  << fish->rightEyeTheta;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+25),CV_FONT_NORMAL,0.4,colTxt,1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+25),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str(""); //Empty String
                   ss << "V:"  << ((int)((fish->leftEyeTheta - fish->rightEyeTheta)*10)) /10.0;
-                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+40),CV_FONT_NORMAL,0.4,colTxt,1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+40),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str("");
                   ss << "nR:"  << ((int)((fR*1000.0)) /1000.0);
-                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+55),CV_FONT_NORMAL,0.4,colTxt,1 );
+                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+55),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
               }
 
 
