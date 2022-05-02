@@ -794,7 +794,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                 {
                     // Update to template Matched Angle and positio
                     //kp.pt = ptSearch; //Does not Work Accuratelly
-                    qDebug() << "+Tmpl:" << maxMatchScore;
+                    //qDebug() << "+Tmpl:" << maxMatchScore;
                 }
             }//If template Matching is used
 

@@ -887,12 +887,9 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
         try //Try To Read The Image of that video Frame
         {
-            //read the current frame
+            //read the current frame - Returns false in next frame-read fails or End of video
             if(!capture.read(frame))
             {
-                if(capture.read(frame)) //Try again
-                    break;
-
                 if (nFrame == startFrameCount)
                 {
                     std::cerr << gTimer.elapsed()/60000.0 << " " <<  nFrame << "# [Error]  Unable to read first frame." << std::endl;
@@ -907,39 +904,56 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
                 else //Not Stuck On 1st Frame / Maybe Vid Is Over?>
                 {
                    std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << "# *Unable to read next frame." << std::endl;
-                   std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << "# frame of " << totFrames <<  " of Video. Moving to next video." <<std::endl;
+                   std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << "# frame of " << gTrackerState.uiTotalFrames <<  " of Video. Moving to next video." <<std::endl;
                    //assert(outframe.cols > 1);
 
                    double dVidRelativePosition = capture.get(cv::CAP_PROP_POS_AVI_RATIO);
                    cout << " Relative Vid.Position : " << dVidRelativePosition << std::endl;
-                   if (nFrame < gTrackerState.uiTotalFrames -1 || nFrame < stopFrame)
+                   if (nFrame < gTrackerState.uiTotalFrames -1 || nFrame < stopFrame || dVidRelativePosition < 0.99)
                    {
-                       std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " [Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked" << std::endl;
+                       std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " [Error] Cannot read next frame! Skipping " << std::endl;
+                       nErrorFrames++;
+                       capture.set(cv::CAP_PROP_POS_FRAMES,nFrame+nErrorFrames); //Skip Frame
                        //removeDataFile(outdatafile); //Delete The Output File
+                       //continue; //Skip Frame
+                       /// Too Many Errors On Reading Frame
+                       if (nErrorFrames > gTrackerState.c_MaxFrameErrors) //Avoid Getting Stuck Here
+                       {
+                           // Too Many Errors / Fail On Tracking
+                           std::cerr << gTimer.elapsed()/60000.0 << " [Error]  Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
+                           gTrackerState.saveState("TrackerConfig.xml");
+                           removeDataFile(outdatafile);
+                           break;
+                       }
                    }
-                   else
+
+                   if (nFrame >= gTrackerState.uiTotalFrames || nFrame == gTrackerState.uiStopFrame)
                    {
                        std::clog << gTimer.elapsed()/60000.0 << " [info] processVideo loop done on frame: " << nFrame << std::endl;
                          ::saveImage(frameNumberString,QString::fromStdString( gTrackerState.gstroutDirCSV),videoFilename,outframe);
                          gTrackerState.saveState("TrackerConfig.xml");
+                         break;
                    }
                    //continue;
-                   break;
-               }
+                }
 
             } //Can't Read Next Frame
+            else{
+                   // nErrorFrames = 0;
+                 }
         }catch(const std::exception &e)
         {
             std::cerr << gTimer.elapsed()/60000.0 << " [Error] reading frame " << nFrame << " skipping." << std::endl;
 
-            if (nFrame < totFrames)
-                capture.set(cv::CAP_PROP_POS_FRAMES,nFrame+1);
+            if (nFrame < gTrackerState.uiTotalFrames)
+                capture.set(cv::CAP_PROP_POS_FRAMES,nFrame+1); //Skip Frame
 
             nErrorFrames++;
-            if (nErrorFrames > 20) //Avoid Getting Stuck Here
+            if (nErrorFrames > gTrackerState.c_MaxFrameErrors) //Avoid Getting Stuck Here
             {
                 // Too Many Error / Fail On Tracking
                 std::cerr << gTimer.elapsed()/60000.0 << " [Error]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
+                std::cout << "Try fixing with : ffmpeg -v error -i broken_video.mp4 -c copy fixed.mp4"  << std::endl;
                 removeDataFile(outdatafile);
 
                 break;
@@ -949,6 +963,13 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         }
 
     } //If Not Paused //
+
+    if (frame.empty())
+    {
+        std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " Empty frame read. Skipping " << std::endl;
+        nErrorFrames++;
+        break;
+    }
 
     //Check If StopFrame Reached And Pause
     if (nFrame == stopFrame && stopFrame > 0 && !gTrackerState.bPaused)
@@ -965,7 +986,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         pwindow_main->LogEvent(QString("[info]>> Video Paused<<"));
     }
 
-    nErrorFrames = 0;
+
 
     //If No Mask Exist Then Make A blank Full On One
     //if (bgStaticMask.cols == 0)  {
@@ -1018,7 +1039,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
             std::stringstream ss;
             ss.precision(4);
             float fFps = gTrackerState.gfVidfps/((float)otLastUpdate.elapsed()/1000.0);
-            ss  << " [Progress] " << nFrame <<"/" << totFrames << " fps:" <<  fFps << " D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
+            ss  << " [Progress] " << nFrame <<"/" << gTrackerState.uiTotalFrames << " fps:" <<  fFps << " D Memory VM: " << vm/1024.0 << "MB; RSS: " << rss/1024.0 << "MB";
             window_main.LogEvent(QString::fromStdString(ss.str()));
 
             otLastUpdate.restart();
@@ -1066,7 +1087,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         checkPauseRun(&window_main,gTrackerState.keyboard,nFrame);
 
 
-    } //main While loop
+    } ///Main Frame (While) loop
     //delete capture object
     capture.release();
 

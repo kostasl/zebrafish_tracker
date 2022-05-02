@@ -173,6 +173,7 @@ class trackerState
       int gFoodReportInterval                       = (int)gfVidfps;
       const int nTemplatesToLoad                    = 11; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
       const int gi_FoodModelNumberLimit             = 250; // Maximum Number of Food Objects /Prey To track
+      const int c_MaxFrameErrors                    = 20; //Limit of frame read errors before quiting tracking
 
       int keyboard; //input from keyboard
       int screenx,screeny;
