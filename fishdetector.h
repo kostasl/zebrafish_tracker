@@ -22,6 +22,7 @@ class fishdetector
 {
 public:
     fishdetector();
+    bool initialize(); //Call first
     float netNeuralTF(float a);
     static cv::Mat getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox,bool correctOrientation); //Normed Bounded region of Rotated Rect
     static cv::Mat getNormedTemplateImg(const cv::Mat& frame, cv::RotatedRect& fishRotAnteriorBox,bool correctOrientation); // Normed Rot Rect Image
@@ -50,7 +51,7 @@ private:
     // the model will try to infer the input and output layer names automatically
     // (only use if it's a simple "one-input -> one-output" model
     bool m_inferInputOutput = false;
-
+    bool bInitialized = false;
 
     tf_image::TF_Model m_TFmodel_loc; // Model Used to Localize Larva in img region (rotation invariant)
 

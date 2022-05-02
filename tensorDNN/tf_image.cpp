@@ -185,8 +185,12 @@ tf_image::TF_Model::~TF_Model()
   TF_DeleteGraph(m_pGraph);
   //std::cout<< "Deleted Session Opts- " << std::endl;
   TF_DeleteSessionOptions(m_pSessionOpts);
-  //std::cout<< "Deleted Session- " << std::endl;
-  TF_DeleteSession(m_pSession, m_pStatus);
+
+  if ( m_pSession != nullptr ){
+    TF_DeleteSession(m_pSession, m_pStatus);
+    std::cout<< "Deleted TF Session " << std::endl;
+  }
+
   //std::cout<< "Deleted Status- " << std::endl;
   TF_DeleteStatus(m_pStatus);
 

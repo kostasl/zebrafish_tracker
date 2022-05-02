@@ -135,7 +135,7 @@ class trackerState
       enum state {PAUSED,TRACKING,DIST_MEASURE,SAVING,EXITING};
 
       /// VIDEO AND BACKGROUND PROCESSING //
-      float gfVidfps                   = 400;
+      float gfVidfps                   = 1;
       uint frame_pxwidth               = 640; //Video Frame pixel Dimensions/ Default Changed when Video Is opened
       uint frame_pxheight              = 480;
 
@@ -269,7 +269,8 @@ class trackerState
       ///Specific To the Tracked Video Options//
       uint uiCurrentFrame = 1;
       uint uiStartFrame = 1;
-      uint uiStopFrame = 0;
+      uint uiStopFrame  = 0;
+      uint uiTotalFrames = 0; //Total Frames Contained in Video File
       uint iSpineContourFitFramePeriod         = 20; //Check that Tail Fitting Matches Contour Every X Frames
 
       /// Segmentation / threshold  Params
@@ -307,9 +308,9 @@ class trackerState
 
       // BackProp YAML model - DEpecrated
       /// \todo Make this Relative Paths - Adjustable
-      string strBackPropModelYMLFile        = "/home/meyerlab/workspace/zebrafishtrack/Rplots/fishNet.yml";
-      string strDNNTensorFlowModelFile      = "/home/meyerlab/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/";
-      std::string strDNNTensorFlowVerticalModelFile = "/home/meyerlab/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir/";
+      string strBackPropModelYMLFile                = "/home/meyerlab/workspace/zebrafishtrack/Rplots/fishNet.yml"; ///\deprecated NN method
+      string strDNNTensorFlowModelFile              = "~/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/"; /// Updated DNN model file location - Where TensorDNN.py script output is saved.
+      string strDNNTensorFlowVerticalModelFile      = "~/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir/"; ///\deprecated \remarks Load  Directional model to correct up-right image of fish in image region - used for direction detection
 
       ///Fish Features Detection Params
       int gFishTemplateAngleSteps     = 1;
@@ -371,15 +372,23 @@ class trackerState
    template<class Archive>
    void serialize(Archive & archive)
    {
-     archive(gstrwinName,CEREAL_NVP(gstroutDirCSV),CEREAL_NVP(gstrinDirVid),gstrvidFilename,outfilename.toStdString(),
-            userROI,bRecordToFile,bTrackFish,bSaveImages,bUseEllipseEdgeFittingMethod,
-            bTemplateSearchThroughRows,bApplyFishMaskBeforeFeatureDetection,bUseOpenCL,bUseGPU,bBlindSourceTracking,bStaticBGMaskRemove,
-            gbUpdateBGModel,gbUpdateBGModelOnAllVids,bFitSpineToTail,bUseMaskedFishForSpineDetect,bUseHistEqualization,bRemovePixelNoise,bMeasure2pDistance,bAddPreyManually,
-            bRenderToDisplay,bRenderWithAlpha,bOffLineTracking,bDrawFoodBlob,curveSmoothKernelSigma,curveSmoothKernelSize_M,
-            bUseBGModelling,gbUpdateBGModel,gbUpdateBGModelOnAllVids,
-            bSkipExisting,bTrackFood,bTracking,bStartPaused,uiStartFrame,uiStopFrame,
-            g_FGSegthresh,g_SegFoodThesMax,g_SegFoodThesMin,gthresEyeSeg,gthresEyeSegL,gi_MaxEllipseSamples,gi_VotesEllipseThres,gi_minEllipseMinor,gi_minEllipseMajor,gi_maxEllipseMajor,gi_CannyThresSmall,gi_CannyThres,
-            gdMOGBGRatio,MOGhistory,gfVidfps
+     string stroutfilename = outfilename.toStdString();
+
+     archive(gstrwinName,CEREAL_NVP(gstroutDirCSV),CEREAL_NVP(gstrinDirVid),CEREAL_NVP(gstrvidFilename),
+            CEREAL_NVP(stroutfilename),
+            CEREAL_NVP(strDNNTensorFlowModelFile),CEREAL_NVP(fishnet_classifier_thres),CEREAL_NVP(gTemplateMatchThreshold),
+            CEREAL_NVP(userROI),CEREAL_NVP(bRecordToFile),CEREAL_NVP(bTrackFish),CEREAL_NVP(bSaveImages),CEREAL_NVP(bUseEllipseEdgeFittingMethod),
+            CEREAL_NVP(bTemplateSearchThroughRows),CEREAL_NVP(bApplyFishMaskBeforeFeatureDetection),bUseOpenCL,bUseGPU,bBlindSourceTracking,CEREAL_NVP(bStaticBGMaskRemove),
+            CEREAL_NVP(gbUpdateBGModel),CEREAL_NVP(gbUpdateBGModelOnAllVids),
+            CEREAL_NVP(bFitSpineToTail),CEREAL_NVP(bUseMaskedFishForSpineDetect),CEREAL_NVP(bUseHistEqualization),CEREAL_NVP(bRemovePixelNoise),bMeasure2pDistance,
+            CEREAL_NVP(bRenderToDisplay),CEREAL_NVP(bRenderWithAlpha), CEREAL_NVP(bOffLineTracking),CEREAL_NVP(bDrawFoodBlob),
+            CEREAL_NVP(curveSmoothKernelSigma),CEREAL_NVP(curveSmoothKernelSize_M),
+            CEREAL_NVP(bUseBGModelling), CEREAL_NVP(gbUpdateBGModel),CEREAL_NVP(gbUpdateBGModelOnAllVids),
+            CEREAL_NVP(bSkipExisting),CEREAL_NVP(bTrackFood),CEREAL_NVP(bTracking),CEREAL_NVP(bStartPaused),
+            CEREAL_NVP(gfVidfps),CEREAL_NVP(uiStartFrame),CEREAL_NVP(uiStopFrame),CEREAL_NVP(uiTotalFrames),
+            CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(gthresEyeSeg),CEREAL_NVP(gthresEyeSegL),
+            CEREAL_NVP(gi_MaxEllipseSamples),CEREAL_NVP(gi_VotesEllipseThres),CEREAL_NVP(gi_minEllipseMinor),CEREAL_NVP(gi_minEllipseMajor),CEREAL_NVP(gi_maxEllipseMajor),
+            CEREAL_NVP(gi_CannyThresSmall),CEREAL_NVP(gi_CannyThres),CEREAL_NVP(gdMOGBGRatio),CEREAL_NVP(MOGhistory)
             ); // serialize things by passing them to the archive
      //archive();
      //archive(CEREAL_NVP(userROI));

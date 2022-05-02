@@ -46,6 +46,16 @@ preyModel::preyModel(zfdblob blob,zfdID ID):preyModel()
     //Initialize Filter Estimate to x0,y0
     ptEstimated = ptPredicted =  blob.pt;
 
+    //Adjust Trakcing Const to FrameRate
+    g_FPS_scaling = 1600.0/gTrackerState.gfVidfps; //Adjust To Higher - if tracking cannot keep up with prey speed
+    dx = 0.01*g_FPS_scaling;
+    dy = 0.01*g_FPS_scaling;
+    // These values have been tested in R using pre-recorded Prey Data
+    dt = g_FPS_scaling*1.0; // Filter TimeStep (a dt 1.0 works when fps 410)
+
+    //constexpr static
+    g = g_FPS_scaling*1.0/100.0; //Measurement Scaling - 2orders Larger than h works best
+    h = g_FPS_scaling*1.0/1000.0;
 
     headingTheta = M_PI;
     velocity.x = 0.0;
@@ -131,7 +141,7 @@ cv::Point2f preyModel::predictMove()
 }
 
 /// \brief Implements a simple position filtering technique using a G-H Filter, such as tracking between subsequent frames is improved,
-/// removing any sudden jumps and noise from the estimated prey position
+/// removing any sudden jumps and noise from the estimated prey position and helping to correctly connect trackPrey with blob between missing frames
 ///
 cv::Point2f preyModel::alpha_beta_TrackingFilter_step(cv::Point2f blobPt)
 {

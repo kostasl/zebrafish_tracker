@@ -61,8 +61,8 @@ static cv::Mat loadImage(const std::string& name)
     return image;
 }
 
-
-fishdetector::fishdetector()
+/// Need to call before Any detection can occur - loads model files
+bool fishdetector::initialize()
 {
 
     String sDir = std::string(gTrackerState.strBackPropModelYMLFile);
@@ -108,12 +108,20 @@ fishdetector::fishdetector()
     m_TFmodel_loc.setInputs( { "serving_default_sequential_input" } );
     m_TFmodel_loc.setOutputs( { "StatefulPartitionedCall" } );
 
-    /// Load  Directional model - used to detection correct up-right image of fish in image region - used for direction detection
-    m_TFmodel_dir.loadModel(gTrackerState.strDNNTensorFlowVerticalModelFile ,m_gpu_memory_fraction , m_inferInputOutput );//"graph_im2vec.pb"
-    m_TFmodel_dir.setInputs( { "serving_default_sequential_1_input" } );
-    m_TFmodel_dir.setOutputs( { "StatefulPartitionedCall" } );
-
+    ///\deprecated Load  Directional model - used to detection correct up-right image of fish in image region - used for direction detection
+    //m_TFmodel_dir.loadModel(gTrackerState.strDNNTensorFlowVerticalModelFile ,m_gpu_memory_fraction , m_inferInputOutput );//"graph_im2vec.pb"
+    //m_TFmodel_dir.setInputs( { "serving_default_sequential_1_input" } );
+    //m_TFmodel_dir.setOutputs( { "StatefulPartitionedCall" } );
+    bInitialized = true;
+    return(true);
 }
+
+
+fishdetector::fishdetector()
+{
+    bInitialized = false;
+}
+
 
 
 
@@ -716,6 +724,7 @@ float fishdetector::netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,fl
 }
 
 
+///\deprecated An oriented classifier that attempts to detect Orientation of larva
 float fishdetector::netDNNDetect_normedfish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass)
 {
     //std::cout << ".  run prediction..." << std::endl;
