@@ -729,7 +729,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                zftblob kpFishBlob = kp; //Search Very Near Last Known Fish Position
                kpFishBlob.pt = fish->ptRotCentre;
                kpFishBlob.response = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kpFishBlob,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,10,1,1, QString::number(iHitCount).toStdString(),false);
+                                                                mask_fnetScore,5,1,1, QString::number(iHitCount).toStdString(),false);
               if (kpFishBlob.response > gTrackerState.fishnet_classifier_thres){
                   kp = kpFishBlob;
                   break;
@@ -742,11 +742,17 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
        {
            //1st Pass - blob position is updated to Detected Position
            fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,80,5,5, QString::number(iHitCount).toStdString(),true);
+                                                            mask_fnetScore,80,10,10, QString::number(iHitCount).toStdString(),true);
            //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
-           if (fRH[0] >= gTrackerState.fishnet_classifier_thres/10.0) //2nd Pass
+           //2nd Pass
+           if (fRH[0] >= gTrackerState.fishnet_classifier_thres/10.0)
                 fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,15,1,1, QString::number(iHitCount).toStdString()+"B",false);
+                                                            mask_fnetScore,15,3,3, QString::number(iHitCount).toStdString()+"B",false);
+           //3rd Pass
+           if (fRH[1] >= gTrackerState.fishnet_classifier_thres*0.75)
+                fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                            mask_fnetScore,5,1,1, QString::number(iHitCount).toStdString()+"B",false);
+
            else{
                //Show User Where Failed Contour Detection Happened
                cv::circle(outUserFrame,kp.pt,4,CV_RGB(255,5,5),2,LINE_AA );
