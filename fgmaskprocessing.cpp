@@ -718,7 +718,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
 
        vFilteredFishbodycontours.push_back(curve);
 
-       std::vector<float> fRH(3);  //Score Array For Each Pass
+       std::vector<float> fRH(4);  //Score Array For Each Pass
 
         kp.response = 0;
        //Optimization 1 - Small Area Search Check If kp Belogs to Existing Model Fish - Update position To tracked Head Pt
@@ -750,7 +750,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                //2nd Pass
                if (fRH[0] >= gTrackerState.fishnet_classifier_thres*0.65)
                     fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,16,4,4, QString::number(iHitCount).toStdString()+"B",true);
+                                                                mask_fnetScore,20,5,5, QString::number(iHitCount).toStdString()+"B",true);
                else
                     //Show User LaseFailed Detection Happened
                     cv::circle(outUserFrame,kp.pt,2,CV_RGB(255,5,5),2,LINE_AA );
@@ -758,10 +758,19 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                //3rd Pass - Extensive Search in Small Region to match best score
                if (fRH[1] >= gTrackerState.fishnet_classifier_thres*0.75)
                     fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,4,1,1, QString::number(iHitCount).toStdString()+"B",false);
+                                                                mask_fnetScore,6,2,2, QString::number(iHitCount).toStdString()+"B",true);
                else
                     //Show User LaseFailed Detection Happened
                     cv::circle(outUserFrame,kp.pt,1,CV_RGB(255,5,5),2,LINE_AA );
+
+               //4th Pass - Extensive Search in Small Region to match best score
+               if (fRH[3] >= gTrackerState.fishnet_classifier_thres*0.95)
+                    fRH[4] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                                mask_fnetScore,3,1,1, QString::number(iHitCount).toStdString()+"B",false);
+               else
+                    //Show User LaseFailed Detection Happened
+                    cv::circle(outUserFrame,kp.pt,1,CV_RGB(255,5,5),1,LINE_AA );
+
 
            }else{
                //Show User Where Failed Detection Happened
@@ -842,7 +851,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
     if (vFilteredFishbodycontours_classified.size() == 0)
     {
         qDebug() << "No Fish Blob detected.";
-        cv::drawContours( outUserFrame, vFilteredFishbodycontours, 0, CV_RGB(255,5,5),2,cv::LINE_AA); //
+        cv::drawContours( outUserFrame, vFilteredFishbodycontours, 0, CV_RGB(255,5,5),1,cv::LINE_AA); //
     }
 
     return (vFilteredFishbodycontours);
