@@ -108,6 +108,7 @@ Some important shortcut keys:
  *  t Start Tracking
  *  q Exit Quit application.
  *  T save detected region as template image.
+ *  d Offline Tracking mode - Do not update display on each frame to improve tracking speed.
  
 ## Output
 

@@ -155,9 +155,9 @@ class trackerState
       const double dMeanBlobArea                  = 100; //Initial Value that will get updated
       const double dVarBlobArea                   = 20;
       const unsigned int gc_fishLength            = 100; //px Length Of Fish
-      const unsigned int thresh_fishblobarea      = 400; //Min area above which to Filter The fish blobs
-      const unsigned int thresh_maxfishblobarea     = 3650; //Min area above which to Filter The fish blobs
-      const unsigned int gthres_maxfoodblobarea     = thresh_fishblobarea/3;
+      const unsigned int thresh_minfishblobarea     = 400; //Min area above which to Filter The fish blobs
+      const unsigned int thresh_maxfishblobarea     = 4650; //Min area above which to Filter The fish blobs
+      const unsigned int gthres_maxfoodblobarea     = thresh_minfishblobarea/3;
 
       const int gFitTailIntensityScanAngleDeg   = 60; //
       const int gFishTailSpineSegmentCount      = ZTF_TAILSPINECOUNT;
@@ -244,7 +244,7 @@ class trackerState
       bool bDrawFoodBlob              = true; ///Draw circle around identified food blobs (prior to model matching)
       bool bOffLineTracking           = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
       bool bBlindSourceTracking       = false; /// Used for Data Labelling, so as to hide the data source/group/condition
-      bool bStaticBGMaskRemove        = false; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+      bool bStaticBGMaskRemove        = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
       bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
@@ -384,12 +384,13 @@ class trackerState
             CEREAL_NVP(bFitSpineToTail),CEREAL_NVP(bUseMaskedFishForSpineDetect),CEREAL_NVP(bUseHistEqualization),CEREAL_NVP(bRemovePixelNoise),bMeasure2pDistance,
             CEREAL_NVP(bRenderToDisplay),CEREAL_NVP(bRenderWithAlpha), CEREAL_NVP(bOffLineTracking),CEREAL_NVP(bDrawFoodBlob),
             CEREAL_NVP(curveSmoothKernelSigma),CEREAL_NVP(curveSmoothKernelSize_M),
-            CEREAL_NVP(bUseBGModelling), CEREAL_NVP(gbUpdateBGModel),CEREAL_NVP(gbUpdateBGModelOnAllVids),
+            CEREAL_NVP(bUseBGModelling),CEREAL_NVP(bStaticBGMaskRemove), CEREAL_NVP(gbUpdateBGModel),CEREAL_NVP(gbUpdateBGModelOnAllVids),
             CEREAL_NVP(bSkipExisting),CEREAL_NVP(bTrackFood),CEREAL_NVP(bTracking),CEREAL_NVP(bStartPaused),
             CEREAL_NVP(gfVidfps),CEREAL_NVP(uiStartFrame),CEREAL_NVP(uiStopFrame),CEREAL_NVP(uiTotalFrames),
             CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(gthresEyeSeg),CEREAL_NVP(gthresEyeSegL),
             CEREAL_NVP(gi_MaxEllipseSamples),CEREAL_NVP(gi_VotesEllipseThres),CEREAL_NVP(gi_minEllipseMinor),CEREAL_NVP(gi_minEllipseMajor),CEREAL_NVP(gi_maxEllipseMajor),
-            CEREAL_NVP(gi_CannyThresSmall),CEREAL_NVP(gi_CannyThres),CEREAL_NVP(gdMOGBGRatio),CEREAL_NVP(MOGhistory)
+            CEREAL_NVP(gi_CannyThresSmall),CEREAL_NVP(gi_CannyThres),CEREAL_NVP(gdMOGBGRatio),
+            CEREAL_NVP(MOGhistory),CEREAL_NVP(thresh_minfishblobarea),CEREAL_NVP(thresh_maxfishblobarea)
             ); // serialize things by passing them to the archive
      //archive();
      //archive(CEREAL_NVP(userROI));

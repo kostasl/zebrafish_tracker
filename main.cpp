@@ -416,8 +416,8 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
            //If BG Model Returns >1 frames
             if (getBGModelFromVideo(bgStaticMask, window_main,invideoname,gTrackerState.outfilename,gTrackerState.MOGhistory))
             {
-                cv::dilate(bgStaticMask,bgStaticMask,kernelDilateMOGMask,cv::Point(-1,-1),2);
-                cv::morphologyEx(bgStaticMask,bgStaticMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),4); //
+                cv::dilate(bgStaticMask,bgStaticMask,kernelDilateMOGMask,cv::Point(-1,-1),1);
+                cv::morphologyEx(bgStaticMask,bgStaticMask,cv::MORPH_CLOSE,kernelDilateMOGMask,cv::Point(-1,-1),1); //
                 cv::bitwise_not ( bgStaticMask, bgStaticMask ); //Invert Accumulated MAsk TO Make it an Fg Mask
 
                 //Next Video File Most Likely belongs to the same Experiment / So Do not Recalc the BG Model

@@ -537,7 +537,8 @@ void getPreyMask(const cv::Mat& frameImg, cv::Mat& fgMask,cv::Mat& outFoodMask)
     /// TODO: Change this As it Gets stuck With Excluding
     if (gTrackerState.bUseBGModelling && !fgMask.empty()) //We Have a (MOG) Model In fgMask - So Remove those Stationary Pixels
         /// \note frameImg may already have FG mask applied to it
-        bitwise_and(outFoodMask,gTrackerState.mMOGMask,outFoodMask);
+        //bitwise_and(outFoodMask,gTrackerState.mMOGMask,outFoodMask); //Apply MOG mask Only
+        bitwise_and(outFoodMask,fgMask,outFoodMask);
     ///Removed because DEnse prey conditions Result in Large Blobs
     //Shrink Dilate prey so as to improve tracking and remove Noise
     cv::morphologyEx(outFoodMask,outFoodMask,cv::MORPH_OPEN,kernelDilateMOGMask,cv::Point(-1,-1),1); //
@@ -652,7 +653,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
 
         /// DO BASIC Contour Filtering for Fish Like Features //
         // Area check and then  Find the thresholded Fish Contour std::max(dMeanBlobArea*8,(double)thresh_fishblobarea)
-        if (area <  gTrackerState.thresh_fishblobarea || area > gTrackerState.thresh_maxfishblobarea) //If Contour Is large Enough then Must be fish
+        if (area <  gTrackerState.thresh_minfishblobarea || area > gTrackerState.thresh_maxfishblobarea) //If Contour Is large Enough then Must be fish
             continue; //skip to next Contour
 
         // Check Centroid is in ROI - Find Barycenter - Centroid
@@ -740,31 +741,34 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
        ///If Fish No longer on the same position - Scan Region Around Blob to Find precise Head point - using Classifier
        if (kp.response < gTrackerState.fishnet_classifier_thres)
        {
-           //1st Pass - blob position is updated to Detected Position
-           fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,80,10,10, QString::number(iHitCount).toStdString(),true);
-           //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
-           //2nd Pass
-           if (fRH[0] >= gTrackerState.fishnet_classifier_thres/10.0)
-                fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,15,3,3, QString::number(iHitCount).toStdString()+"B",false);
-           //3rd Pass
-           if (fRH[1] >= gTrackerState.fishnet_classifier_thres*0.75)
-                fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                            mask_fnetScore,5,1,1, QString::number(iHitCount).toStdString()+"B",false);
+               /// PYRAMID Detection
+               //1st Pass - blob position is updated to Detected Position
+               fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                                mask_fnetScore,100,10,10, QString::number(iHitCount).toStdString(),true);
 
-           else{
-               //Show User Where Failed Contour Detection Happened
-               cv::circle(outUserFrame,kp.pt,4,CV_RGB(255,5,5),2,LINE_AA );
+               //cv::circle(outFishMask,kp.pt,4,CV_RGB(155,155,155),2);
+               //2nd Pass
+               if (fRH[0] >= gTrackerState.fishnet_classifier_thres*0.65)
+                    fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                                mask_fnetScore,16,4,4, QString::number(iHitCount).toStdString()+"B",true);
+               else
+                    //Show User LaseFailed Detection Happened
+                    cv::circle(outUserFrame,kp.pt,2,CV_RGB(255,5,5),2,LINE_AA );
+
+               //3rd Pass - Extensive Search in Small Region to match best score
+               if (fRH[1] >= gTrackerState.fishnet_classifier_thres*0.75)
+                    fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                                mask_fnetScore,4,1,1, QString::number(iHitCount).toStdString()+"B",false);
+               else
+                    //Show User LaseFailed Detection Happened
+                    cv::circle(outUserFrame,kp.pt,1,CV_RGB(255,5,5),2,LINE_AA );
+
+           }else{
+               //Show User Where Failed Detection Happened
+               cv::circle(outUserFrame,kp.pt,5,CV_RGB(255,5,5),2,LINE_AA );
                continue; //Next Contour
+          } //Key Point Does not belong to existing Fish position - where a fish can be detected
 
-           }
-       }
-//           //cv::circle(outFishMask,kp.pt,3,CV_RGB(200,200,200),2);
-//           if (fRH[1]  > gTrackerState.fishnet_classifier_thres && fRH[1] > fRH[0]) //3nd Pass
-//                fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg, kp,boundEllipse, imgFishAnterior_NetNorm,
-//                                                            mask_fnetScore,12,1,1, QString::number(iHitCount).toStdString()+"C",false);
-       //cv::circle(outFishMask,kp.pt,1,CV_RGB(250,250,250),2);
 
        // Head Has been located by Classifier - Now Fix Orientation
        //Correct Angle - 0 is Vertical Up
