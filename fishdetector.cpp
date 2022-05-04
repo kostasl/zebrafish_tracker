@@ -445,7 +445,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
         //cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(max_dscore,max_dscore,max_dscore),1);
     }else
     {
-        cv::circle(imgFishAnterior,ptmax,3,CV_RGB(250,250,250),1);
+        //cv::circle(imgFishAnterior,ptmax,3,CV_RGB(250,250,250),1); //Indicate Max Score position By Grey Circle
         //cv::imshow("imgFishAnterior scoreBlobRegion "  + regTag, imgFishAnterior);
         cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, 1, 0, cv::NORM_MINMAX);
         //cv::imshow(("FishNet ScoreRegion (Norm) ") + regTag, maskRegionScore_Norm);
