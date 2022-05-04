@@ -95,6 +95,7 @@ Command line options:
     - EyeHistEqualization histEq | 0  | Use hist. equalization to enhance eye detection contrast  
     - TrackFish ft | 1  | Track Fish not just the moving prey 
     - MeasureMode M | 0 | Click 2 points to measure distance to prey
+    - CircleROIRadius cr | 512 | pixel radius for the default circular ROI - positioned in the centre of the image
 
 
 ### Control keys for tracker during Run time :

@@ -6,6 +6,8 @@
 #include <QtMath>
 #include <QScrollBar>
 #include <QEvent>
+#include <QFile>
+#include <QTemporaryFile>
 #include "larvatrack.h" //For resetDataRecording()
 #include "QtOpencvCore.hpp"
 #include <QStringListModel>
@@ -208,6 +210,7 @@ void MainWindow::saveScreenShot()
 //Saves Selected Template Images From Running Video To Special templates Subfolder for future Re-Use
 void MainWindow::saveTemplateImage(cv::Mat& imgTempl)
 {
+    bool saved = false;
     //std::stringstream frameNumberString; frameNumberString << nFrame;
     QString dirToSave = stroutDirCSV;
     QString frameNumberString = "Templ_" + QString::number(nFrame);
@@ -216,9 +219,17 @@ void MainWindow::saveTemplateImage(cv::Mat& imgTempl)
     QFileInfo fiVid(vidFilename);
     QString fileVidCoreName = "templ_"+ fiVid.completeBaseName();
 
+
     dirToSave.append("/templates/");
-    QString imageToSave =  fileVidCoreName + "_" + frameNumberString + ".pgm";
+
+
+    QString imageToSave =  fileVidCoreName + "_" + frameNumberString + "_XXXXXX.pgm";
     imageToSave.prepend(dirToSave);
+
+    QTemporaryFile tmpfile(imageToSave);
+    tmpfile.setFileTemplate(imageToSave);
+    tmpfile.setAutoRemove(false);
+
 
     if (!QDir(dirToSave).exists())
     {
@@ -226,7 +237,15 @@ void MainWindow::saveTemplateImage(cv::Mat& imgTempl)
         QDir().mkpath(dirToSave);
     }
 
-    bool saved = cv::imwrite(imageToSave.toStdString(), imgTempl);
+    //if QFileInfo::exists(imageToSave.toStdString())
+
+    if (tmpfile.open())
+        saved = cv::imwrite(tmpfile.fileName().toStdString(), imgTempl);
+
+    if (!saved)
+        std::cerr << "Failed to Save templated file : " << tmpfile.fileName().toStdString() << std::endl;
+    else
+        std::cout << "Saved templated to: " << tmpfile.fileName().toStdString() << std::endl;
 
 
 }
