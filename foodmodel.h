@@ -70,7 +70,7 @@ public:
     cv::Point2f ptEstimated; //Filter Internal Vars
     cv::Point2f ptPredicted;
 
-    double g_FPS_scaling = 400.0/gTrackerState.gfVidfps;
+    double g_FPS_scaling = 1600.0/gTrackerState.gfVidfps; //Adjust To Higher - if tracking cannot keep up with prey speed
     double dx = 0.01*g_FPS_scaling;
     double dy = 0.01*g_FPS_scaling;
     // These values have been tested in R using pre-recorded Prey Data

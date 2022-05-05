@@ -2,6 +2,7 @@
 
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/xml.hpp>
+#include "GUI/mainwindow.h"
 #include "cereal/types/vector.hpp"
 #include <fstream>
 
@@ -69,7 +70,7 @@ cv::Point gptHead,gptTail; //Candidate Fish Contour Position Of HEad - Use for t
 //uint gi_MaxFoodID; //Declared in Model Header Files
 
 class MainWindow;
-extern MainWindow pwindow_main;
+extern MainWindow* pwindow_main;
 extern trackerState gTrackerState;
 
 
@@ -240,7 +241,8 @@ void trackerState::setVidFps(float fps)
 
 void trackerState::saveState(std::string strFilename)
 {
-    std::ofstream os(strFilename);
+
+    std::ofstream os(gstroutDirCSV + "/" + strFilename );
     cereal::XMLOutputArchive archive(os);
     this->serialize(archive); //save State Values
 
@@ -300,9 +302,18 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
       gstroutDirCSV = outfilename.left(outfilename.lastIndexOf("/")).toStdString();
     }
 
-
     std::cout << "Csv Output Dir is " << gstroutDirCSV  << "\n " <<std::endl;
 
+    /// Load DNN model File for classification
+    strDNNTensorFlowModelFile =  parser.get<std::string>("DNNModelFile");
+    if (QFileInfo::exists(QString::fromStdString(strDNNTensorFlowModelFile))){
+        std::cout << "DNN Model file to be loaded from " << strDNNTensorFlowModelFile  << "\n " <<std::endl;
+        fishnet.initialize();
+    }
+    else{
+        std::cerr << "[ERROR ]DNN Model file loaded from " << strDNNTensorFlowModelFile  << "\n " <<std::endl;
+        pwindow_main->LogEvent("[ERROR ] DNN Model file " + QString::fromStdString(strDNNTensorFlowModelFile) + " does not exist");
+    }
 
  /// Check if vid file provided in arguments.
  /// If File exists added to video file list,
