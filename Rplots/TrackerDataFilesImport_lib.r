@@ -568,7 +568,7 @@ extractFileNameParams_OliviaAssay <- function(strFileName)
   #vexpDir <- unlist(strsplit(expDir,"_"))
   #stopifnot(vexpDir[1] == brokenname[1])
   
-  strGroupID <- "X"#vexpDir[3]
+  strGroupID <- "LR"#vexpDir[3]
   ageDPF <- 7  #as.numeric(gsub("[^0-9]","",vexpDir[2]) );
   fps = 50
   

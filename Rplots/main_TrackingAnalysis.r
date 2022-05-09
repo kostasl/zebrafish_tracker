@@ -103,8 +103,11 @@ strCondR  <- "*.csv";
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
-  source("processLoadedData.r")
+  strCondTags <- names(groupsrcdatList)
+  source("processLoadedData.r") ##Detects HuntEvents
 
+  barplot(table(datHuntEvent$expID),main="Hunt Events Per Exp ID")
+  
   ## Plot Prey Dynamics
   plot(meanf(datAllFrames[datAllFrames$expID == 4,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
   for (fID in unique(datAllFrames$expID) )
@@ -121,7 +124,7 @@ strCondR  <- "*.csv";
     #vexpID = unique(filtereddatAllFrames$expID)
     ##Select Larvaof this Group
     
-    datAllGroupFrames <- datAllFrames[which(datAllFrames$group == i),]
+    datAllGroupFrames <- datAllFrames[which(datAllFrames$groupID == i),]
     #Note:A Larva ID Corresponds to A specific Condition ex. NF1E (Same Fish Is tested in 2 conditions tho ex. NF1E, NF1L)
     vexpID = unique(datAllGroupFrames$expID)
     #plotGroupMotion(datAllGroupFrames,lHuntStat[[i]],vexpID)
