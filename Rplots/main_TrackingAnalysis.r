@@ -63,6 +63,8 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                                  "DS_8dpf"
                                  ),sep="/")
 
+strDataSetDirectories <- "/media/kostasl/D445GB_ext4/expData/Olivia_assay/Olivia_tracked/tracked"
+
 ### Set Colour Pallette Size from List Of Datasets
 G_DATASETPALLETSIZE = NROW(strDataSetDirectories)
 rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
@@ -103,7 +105,11 @@ strCondR  <- "*.csv";
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   source("processLoadedData.r")
 
-
+  ## Plot Prey Dynamics
+  plot(meanf(datAllFrames[datAllFrames$expID == 4,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
+  for (fID in unique(datAllFrames$expID) )
+    lines(meanf(datAllFrames[datAllFrames$expID == fID,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
+  
   ### Make Eye Phase Space Density Plots ##########
   for (i in strCondTags)
   {

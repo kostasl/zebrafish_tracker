@@ -548,6 +548,34 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
 }
 
 
+
+##Aux Functions used for importing data from CSV Files - Processes file name :
+#/// Returns a list of name value pairs extracted from TrackerFile name used for the Hunting  Assay
+extractFileNameParams_OliviaAssay <- function(strFileName)
+{
+  ##Extract Experiment ID
+  basename <- basename(strFileName)
+  brokenname = unlist(strsplit(basename,"_"))
+  expID <-  as.numeric(gsub("[^0-9]","",brokenname[1]) )
+  eventID <- 1#as.numeric(brokenname[4]);
+  camID <- 0 #(brokenname[3])
+  testCond <- "LR"#brokenname[2]
+  larvaID <- as.numeric(gsub("[^0-9]","",brokenname[1]) );
+  trackID <- as.numeric(gsub("[^0-9]","",brokenname[6]) );
+  
+  vpath <- strsplit(normalizePath(dirname(strFileName) ),"/")[[1]]
+  #expDir <- vpath[length(vpath)-1] ## Extract parent Dir with Exp iNfo
+  #vexpDir <- unlist(strsplit(expDir,"_"))
+  #stopifnot(vexpDir[1] == brokenname[1])
+  
+  strGroupID <- "X"#vexpDir[3]
+  ageDPF <- 7  #as.numeric(gsub("[^0-9]","",vexpDir[2]) );
+  fps = 50
+  
+  
+  return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps,groupID=strGroupID,testCond=testCond,age=ageDPF) )
+}
+
 ##Aux Functions used for importing data from CSV Files - Processes file name :
 #/// Returns a list of name value pairs extracted from TrackerFile name used for the Hunting  Assay
 extractFileNameParams_HungerExp_camA <- function(strFileName)
@@ -570,7 +598,7 @@ extractFileNameParams_HungerExp_camA <- function(strFileName)
   ageDPF <-    as.numeric(gsub("[^0-9]","",vexpDir[2]) );
   fps = NA
   
-  return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps,groupID=strGroupID,age=ageDPF) )
+  return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps,groupID=strGroupID,testCond=testCond,age=ageDPF) )
 }
 
 ## Top CAM with Long recording
