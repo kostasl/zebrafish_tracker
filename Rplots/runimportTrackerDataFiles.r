@@ -11,9 +11,17 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   d = strDataSetDirectories[[idxDataSet]]
   groupsrcdatList = list()
   strCondR  <- "*.csv"; 
-  groupsrcdatList[["LE"]] <- list((getFileSet("LE/",d,strCondR= "tracks_[0-9].csv")),"-TestEmpty")
-  groupsrcdatList[["LR"]] <- list((getFileSet("LR/",d,strCondR= "*tracks_[0-9].csv")),"-TestPrey")
-  
+  ## Use SubDirs as Labels That Separate Conditions / Groups
+  vgroupDirs <- basename(list.dirs(strDataSetDirectories,recursive=F))
+  for (groupID in vgroupDirs)
+  {
+    vFileList <- list((getFileSet(paste0(groupID,"/"),d,strCondR= "tracks_[0-9].csv")),groupID)
+    if (NROW(vFileList[[1]]) > 0){
+      groupsrcdatList[[groupID]] <- vFileList
+      message("New GroupID: ",groupID, " Loaded with ",NROW(vFileList), " tracking files")
+    }
+     ##groupsrcdatList[["LR"]] <- list((getFileSet("LR/",d,strCondR= "*tracks_[0-9].csv")),"-TestPrey")
+  }
   ##OutPutFIleName
   strDataSetIdentifier <- strsplit(d,"/")
   strDataSetIdentifier <- strDataSetIdentifier[[1]][[ length(strDataSetIdentifier[[1]]) ]]
@@ -22,7 +30,7 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   message(paste(" Importing to:",strDataFileName))
   ##RUN IMPORT FUNCTION
   #datAllFrames <- importTrackerFilesToFrame(groupsrcdatList,"extractFileNameParams_HungerExp_camB") ##"extractFileNameParams_huntingExp")
-  datAllFrames <- importTrackerFilesToFrame(groupsrcdatList,"extractFileNameParams_OliviaAssay") ##"extractFileNameParams_huntingExp")
+  datAllFrames <- importTrackerFilesToFrame(groupsrcdatList,strFileNameFn) ##"extractFileNameParams_huntingExp")
   
   datAllFrames$dataSet <- idxDataSet ##Identify DataSet
   

@@ -76,8 +76,9 @@ strCondR  <- "*.csv";
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
 ##NOTE: Assumes Files Begin with "Auto" and end with "track"
-  lastDataSet = NROW(strDataSetDirectories)
-  firstDataSet = 1 
+  lastDataSet   = NROW(strDataSetDirectories)
+  firstDataSet  = 1 
+  strFileNameFn = "extractFileNameParams_OliviaAssay"
   source("runimportTrackerDataFiles.r") 
 
 ###### END OF IMPORT TRACKER DATA ############
@@ -98,7 +99,7 @@ strCondR  <- "*.csv";
   load(paste0(strDatDir,"/datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
   load(paste0(strDatDir,"groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData"))
   
-  load(file =paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
+  load(file =paste(strDatDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
   
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]
@@ -113,7 +114,8 @@ strCondR  <- "*.csv";
   for (fID in unique(datAllFrames$expID) )
     lines(meanf(datAllFrames[datAllFrames$expID == fID,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
   
-  ### Make Eye Phase Space Density Plots ##########
+    ### Make Eye Phase Space Density Plots ##########
+  strCondTags <- unique(datAllFrames$groupID)
   for (i in strCondTags)
   {
     message(paste("#### Eye ProcessGroup ",i," ###############"))
