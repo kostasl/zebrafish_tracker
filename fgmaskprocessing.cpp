@@ -807,12 +807,12 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                 int iTemplCol = kp.angle;
                 float maxMatchScore = doTemplateMatchAroundPoint(frameImg_grey,kp.pt,iTemplRow,iTemplCol,bestAngle,ptSearch,outFishMask);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
                 gTrackerState.iLastKnownGoodTemplateRow = iTemplRow;
-                kp.angle            = bestAngle;
                 //If Template Match Succeeds then Update Blob To Correct Position And Orientation -
                 if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)  //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
                 {
                     // Update to template Matched Angle and positio
-                    //kp.pt = ptSearch; //Does not Work Accuratelly
+                    kp.angle            = bestAngle;
+                    kp.pt               = ptSearch; //Does not Work Accuratelly
                     //qDebug() << "+Tmpl:" << maxMatchScore;
                 }
             }//If template Matching is used

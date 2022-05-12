@@ -142,7 +142,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     //gptmaxLoc.x = fishRegion.cols - gptmaxLoc.x;
     //gptmaxLoc.y = fishRegion.rows - gptmaxLoc.y;
     cv::Point top_left  = pBound1+gptmaxLoc; //Get top Left Corner Of Template Detected Region
-    detectedPoint = top_left - rotCentre; //Get Centre Of Template Detection Region - Used for Tracking
+    detectedPoint = top_left + rotCentre; //Get Centre Of Template Detection Region - Used for Tracking
 
     return maxMatchScore;
 }
@@ -349,8 +349,8 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
         if (maxGVal < maxVal)
         {
             maxGVal         = maxVal;
-            ptGmaxLoc       =  cv::Point(ptmaxLoc.x+imgRegionIn.cols/2,
-                                         ptmaxLoc.y+imgRegionIn.rows/2); //The calling Function needs to reposition maxLoc To the global Frame
+            ptGmaxLoc       =  cv::Point(ptmaxLoc.x, //+imgRegionIn.cols/2
+                                         ptmaxLoc.y); //+imgRegionIn.rows/2 //The calling Function needs to reposition maxLoc To the global Frame
             matchColIdx     = Colidx;
             ibestMatchRow   = idRow;
             matchScore      = maxVal; //Save Score Of Best Match
