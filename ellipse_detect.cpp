@@ -687,23 +687,35 @@ std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::ve
         //Get Mean Value
         //iThresEyeSeg = (iThresEyeSeg+gthresEyeSeg)/(isampleN+1);
 
-        //Get 3 values starting from Approx Median Value moving up the intensity
+        //Get N values starting from Approx Median Value moving up the intensity
         std::sort(veyeSegSamples.begin(),veyeSegSamples.end());
 
-        int idx = (int)veyeSegSamples.size()*0.75 + gTrackerState.gthresEyeSeg;
+        int idx = (int)veyeSegSamples.size() + gTrackerState.gthresEyeSeg;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
         iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
         vretThresholds.push_back(iThresEyeSeg);
 
-        idx = (int)veyeSegSamples.size()*0.55 + gTrackerState.gthresEyeSegL;
+
+        idx = (int)veyeSegSamples.size()*0.85 + + gTrackerState.gthresEyeSeg;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
         iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
         vretThresholds.push_back(iThresEyeSeg);
 
- //       idx = veyeSegSamples.size()*0.50 + gthresEyeSeg;
- //      idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
- //       iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
- //        vretThresholds.push_back(iThresEyeSeg);
+
+        idx = (int)veyeSegSamples.size()*0.65 + + gTrackerState.gthresEyeSeg;
+        idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
+        iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
+        vretThresholds.push_back(iThresEyeSeg);
+
+        idx = veyeSegSamples.size()*0.50 + gTrackerState.gthresEyeSeg;
+        idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
+        iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
+        vretThresholds.push_back(iThresEyeSeg);
+
+        idx = veyeSegSamples.size()*0.30 + gTrackerState.gthresEyeSeg;
+        idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
+        iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
+        vretThresholds.push_back(iThresEyeSeg);
 
 
         //Constaint Limit of Eye Seg Threshold and return
@@ -865,8 +877,6 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     ////cv::circle(imgEdge_local,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-giHeadIsolationMaskVOffset),giEyeIsolationMaskRadius,CV_RGB(0,0,0),cv::FILLED); //Mask Body
     //cv::ellipse(imgEyeDiscover,rectMidEllipse,CV_RGB(0,0,0),cv::FILLED ) ; //Mask the body and between eye edges
 
-    drawEyeExtractionMasks(imgEyeDiscover,ptcentre);
-
 
     ///COVER Right Eye - Find Left EYE //
     cv::Mat imgEyeCover = imgEyeDiscover.clone();
@@ -908,25 +918,49 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     std::vector<int> viThresEyeSeg = getEyeSegThreshold(imgEyeDiscover,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
       // Do Multiple Thresholding Of Masked Image to Obtain Segmented Eyes //
-    cv::Mat imgIn_thres2;
+    cv::Mat imgEyeDiscover_blur,imgIn_thres2;
     cv::Mat imgIn_thres3,imgFishHead_Lapl2,imgFishHead_Lapl3;
-    cv::threshold(imgEyeDiscover, imgIn_thres,viThresEyeSeg[0],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
-    cv::threshold(imgEyeDiscover, imgIn_thres2,viThresEyeSeg[1],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+
+    //imgEdge_local = Mat::zeros(imgEyeDiscover.rows,imgEyeDiscover.cols,CV_8UC1);
+
+    cv::GaussianBlur(imgEyeDiscover,imgEyeDiscover_blur,cv::Size(3,3),3,3);
+    cv::Laplacian(imgEyeDiscover_blur,imgEdge_local,CV_8UC1,1);
+    cv::imshow("Laplacian",imgEdge_local);
+    cv::normalize(imgEdge_local,imgEdge_local,0,255,cv::NORM_MINMAX);
+    //cv::dilate(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1),2);
+    cv::morphologyEx(imgEdge_local,imgEdge_local, cv::MORPH_CLOSE, kernelOpen,cv::Point(-1,-1),1);
+    cv::floodFill(imgEdge_local,cv::Point(1,1),255);
+    cv::floodFill(imgEdge_local,cv::Point(imgEdge_local.cols-1,1),255);
+    cv::threshold(imgEdge_local, imgEdge_local,0,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    cv::findContours(imgEdge_local, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    for (int i=0;i<contours_canny.size();i++)
+        cv::drawContours(imgEdge_local,contours_canny,i,CV_RGB(255,255,255));
+    //imgEdge_local = cv::abs(imgEdge_local-255);// cv::bitwise_not(imgEdge_local,imgEdge_local);
+
+    cv::imshow("Laplacian_norm",imgEdge_local);
+
+    drawEyeExtractionMasks(imgEdge_local,ptcentre);
+
+//    for (int i=0; i<viThresEyeSeg.size();i++)
+//    {
+//        cv::threshold(imgEyeDiscover, imgIn_thres,viThresEyeSeg[i],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+//        cv::Laplacian(imgIn_thres,imgFishHead_Lapl,imgIn_thres.type(),1);
+//        imgEdge_local += imgFishHead_Lapl;
+//    }
+    //cv::threshold(imgEyeDiscover, imgIn_thres2,viThresEyeSeg[1],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
+    //cv::Laplacian(imgIn_thres2,imgFishHead_Lapl2,imgIn_thres.type(),1);
 
     //Try Laplacian CV_8U
-    //cv::GaussianBlur(imgIn_thres,imgIn_thres,cv::Size(3,3),3,3);
-    cv::Laplacian(imgIn_thres,imgFishHead_Lapl,imgIn_thres.type(),1);
-    cv::Laplacian(imgIn_thres2,imgFishHead_Lapl2,imgIn_thres.type(),1);
-
+    //
     //imgFishHead_Lapl.copyTo(imgEdge_local);
-    imgEdge_local = imgFishHead_Lapl + imgFishHead_Lapl2;
-
+/*    imgEdge_local = imgFishHead_Lapl + imgFishHead_Lapl2;
     if (viThresEyeSeg.size() == 3)
     {
         cv::threshold(imgEyeDiscover, imgIn_thres3,viThresEyeSeg[2],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
         cv::Laplacian(imgIn_thres3,imgFishHead_Lapl3,imgIn_thres.type(),1);
         imgEdge_local = imgEdge_local + imgFishHead_Lapl3;
     }
+   */
 
     assert(!imgEdge_local.empty());
 //    /// Make Mask regions to Separate Eyes //
@@ -950,11 +984,11 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
     //imgIn_thres.copyTo(outHeadFrameMonitor);
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),1);
-    cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),1); //Break Connections
+    //cv::morphologyEx(imgIn_thres,imgIn_thres, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),1); //Break Connections
     //cv::morphologyEx(imgEdge_local,imgEdge_local, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),1);
     //cv::erode(imgIn_thres,imgIn_thres,kernelOpen,cv::Point(-1,-1),3);
 
-    cv::findContours(imgEdge_local, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    //cv::findContours(imgEdge_local, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
 
     //Empty List

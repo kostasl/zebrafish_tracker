@@ -213,7 +213,10 @@
           </rect>
          </property>
          <property name="toolTip">
-          <string>Eye Segmentation Threshold Tuner</string>
+          <string>Segmentation Threshold Rank Offset </string>
+         </property>
+         <property name="statusTip">
+          <string extracomment="Sampled values are sorted and n samples are obtained from high-&gt;low starting from offset from top idx"/>
          </property>
          <property name="buttonSymbols">
           <enum>QAbstractSpinBox::PlusMinus</enum>
@@ -728,8 +731,8 @@
           <rect>
            <x>170</x>
            <y>300</y>
-           <width>51</width>
-           <height>51</height>
+           <width>60</width>
+           <height>61</height>
           </rect>
          </property>
          <property name="sizePolicy">
