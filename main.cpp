@@ -593,9 +593,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
 
 
 
-
-
-
+             /// Draw Tracks And Eye Angles //
             //If A fish Is Detected Then Draw Its tracks
             fishModels::iterator ft = vfishmodels.begin();
             while (ft != vfishmodels.end() && gTrackerState.bRenderToDisplay) //Render All Fish
@@ -604,8 +602,8 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
                 assert(pfish);
                 zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, cv::FONT_HERSHEY_PLAIN, gTrackerState.trackFntScale+0.2 );
                 //Draw KFiltered Axis
-                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->leftEye,CV_RGB(200,250,200));
-                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->rightEye,CV_RGB(200,250,200));
+                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->leftEye,CV_RGB(200,0,0));
+                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->rightEye,CV_RGB(0,200,0));
 
                 ++ft;
             }
@@ -3107,7 +3105,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               //qDebug() << "R:" << fitScoreReward;
               tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
               current_eyeState.iSegThres1        = gTrackerState.gthresEyeSeg; //Update to what the environment state is
-              current_eyeState.iDSegThres2       = gTrackerState.gthresEyeSeg-gTrackerState.gthresEyeSegL;
+              current_eyeState.iDSegThres2       = gTrackerState.gthresEyeSeg-gTrackerState.gEyeMaskErrosionIterations;
               current_eyeState.setVergenceState( fish->leftEyeTheta - fish->rightEyeTheta);
               //Test - Add Target Vector
               //fitScoreReward += -10.0*abs(40.25 - fish->leftEyeTheta) -10.0*abs(34.7 - fish->rightEyeTheta);

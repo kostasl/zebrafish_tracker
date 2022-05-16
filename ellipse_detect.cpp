@@ -852,11 +852,12 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size((int)pimgIn.cols*g_EyesUpScale,(int)pimgIn.rows*g_EyesUpScale));
 
     //cv::imshow("Eye Isolate Rect",imgUpsampled_gray);
-    int lengthLine = 13;
+    //int lengthLine = 13;
     cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/3+7);
     /// Make Mask regions to Separate Eyes //
-    cv::Point ptMaskCntr = cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
-    cv::RotatedRect rectMidEllipse = cv::RotatedRect(ptMaskCntr,cv::Size2f(gTrackerState.iEyeVMaskSepWidth,imgUpsampled_gray.rows+gTrackerState.iEyeVMaskSepHeight),0);
+    cv::Point ptMaskCntr           = cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
+    cv::RotatedRect rectMidEllipse = cv::RotatedRect(ptMaskCntr,cv::Size2f(gTrackerState.iEyeVMaskSepWidth,
+                                                                           imgUpsampled_gray.rows+gTrackerState.iEyeVMaskSepHeight),0);
 
     // Locate Eye Points //
     ///COVER Right Eye - Find Left EYE //
@@ -884,8 +885,11 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     //Find Eye On Left Side
     double minVal,maxVal;
     cv::Point ptMax,ptMin;
-    cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax);
-    ptLEyeMid = ptMax;
+    //cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax);
+    ptLEyeMid   = ptMax;
+    ptLEyeMid.x = rectMidEllipse.boundingRect2f().tl().x; //Use the Middle Ellipsoid mask to fix where eyes should be positioned (Given Accurated Template position)
+    ptLEyeMid.y = rectMidEllipse.boundingRect2f().tl().y;
+
 
     //cv::imshow("pyrUP",imgUpsampled_gray);
     //cv::imshow("LEye Discover",imgEyeCover);
@@ -894,8 +898,9 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     imgEyeCover = imgEyeDiscover.clone();
     cv::Rect rLeftMask(0,0,imgEyeDiscover.cols/2,imgEyeDiscover.rows);
     cv::rectangle(imgEyeCover,rLeftMask,cv::Scalar(0),-1);
-    cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax); //Find Centre of RIght Eye
-    ptREyeMid = ptMax;
+    //cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax); //Find Centre of RIght Eye
+    ptREyeMid.x = rectMidEllipse.boundingRect2f().br().x; //Use the Middle Ellipsoid mask to fix where eyes should be positioned (Given Accurated Template position)
+    ptREyeMid.y = rectMidEllipse.boundingRect2f().tl().y;
     //cv::imshow("REye Discover",imgEyeCover);
 
     /// Make Arc from Which to get Sample Points For Eye Segmentation
@@ -921,25 +926,50 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::Mat imgEyeDiscover_blur,imgIn_thres2;
     cv::Mat imgIn_thres3,imgFishHead_Lapl2,imgFishHead_Lapl3;
 
-    //imgEdge_local = Mat::zeros(imgEyeDiscover.rows,imgEyeDiscover.cols,CV_8UC1);
+
 
     cv::GaussianBlur(imgEyeDiscover,imgEyeDiscover_blur,cv::Size(3,3),3,3);
     cv::Laplacian(imgEyeDiscover_blur,imgEdge_local,CV_8UC1,1);
+
     cv::imshow("Laplacian",imgEdge_local);
     cv::normalize(imgEdge_local,imgEdge_local,0,255,cv::NORM_MINMAX);
+    imgEdge_local = cv::abs(imgEdge_local-255);// cv::bitwise_not(imgEdge_local,imgEdge_local);
+    //cv::erode(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1),2);
+    cv::GaussianBlur(imgEdge_local,imgEdge_local,cv::Size(3,3),3,3);
+
+
+    cv::imshow("LP+Blur",imgEdge_local);
+    //cv::threshold(imgEdge_local, imgEdge_local,220,255,cv::THRESH_OTSU); // Log Threshold Image + cv::THRESH_OTSU
+    cv::adaptiveThreshold(imgEdge_local,imgEdge_local,255,cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 27,0);
+    cv::imshow("T+B+L",imgEdge_local);
+    cv::erode(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1), gTrackerState.gEyeMaskErrosionIterations);
+    cv::imshow("E+T+B+L",imgEdge_local);
+
     //cv::dilate(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1),2);
     cv::morphologyEx(imgEdge_local,imgEdge_local, cv::MORPH_CLOSE, kernelOpen,cv::Point(-1,-1),1);
-    cv::floodFill(imgEdge_local,cv::Point(1,1),255);
-    cv::floodFill(imgEdge_local,cv::Point(imgEdge_local.cols-1,1),255);
-    cv::threshold(imgEdge_local, imgEdge_local,0,255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
-    cv::findContours(imgEdge_local, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-    for (int i=0;i<contours_canny.size();i++)
-        cv::drawContours(imgEdge_local,contours_canny,i,CV_RGB(255,255,255));
-    //imgEdge_local = cv::abs(imgEdge_local-255);// cv::bitwise_not(imgEdge_local,imgEdge_local);
-
-    cv::imshow("Laplacian_norm",imgEdge_local);
-
     drawEyeExtractionMasks(imgEdge_local,ptcentre);
+
+
+    //cv::morphologyEx(imgEdge_local,imgEdge_local, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
+    cv::circle(imgEdge_local,ptREyeMid,5,CV_RGB(255,255,255),cv::FILLED); //Fill the Gap in the Mask Caused by Lens
+    cv::circle(imgEdge_local,ptLEyeMid,5,CV_RGB(255,255,255),cv::FILLED);
+    //cv::floodFill(imgEdge_local,ptREyeMid+cv::Point2f(3,-5),255); //Fill the Contour of the rest of the eye - Move Above and away lens
+    //cv::floodFill(imgEdge_local,ptLEyeMid+cv::Point2f(-3,-5),255);
+    cv::imshow("F+E+T+B+L",imgEdge_local);
+
+    cv::Mat imglocalEyeEdges = Mat::zeros(imgEyeDiscover.rows,imgEyeDiscover.cols,CV_8UC1);
+    //cv::threshold(imgEdge_local, imgEdge_local,1,255,cv::THRESH_OTSU); // Log Threshold Image + cv::THRESH_OTSU
+    cv::findContours(imgEdge_local, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+    for (int i=0;i<contours_canny.size();i++){
+
+       // if (cv::pointPolygonTest(contours_canny[i],ptREyeMid,false) ||
+       //     cv::pointPolygonTest(contours_canny[i],ptLEyeMid,false) )
+                cv::drawContours(imglocalEyeEdges,contours_canny,i,CV_RGB(255,255,255),1);
+    }
+
+
+    cv::imshow("EyeContour",imglocalEyeEdges);
+    imglocalEyeEdges.copyTo(imgEdge_local);
 
 //    for (int i=0; i<viThresEyeSeg.size();i++)
 //    {
@@ -947,6 +977,8 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 //        cv::Laplacian(imgIn_thres,imgFishHead_Lapl,imgIn_thres.type(),1);
 //        imgEdge_local += imgFishHead_Lapl;
 //    }
+
+
     //cv::threshold(imgEyeDiscover, imgIn_thres2,viThresEyeSeg[1],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
     //cv::Laplacian(imgIn_thres2,imgFishHead_Lapl2,imgIn_thres.type(),1);
 
@@ -1003,15 +1035,15 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         qEllipsoids.pop(); //Empty All Other Candidates
 
     //Make coloured Version for Display
-    cv::cvtColor( imgEdge_local, outHeadFrameMonitor, cv::COLOR_GRAY2RGB);
+    cv::cvtColor( imglocalEyeEdges, outHeadFrameMonitor, cv::COLOR_GRAY2RGB);
 
     // Here is a heurestic approach combines the opencv ability to detect ellipses , with the noisy fast ellipsoid detection method that returns goodness of fit
     //imgEdge_local.copyTo(imgEdge_local_LEye );
 
     /// DETECT LEFT EYE COVER Right Eye
     imgEdge_local.copyTo(imgEdge_local_Orig);
-    cv::Rect r(imgEdge_local.cols/2,0,imgIn_thres.cols,imgIn_thres.rows);
-    cv::rectangle(imgEdge_local,r,cv::Scalar(0),-1);
+    cv::Rect r(imgEdge_local.cols/2,0,imgEdge_local.cols,imgEdge_local.rows);
+    cv::rectangle(imgEdge_local,r,cv::Scalar(0),cv::FILLED);
     //cv::imshow("LEftEye",imgEdge_local_LEye);
     // Get a ranked list of detected ellipsoids in the image
     getBestEllipsoidFits(imgEdge_local,qEllipsoids);
@@ -1024,7 +1056,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     {
         ret++;
         vLellipses.push_back(lEllMean);
-        drawExtendedMajorAxis(img_colour,lEllMean,CV_RGB(200,200,0));
+        drawExtendedMajorAxis(img_colour,lEllMean,CV_RGB(00,200,0));
     }
     //else
         //qDebug() << " L Eye failed to fit ellipsoid";

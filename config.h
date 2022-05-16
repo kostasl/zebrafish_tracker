@@ -293,13 +293,13 @@ class trackerState
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
       int gthresEyeSeg                    = -5; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
 
-      int gthresEyeSegL                   = 2;
+      int gEyeMaskErrosionIterations      = 1;
       int gFishTailSpineSegmentLength     = 9;
       // Eye Masks //
       int iEyeHMaskSepRadius                = 18; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
       int iEyeVMaskSepWidth               = 25; //5 px width vertical line separates the eyes for segmentation
-      int iEyeVMaskSepHeight              = 46;
+      int iEyeVMaskSepHeight              = 46; //Radius for rectMidEllipse : The Ellipsoid Mask Of Body In little Upsampled EyeDiscovery Image
       int eyeMaskVLineThickness           = 15; //Width Vertical Midline Separating The eyes
 
       /// Fishnet Classifier params //
@@ -387,7 +387,7 @@ class trackerState
             CEREAL_NVP(bUseBGModelling),CEREAL_NVP(bStaticBGMaskRemove), CEREAL_NVP(gbUpdateBGModel),CEREAL_NVP(gbUpdateBGModelOnAllVids),
             CEREAL_NVP(bSkipExisting),CEREAL_NVP(bTrackFood),CEREAL_NVP(bTracking),CEREAL_NVP(bStartPaused),
             CEREAL_NVP(gfVidfps),CEREAL_NVP(uiStartFrame),CEREAL_NVP(uiStopFrame),CEREAL_NVP(uiTotalFrames),
-            CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(gthresEyeSeg),CEREAL_NVP(gthresEyeSegL),
+            CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(gthresEyeSeg),CEREAL_NVP(gEyeMaskErrosionIterations),
             CEREAL_NVP(gi_MaxEllipseSamples),CEREAL_NVP(gi_VotesEllipseThres),CEREAL_NVP(gi_minEllipseMinor),CEREAL_NVP(gi_minEllipseMajor),CEREAL_NVP(gi_maxEllipseMajor),
             CEREAL_NVP(gi_CannyThresSmall),CEREAL_NVP(gi_CannyThres),CEREAL_NVP(gdMOGBGRatio),
             CEREAL_NVP(MOGhistory),CEREAL_NVP(thresh_minfishblobarea),CEREAL_NVP(thresh_maxfishblobarea),CEREAL_NVP(iEyeHMaskSepRadius),CEREAL_NVP(iEyeVMaskSepWidth)
