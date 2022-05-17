@@ -928,8 +928,6 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::Mat imgEyeDiscover_blur,imgIn_thres2;
     cv::Mat imgIn_thres3,imgFishHead_Lapl2,imgFishHead_Lapl3;
 
-
-
     //cv::GaussianBlur(imgEyeDiscover,imgEyeDiscover_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(imgEyeDiscover_blur,imgEdge_local,CV_8UC1,3);
     cv::floodFill(imgEyeDiscover,cv::Point(1,1),0,nullptr,gTrackerState.thresEyeEdgeCanny_low,gTrackerState.thresEyeEdgeCanny_high); //Fill the Contour of the rest of the eye - Move Above and away lens
@@ -939,43 +937,34 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
                                           gTrackerState.thresEyeEdgeCanny_high, 5, true);
 
     cv::imshow("Canny",imgEdge_local);
-    //cv::normalize(imgEdge_local,imgEdge_local,0,255,cv::NORM_MINMAX);
-    //imgEdge_local = cv::abs(imgEdge_local-255);// cv::bitwise_not(imgEdge_local,imgEdge_local);
-    //cv::erode(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1),2);
-    //cv::GaussianBlur(imgEdge_local,imgEdge_local,cv::Size(3,3),3,3);
-
-
-    //cv::imshow("LP+Blur",imgEdge_local);
-    //cv::threshold(imgEdge_local, imgEdge_local,220,255,cv::THRESH_OTSU); // Log Threshold Image + cv::THRESH_OTSU
-    //::adaptiveThreshold(imgEdge_local,imgEdge_local,255,cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 27,gTrackerState.gthresEyeSeg);
-    //cv::imshow("T+B+L",imgEdge_local);
-    //cv::erode(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1), gTrackerState.gEyeMaskErrosionIterations);
-    //cv::imshow("E+T+B+L",imgEdge_local);
-
-    //cv::dilate(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1),2);
+      //cv::dilate(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1),2);
     //cv::morphologyEx(imgEdge_local,imgEdge_local, cv::MORPH_CLOSE, kernelOpen,cv::Point(-1,-1),1);
-    drawEyeExtractionMasks(imgEdge_local,ptcentre);
+
 
 
     //cv::morphologyEx(imgEdge_local,imgEdge_local, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
     //cv::circle(imgEdge_local,ptREyeMid,5,CV_RGB(255,255,255),cv::FILLED); //Fill the Gap in the Mask Caused by Lens
     //cv::circle(imgEdge_local,ptLEyeMid,5,CV_RGB(255,255,255),cv::FILLED);
-    cv::imshow("F+E+T+B+C",imgEdge_local);
+    //cv::imshow("F+E+T+B+C",imgEdge_local);
 
     cv::Mat imglocalEyeEdges = Mat::zeros(imgEyeDiscover.rows,imgEyeDiscover.cols,CV_8UC1);
     //cv::threshold(imgEdge_local, imgEdge_local,1,255,cv::THRESH_OTSU); // Log Threshold Image + cv::THRESH_OTSU
-    cv::findContours(imgEdge_local, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-    for (int i=0;i<contours_canny.size();i++){
+//    cv::findContours(imgEdge_local, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+//    for (int i=0;i<contours_canny.size();i++){
 
-       // if (cv::pointPolygonTest(contours_canny[i],ptREyeMid,false) ||
-       //     cv::pointPolygonTest(contours_canny[i],ptLEyeMid,false) )
-                cv::drawContours(imglocalEyeEdges,contours_canny,i,CV_RGB(255,255,255),1);
-    }
+//        if (cv::pointPolygonTest(contours_canny[i],ptREyeMid,false) //||
+//            //cv::pointPolygonTest(contours_canny[i],ptLEyeMid,false)
+//                ){
+//                cv::drawContours(imglocalEyeEdges,contours_canny,i,CV_RGB(255,255,255),1);
+//                //break;
+//        }
+//    }
 
 
-    cv::imshow("EyeContour",imglocalEyeEdges);
-    imglocalEyeEdges.copyTo(imgEdge_local);
+    //cv::imshow("EyeContour",imglocalEyeEdges);
+    //imglocalEyeEdges.copyTo(imgEdge_local);
 
+    drawEyeExtractionMasks(imgEdge_local,ptcentre);
 //    for (int i=0; i<viThresEyeSeg.size();i++)
 //    {
 //        cv::threshold(imgEyeDiscover, imgIn_thres,viThresEyeSeg[i],255,cv::THRESH_BINARY); // Log Threshold Image + cv::THRESH_OTSU
@@ -1040,7 +1029,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
         qEllipsoids.pop(); //Empty All Other Candidates
 
     //Make coloured Version for Display
-    cv::cvtColor( imglocalEyeEdges, outHeadFrameMonitor, cv::COLOR_GRAY2RGB);
+    cv::cvtColor( imgEdge_local, outHeadFrameMonitor, cv::COLOR_GRAY2RGB);
 
     // Here is a heurestic approach combines the opencv ability to detect ellipses , with the noisy fast ellipsoid detection method that returns goodness of fit
     //imgEdge_local.copyTo(imgEdge_local_LEye );

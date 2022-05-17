@@ -424,10 +424,11 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     /// Find and Best scorring point ScoreMask - Along with Normed Fish Image centered at best-point
     //Need to Rotate Score Image Back to Original Orientiation to return Coordinates oF Best Match
     //- Removed  - Scores scaled too low Find Max Match Position In Non-Norm pic (original orientation)
-    //double minL1, maxL1;
-    //cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(13,13),13,13);
-    //cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
-
+    double minL1, maxL1;
+    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(iSlidePx_H_step*2+1,iSlidePx_V_step*2+1),iSlidePx_H_step,iSlidePx_V_step);
+    cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, max_dscore, 0, cv::NORM_MINMAX);
+    cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
+    max_dscore = maxL1;
     // Rotate Max Point Back to Original Orientation
     //cv::Mat MrotInv = cv::getRotationMatrix2D( ptRotCenter, -fishblob.angle,1.0); //Rotate Upwarte Upwards
     //cv::warpAffine(maskRegionScore,outmaskRegionScore,MrotInv,szFishAnteriorNorm);
@@ -447,7 +448,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     {
         //cv::circle(imgFishAnterior,ptmax,3,CV_RGB(250,250,250),1); //Indicate Max Score position By Grey Circle
         //cv::imshow("imgFishAnterior scoreBlobRegion "  + regTag, imgFishAnterior);
-        cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, 1, 0, cv::NORM_MINMAX);
+
         //cv::imshow(("FishNet ScoreRegion (Norm) ") + regTag, maskRegionScore_Norm);
 
         qDebug() << "scoreBlobRegion :" << max_dscore << " - Blob had higher class. score :" << fishblob.response ;
