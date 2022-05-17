@@ -66,7 +66,7 @@ static cv::Mat loadImage(const std::string& name)
 /// pt Cant be closer to image border than gFishBoundBoxSize - If it is it will fixed to this distance
 /// Returns Angle of Matched Template, centre of Detected Template and Match Score
 double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& iLastKnownGoodTemplateRow,int& iLastKnownGoodTemplateCol,
-                                  int& detectedAngle,cv::Point& detectedPoint , cv::Mat& frameOut )
+                                  int& detectedAngle,cv::Point& detectedPoint ,const cv::Mat& frameOut )
 {
     /// Fix Bounds For Search point such that search temaplte region is not smaller than template size
     pt.x = (pt.x <= gTrackerState.gszTemplateImg.width)?(gTrackerState.gszTemplateImg.width/2): pt.x;
@@ -81,7 +81,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     cv::Size szTempIcon(std::max(gTrackerState.gszTemplateImg.width,gTrackerState.gszTemplateImg.height),
                         std::max(gTrackerState.gszTemplateImg.width,gTrackerState.gszTemplateImg.height));
     assert(szTempIcon.width > 5 && szTempIcon.height> 5);
-    cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
+    cv::Point rotCentre = cv::Point(gTrackerState.gszTemplateImg.width/2,gTrackerState.gszTemplateImg.height/2);
     ///
     /// Check If Track Centre Point Contains An image that matches a fish template
     /// \todo make HeadPoint/Tail point a Propery of FishBlob
@@ -92,7 +92,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     /// BOUND SEARCH REGION ///
     // Small Search Region When A Match has already been found
     cv::Point pBound1,pBound2;
-    int iSearchRegionSize = max((int)(max(szTempIcon.height,szTempIcon.width)*0.60), (int)(0.25*gTrackerState.gFishBoundBoxSize));
+    int iSearchRegionSize = max((int)(max(szTempIcon.height,szTempIcon.width)*0.7), (int)(0.5*gTrackerState.gFishBoundBoxSize));
 
     //Expand the Search Region If Fish Tracking Has been lost
     if (iLastKnownGoodTemplateRow == 0 && iLastKnownGoodTemplateCol == 0)
@@ -105,11 +105,8 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     // Look for Fish Template Within The Blob Region //
     cv::Rect rectFish(pBound1,pBound2);
 
-    // Debug //
-    #ifdef _ZTFDEBUG_
-       cv::rectangle(frameOut,rectFish,CV_RGB(20,200,150),1); //Ucomment to debug template search Region
-    #endif
-    cv::rectangle(frameOut,rectFish,CV_RGB(200,0,0),1); //Ucomment to debug template search Region
+
+
     cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
     if (gTrackerState.bshowDetectorDebugImg)
@@ -139,10 +136,17 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     detectedAngle =AngleIdx*gTrackerState.gFishTemplateAngleSteps;
 
     //MaxLoc Coords Need inversion
-    //gptmaxLoc.x = fishRegion.cols - gptmaxLoc.x;
-    //gptmaxLoc.y = fishRegion.rows - gptmaxLoc.y;
+    //gptmaxLoc.x = pBound2.x - gptmaxLoc.x;
+    //gptmaxLoc.y = pBound2.y - gptmaxLoc.y;
     cv::Point top_left  = pBound1+gptmaxLoc; //Get top Left Corner Of Template Detected Region
     detectedPoint = top_left + rotCentre; //Get Centre Of Template Detection Region - Used for Tracking
+    /// Debug Draw //
+    //#ifdef _ZTFDEBUG_
+        cv::rectangle(frameOut,rectFish,CV_RGB(200,0,0),1); //Ucomment to debug template search Region
+        cv::circle(frameOut,detectedPoint,3,CV_RGB(200,0,0),2); //Best Match Point in Region
+     //#endif
+
+
 
     return maxMatchScore;
 }
@@ -338,7 +342,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 #if defined(USE_CUDA) && defined(USE_CUDA_FOR_TEMPLATE_MATCHING) && defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAIMGPROC)
         maxVal = gpu_matchTemplate(templ_rot,dimgRegionIn,ptmaxLoc);
 #else
-         cv::matchTemplate(imgRegionIn,templ_rot,outMatchConv, cv::TM_CCORR_NORMED  ); // CV_TM_CCOEFF_NORMED ,TM_SQDIFF_NORMED
+         cv::matchTemplate(imgRegionIn,templ_rot,outMatchConv, cv::TM_CCOEFF_NORMED  ); // cv::TM_CCORR_NORMED CV_TM_CCOEFF_NORMED ,TM_SQDIFF_NORMED
          //Find Min Max Location
 
          //cv::flip(outMatchConv,outMatchConv,-1); //Flip H and V
@@ -346,8 +350,10 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 #endif         //Convolution  // CV_TM_SQDIFF_NORMED Poor Matching
 
         //Assume Value < 0.7 is non Fish,
-        if (maxGVal < maxVal)
-        {
+       //maxVal   = 1-minVal; //When Using SQ Diff
+       //ptmaxLoc = ptminLoc;
+       if (maxGVal < maxVal)
+       {
             maxGVal         = maxVal;
             ptGmaxLoc       =  cv::Point(ptmaxLoc.x, //+imgRegionIn.cols/2
                                          ptmaxLoc.y); //+imgRegionIn.rows/2 //The calling Function needs to reposition maxLoc To the global Frame
@@ -442,7 +448,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
             //pwindow_main->updateTemplateThres();
      }
      if (gTrackerState.bshowDetectorDebugImg)
-        cv::imshow("Templ Score",outMatchConv);
+        cv::imshow("TScore",outMatchConv);
      gTrackerState.iTemplateMatchFailCounter = 0; //Reset Counter of Failed Attempts
 
  }

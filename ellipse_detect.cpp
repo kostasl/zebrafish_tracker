@@ -690,29 +690,29 @@ std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::ve
         //Get N values starting from Approx Median Value moving up the intensity
         std::sort(veyeSegSamples.begin(),veyeSegSamples.end());
 
-        int idx = (int)veyeSegSamples.size() + gTrackerState.gthresEyeSeg;
+        int idx = (int)veyeSegSamples.size() + gTrackerState.thresEyeEdgeCanny_low;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
         iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
         vretThresholds.push_back(iThresEyeSeg);
 
 
-        idx = (int)veyeSegSamples.size()*0.85 + + gTrackerState.gthresEyeSeg;
+        idx = (int)veyeSegSamples.size()*0.85 + + gTrackerState.thresEyeEdgeCanny_low;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
         iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
         vretThresholds.push_back(iThresEyeSeg);
 
 
-        idx = (int)veyeSegSamples.size()*0.65 + + gTrackerState.gthresEyeSeg;
+        idx = (int)veyeSegSamples.size()*0.65 + + gTrackerState.thresEyeEdgeCanny_low;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
         iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
         vretThresholds.push_back(iThresEyeSeg);
 
-        idx = veyeSegSamples.size()*0.50 + gTrackerState.gthresEyeSeg;
+        idx = veyeSegSamples.size()*0.50 + gTrackerState.thresEyeEdgeCanny_low;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
         iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
         vretThresholds.push_back(iThresEyeSeg);
 
-        idx = veyeSegSamples.size()*0.30 + gTrackerState.gthresEyeSeg;
+        idx = veyeSegSamples.size()*0.30 + gTrackerState.thresEyeEdgeCanny_low;
         idx = std::min((int)veyeSegSamples.size(), std::max(1,idx)); //Limits
         iThresEyeSeg = std::min(std::max(3,veyeSegSamples[idx]),255);
         vretThresholds.push_back(iThresEyeSeg);
@@ -788,7 +788,9 @@ void drawEyeExtractionMasks(cv::Mat& mfishHead,cv::Point2f ptcentre)
 {
     cv::Point ptMaskCntr            = cv::Point(ptcentre.x,mfishHead.rows);//cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
     cv::RotatedRect rectMidEllipse  = cv::RotatedRect(ptMaskCntr,
-                                                     cv::Size2f(gTrackerState.iEyeVMaskSepWidth,mfishHead.rows+26),0);
+                                                     cv::Size2f(gTrackerState.iEyeVMaskSepWidth,mfishHead.rows+36),0);
+
+    gTrackerState.eyeMaskVLineThickness = gTrackerState.iEyeVMaskSepWidth/2;
 
     //If Grey Scale then Draw Filled Black Masks
     if (mfishHead.channels() == 1)
@@ -920,7 +922,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
 
     /// Estimate Eye Segmentation threshold from sample points in Image
-    std::vector<int> viThresEyeSeg = getEyeSegThreshold(imgEyeDiscover,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
+    //std::vector<int> viThresEyeSeg = getEyeSegThreshold(imgEyeDiscover,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
       // Do Multiple Thresholding Of Masked Image to Obtain Segmented Eyes //
     cv::Mat imgEyeDiscover_blur,imgIn_thres2;
@@ -928,34 +930,37 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
 
 
-    cv::GaussianBlur(imgEyeDiscover,imgEyeDiscover_blur,cv::Size(3,3),3,3);
-    cv::Laplacian(imgEyeDiscover_blur,imgEdge_local,CV_8UC1,1);
+    //cv::GaussianBlur(imgEyeDiscover,imgEyeDiscover_blur,cv::Size(3,3),3,3);
+    //cv::Laplacian(imgEyeDiscover_blur,imgEdge_local,CV_8UC1,3);
+    cv::floodFill(imgEyeDiscover,cv::Point(1,1),0,nullptr,gTrackerState.thresEyeEdgeCanny_low,gTrackerState.thresEyeEdgeCanny_high); //Fill the Contour of the rest of the eye - Move Above and away lens
+    cv::floodFill(imgEyeDiscover,cv::Point(imgEyeDiscover.cols-1,1),0,nullptr,gTrackerState.thresEyeEdgeCanny_low,gTrackerState.thresEyeEdgeCanny_high);
 
-    cv::imshow("Laplacian",imgEdge_local);
-    cv::normalize(imgEdge_local,imgEdge_local,0,255,cv::NORM_MINMAX);
-    imgEdge_local = cv::abs(imgEdge_local-255);// cv::bitwise_not(imgEdge_local,imgEdge_local);
+    cv::Canny(imgEyeDiscover,imgEdge_local,gTrackerState.thresEyeEdgeCanny_low,
+                                          gTrackerState.thresEyeEdgeCanny_high, 5, true);
+
+    cv::imshow("Canny",imgEdge_local);
+    //cv::normalize(imgEdge_local,imgEdge_local,0,255,cv::NORM_MINMAX);
+    //imgEdge_local = cv::abs(imgEdge_local-255);// cv::bitwise_not(imgEdge_local,imgEdge_local);
     //cv::erode(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1),2);
-    cv::GaussianBlur(imgEdge_local,imgEdge_local,cv::Size(3,3),3,3);
+    //cv::GaussianBlur(imgEdge_local,imgEdge_local,cv::Size(3,3),3,3);
 
 
-    cv::imshow("LP+Blur",imgEdge_local);
+    //cv::imshow("LP+Blur",imgEdge_local);
     //cv::threshold(imgEdge_local, imgEdge_local,220,255,cv::THRESH_OTSU); // Log Threshold Image + cv::THRESH_OTSU
-    cv::adaptiveThreshold(imgEdge_local,imgEdge_local,255,cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 27,0);
-    cv::imshow("T+B+L",imgEdge_local);
-    cv::erode(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1), gTrackerState.gEyeMaskErrosionIterations);
-    cv::imshow("E+T+B+L",imgEdge_local);
+    //::adaptiveThreshold(imgEdge_local,imgEdge_local,255,cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 27,gTrackerState.gthresEyeSeg);
+    //cv::imshow("T+B+L",imgEdge_local);
+    //cv::erode(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1), gTrackerState.gEyeMaskErrosionIterations);
+    //cv::imshow("E+T+B+L",imgEdge_local);
 
     //cv::dilate(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1),2);
-    cv::morphologyEx(imgEdge_local,imgEdge_local, cv::MORPH_CLOSE, kernelOpen,cv::Point(-1,-1),1);
+    //cv::morphologyEx(imgEdge_local,imgEdge_local, cv::MORPH_CLOSE, kernelOpen,cv::Point(-1,-1),1);
     drawEyeExtractionMasks(imgEdge_local,ptcentre);
 
 
     //cv::morphologyEx(imgEdge_local,imgEdge_local, cv::MORPH_OPEN, kernelOpen,cv::Point(-1,-1),1);
-    cv::circle(imgEdge_local,ptREyeMid,5,CV_RGB(255,255,255),cv::FILLED); //Fill the Gap in the Mask Caused by Lens
-    cv::circle(imgEdge_local,ptLEyeMid,5,CV_RGB(255,255,255),cv::FILLED);
-    //cv::floodFill(imgEdge_local,ptREyeMid+cv::Point2f(3,-5),255); //Fill the Contour of the rest of the eye - Move Above and away lens
-    //cv::floodFill(imgEdge_local,ptLEyeMid+cv::Point2f(-3,-5),255);
-    cv::imshow("F+E+T+B+L",imgEdge_local);
+    //cv::circle(imgEdge_local,ptREyeMid,5,CV_RGB(255,255,255),cv::FILLED); //Fill the Gap in the Mask Caused by Lens
+    //cv::circle(imgEdge_local,ptLEyeMid,5,CV_RGB(255,255,255),cv::FILLED);
+    cv::imshow("F+E+T+B+C",imgEdge_local);
 
     cv::Mat imglocalEyeEdges = Mat::zeros(imgEyeDiscover.rows,imgEyeDiscover.cols,CV_8UC1);
     //cv::threshold(imgEdge_local, imgEdge_local,1,255,cv::THRESH_OTSU); // Log Threshold Image + cv::THRESH_OTSU
@@ -1214,7 +1219,7 @@ void show_histogram(std::string const& name, cv::Mat1b const& image)
            cv::putText(hist_image,"H",cv::Point(b, hist_height-sheight+ picoffset),cv::FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);
         }
 
-        if (gTrackerState.gthresEyeSeg == b)
+        if (gTrackerState.thresEyeEdgeCanny_low == b)
         {
            cv::circle(hist_image, cv::Point(b, hist_height-sheight+ picoffset),8,CV_RGB(150,150,150),cv::FILLED);
            cv::putText(hist_image,"T",cv::Point(b, hist_height-sheight+ picoffset),cv::FONT_HERSHEY_PLAIN,0.7,CV_RGB(200,200,200),1);

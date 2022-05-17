@@ -31,7 +31,7 @@ typedef std::vector<std::vector< std::vector<double> > > tStateValueMatrix;
 typedef struct EyeDetectorState
 {
     EyeDetectorState(){
-        iSegThres1 = gTrackerState.gthresEyeSeg;
+        iSegThres1 = gTrackerState.thresEyeEdgeCanny_low;
         iDSegThres2 = 1;
         yEyePosition = 7;
         VergenceState = 1;

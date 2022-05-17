@@ -725,12 +725,13 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
        for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
        {
              fishModel* fish = (*it).second;
-             if (cv::norm(fish->ptRotCentre-kp.pt) < 10)//(fish->bodyRotBound.boundingRect().contains(kp.pt))
+             // Blob Is in Existing Fish Contour - Must be pointing to existing model
+             if (cv::norm(fish->ptRotCentre - kp.pt) <= 20 )//(fish->bodyRotBound.boundingRect().contains(kp.pt))
              {
                zftblob kpFishBlob = kp; //Search Very Near Last Known Fish Position
                kpFishBlob.pt = fish->ptRotCentre;
                kpFishBlob.response = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kpFishBlob,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,5,1,1, QString::number(iHitCount).toStdString(),false);
+                                                                mask_fnetScore,20,2,2, QString::number(iHitCount).toStdString(),false);
               if (kpFishBlob.response > gTrackerState.fishnet_classifier_thres){
                   kp = kpFishBlob;
                   break;
@@ -758,15 +759,15 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                //3rd Pass - Extensive Search in Small Region to match best score
                if (fRH[1] >= gTrackerState.fishnet_classifier_thres*0.75)
                     fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,6,2,2, QString::number(iHitCount).toStdString()+"B",true);
+                                                                mask_fnetScore,6,2,2, QString::number(iHitCount).toStdString()+"C",true);
                else
                     //Show User LaseFailed Detection Happened
                     cv::circle(outUserFrame,kp.pt,1,CV_RGB(255,5,5),2,LINE_AA );
 
                //4th Pass - Extensive Search in Small Region to match best score
-               if (fRH[3] >= gTrackerState.fishnet_classifier_thres*0.95)
-                    fRH[4] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,3,1,1, QString::number(iHitCount).toStdString()+"B",false);
+               if (fRH[2] >= gTrackerState.fishnet_classifier_thres*0.95)
+                    fRH[3] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
+                                                                mask_fnetScore,3,1,1, QString::number(iHitCount).toStdString()+"D",false);
                else
                     //Show User LaseFailed Detection Happened
                     cv::circle(outUserFrame,kp.pt,1,CV_RGB(255,5,5),1,LINE_AA );
@@ -805,14 +806,14 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                 int bestAngle = kp.angle;
                 int iTemplRow = gTrackerState.iLastKnownGoodTemplateRow; //Starting Search Point For Template
                 int iTemplCol = kp.angle;
-                float maxMatchScore = doTemplateMatchAroundPoint(frameImg_grey,kp.pt,iTemplRow,iTemplCol,bestAngle,ptSearch,outFishMask);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
+                float maxMatchScore = doTemplateMatchAroundPoint(frameImg_grey, kp.pt, iTemplRow, iTemplCol, bestAngle, ptSearch, outUserFrame);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
                 gTrackerState.iLastKnownGoodTemplateRow = iTemplRow;
                 //If Template Match Succeeds then Update Blob To Correct Position And Orientation -
                 if (maxMatchScore >= gTrackerState.gTemplateMatchThreshold)  //gTrackerState.fishnet_classifier_thres //|| maxMatchScore > 100.0f
                 {
                     // Update to template Matched Angle and positio
                     kp.angle            = bestAngle;
-                    kp.pt               = ptSearch; //Does not Work Accuratelly
+                    //kp.pt               = ptSearch; //Does not Work Accuratelly
                     //qDebug() << "+Tmpl:" << maxMatchScore;
                 }
             }//If template Matching is used
@@ -820,6 +821,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
             ptFishblobs.push_back(kp);
             /// \todo Conditionally add this Contour to output if it matches template.
             vFilteredFishbodycontours_classified.push_back(curve);
+
 
             ///  COMBINE - DRAW CONTOURS
             ///\bug drawContours produces freezing sometimes

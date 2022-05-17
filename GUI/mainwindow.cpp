@@ -61,6 +61,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->graphicsView->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
     this->ui->graphicsView->setResizeAnchor(QGraphicsView::AnchorUnderMouse);
 
+    //Circular Bottom Eye Mask
+    this->ui->spinBoxEyeMaskH->setValue(gTrackerState.iEyeHMaskSepRadius);
     //this->ui->graphicsView->setFixedSize(1280,1024);
 
 
@@ -113,9 +115,10 @@ void MainWindow::createSpinBoxes()
 
 
     this->ui->spinBoxFrame->installEventFilter(this);
-    this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
+    //this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
     //this->ui->spinBoxEyeThres->setRange(-100,100); //-Set On GUI form -Ve Values Allow for lowering Avg Threshold
-    this->ui->spinBoxEyeThres->setValue(gTrackerState.gthresEyeSeg);
+    this->ui->spinBoxEyeThres->setValue(gTrackerState.thresEyeEdgeCanny_low);
+    this->ui->spinBoxEyeThres_H->setValue(gTrackerState.thresEyeEdgeCanny_high);
 
     this->ui->spinBoxFoodThresMax->setValue(gTrackerState.g_SegFoodThesMax);
     this->ui->spinBoxFoodThresMin->setValue(gTrackerState.g_SegFoodThesMin);
@@ -160,11 +163,11 @@ void MainWindow::createSpinBoxes()
 //                     static_cast<void (MainWindow::*)(int)>(&MainWindow::valueChanged));
 
 
-    ///\todo Remove These and Make Use of Auto Slots via form editor just like the spinBoxMOGBGRatio or spinBoxTemplateThres
-    QObject::connect(this->ui->spinBoxEyeThres,
-                     SIGNAL(valueChanged(int)),
-                     this,
-                     SLOT(eyevalueChanged(int)));
+//    ///\todo Remove These and Make Use of Auto Slots via form editor just like the spinBoxMOGBGRatio or spinBoxTemplateThres
+//    QObject::connect(this->ui->spinBoxEyeThres,
+//                     SIGNAL(valueChanged(int)),
+//                     this,
+//                     SLOT(eyevalueChanged(int)));
 
     QObject::connect(this->ui->spinBoxFishThres,
                      SIGNAL(valueChanged(int)),
@@ -432,7 +435,7 @@ void MainWindow::showCVimg(cv::Mat& img)
 void MainWindow::UpdateSpinBoxToValue()
 {
 
-    this->ui->spinBoxEyeThres->setValue(gTrackerState.gthresEyeSeg);
+    this->ui->spinBoxEyeThres->setValue(gTrackerState.thresEyeEdgeCanny_low);
     this->ui->spinBoxFishThres->setValue(gTrackerState.g_FGSegthresh);
 
     this->ui->spinBoxFoodThresMax->setValue(gTrackerState.g_SegFoodThesMax);
@@ -440,15 +443,11 @@ void MainWindow::UpdateSpinBoxToValue()
 
 }
 
-void MainWindow::eyevalueChanged(int i)
-{
-    //qDebug() << "Eye SpinBox gave " << i;
+//void MainWindow::eyevalueChanged(int i)
+//{
+//    //qDebug() << "Eye SpinBox gave " << i;
 
-    if (bSceneMouseLButtonDown)
-        LogEvent(QString("Changed Eye Seg Threshold:") + QString::number(i));
-
-    gTrackerState.gthresEyeSeg = i;
-}
+//}
 
 void MainWindow::fishvalueChanged(int i)
 {
@@ -1293,10 +1292,6 @@ void MainWindow::on_spinBoxEyeThres_valueChanged(const QString &arg1)
 
 }
 
-void MainWindow::on_spinBoxEyeThres_valueChanged(int arg1)
-{
-
-}
 
 void MainWindow::on_checkBoxHistEqualizer_stateChanged(int arg1)
 {
@@ -1358,3 +1353,27 @@ void MainWindow::on_spinBoxTemplatethres_valueChanged(int arg1)
      gTrackerState.gTemplateMatchThreshold =  (float)arg1/100.0;
 }
 
+
+void MainWindow::on_spinBoxMaxEllipse_valueChanged(int arg1)
+{
+
+}
+
+
+void MainWindow::on_spinBoxEyeThres_H_valueChanged(int arg1)
+{
+    if (bSceneMouseLButtonDown)
+        LogEvent(QString("Changed higher Canny Eye Seg Threshold:") + QString::number(arg1));
+
+    gTrackerState.thresEyeEdgeCanny_high = arg1;
+}
+
+
+void MainWindow::on_spinBoxEyeThres_valueChanged(int arg1)
+{
+
+    if (bSceneMouseLButtonDown)
+        LogEvent(QString("Changed lower Canny Eye Seg Threshold:") + QString::number(arg1));
+
+    gTrackerState.thresEyeEdgeCanny_low = arg1;
+}

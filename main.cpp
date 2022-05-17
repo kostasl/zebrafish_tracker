@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
         "{UseTemplateMatching T | 1  | After DNN Classifier, also use template matching to Detect orientation and position of larva (speed up if false)}" //bUseTemplateMatching
         "{BGThreshold bgthres | 2  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
         "{HeadMaskVW hmw | 25  | Head Vertical mask width that separates eyes}"
-        "{HeadMaskHR hmh | 23  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
+        "{HeadMaskHR hmh | 48  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{CircleROIRadius cr | 512  | px radius for default centred ROI}"
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
         "{DisableOpenCL ocl | 0  | Disabling the use of OPENCL can avoid some SEG faults hit when running multiple trackers in parallel}"
         "{EnableCUDA cuda | 0  | Use CUDA for MOG, and mask processing - if available  }"
         "{HideDataSource srcShow | 0  | Do not reveal datafile source, so user can label data blindly  }"
-        "{EyeHistEqualization histEq | 0  | Use hist. equalization to enhance eye detection contrast  }"
+        "{EyeHistEqualization histEq | 1  | Use hist. equalization to enhance eye detection contrast  }"
         "{TrackFish ft | 1  | Track Fish not just the moving prey }"
         "{MeasureMode M | 0 | Click 2 points to measure distance to prey}"
         "{DNNModelFile T | /home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/ | Location of Tensorflow model file used for classification}"
@@ -2764,8 +2764,8 @@ void CallBackHistFunc(int event, int x, int y, int flags, void* userdata)
             mousepnt.x = x;
             mousepnt.y = y;
 
-            gTrackerState.gthresEyeSeg = x;
-            std::cout << "Eye Threshold Set to:" << gTrackerState.gthresEyeSeg << std::endl;
+            gTrackerState.thresEyeEdgeCanny_low = x;
+            std::cout << "Eye Threshold Set to:" << gTrackerState.thresEyeEdgeCanny_low << std::endl;
     }
 }
 
@@ -3104,8 +3104,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               gTrackerState.gUserReward = 0.0; //Reset User Provided Rewards
               //qDebug() << "R:" << fitScoreReward;
               tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
-              current_eyeState.iSegThres1        = gTrackerState.gthresEyeSeg; //Update to what the environment state is
-              current_eyeState.iDSegThres2       = gTrackerState.gthresEyeSeg-gTrackerState.gEyeMaskErrosionIterations;
+              current_eyeState.iSegThres1        = gTrackerState.thresEyeEdgeCanny_low; //Update to what the environment state is
+              current_eyeState.iDSegThres2       = gTrackerState.thresEyeEdgeCanny_low-gTrackerState.gEyeMaskErrosionIterations;
               current_eyeState.setVergenceState( fish->leftEyeTheta - fish->rightEyeTheta);
               //Test - Add Target Vector
               //fitScoreReward += -10.0*abs(40.25 - fish->leftEyeTheta) -10.0*abs(34.7 - fish->rightEyeTheta);
@@ -3154,7 +3154,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               }
 
 
-              /// END OF EYE DETECTION //
+              /// END - EYE DETECTION SECTION //
 
 
               /// SPINE Fitting And Drawing ///

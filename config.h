@@ -286,17 +286,18 @@ class trackerState
       /// Eye Tracking Params
       int gi_CannyThres           = 150;
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-      int gi_maxEllipseMajor      = 30; /// thres  for Eye Ellipse Detection methods
-      int gi_minEllipseMajor      = 13; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
+      int gi_maxEllipseMajor      = 38; /// thres  for Eye Ellipse Detection methods
+      int gi_minEllipseMajor      = 15; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
       int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int gthresEyeSeg                    = -5; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int thresEyeEdgeCanny_low             = 2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int thresEyeEdgeCanny_high            = 2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
 
       int gEyeMaskErrosionIterations      = 1;
       int gFishTailSpineSegmentLength     = 9;
       // Eye Masks //
-      int iEyeHMaskSepRadius                = 18; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
+      int iEyeHMaskSepRadius              = 40; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
       int iEyeVMaskSepWidth               = 25; //5 px width vertical line separates the eyes for segmentation
       int iEyeVMaskSepHeight              = 46; //Radius for rectMidEllipse : The Ellipsoid Mask Of Body In little Upsampled EyeDiscovery Image
@@ -318,7 +319,7 @@ class trackerState
       int gEyeTemplateAngleSteps      = 5;
 
       double eyeStepIncrement         = 0.8; //Eye Angles Can be Slowly Updated on each Frame- Change with Step Size eyeStepIncrement
-      double gTemplateMatchThreshold  = 0.73; //Template Matching is tested After Fish Net Classifier Has passed-
+      double gTemplateMatchThreshold  = 0.81; //Template Matching is tested After Fish Net Classifier Has passed-
       double gTemplateMatchThreshold_LowLimit = 0.65;
       double gTemplateMatchThreshold_UpLimit = 0.95;
 
@@ -387,7 +388,7 @@ class trackerState
             CEREAL_NVP(bUseBGModelling),CEREAL_NVP(bStaticBGMaskRemove), CEREAL_NVP(gbUpdateBGModel),CEREAL_NVP(gbUpdateBGModelOnAllVids),
             CEREAL_NVP(bSkipExisting),CEREAL_NVP(bTrackFood),CEREAL_NVP(bTracking),CEREAL_NVP(bStartPaused),
             CEREAL_NVP(gfVidfps),CEREAL_NVP(uiStartFrame),CEREAL_NVP(uiStopFrame),CEREAL_NVP(uiTotalFrames),
-            CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(gthresEyeSeg),CEREAL_NVP(gEyeMaskErrosionIterations),
+            CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(thresEyeEdgeCanny_low),CEREAL_NVP(gEyeMaskErrosionIterations),
             CEREAL_NVP(gi_MaxEllipseSamples),CEREAL_NVP(gi_VotesEllipseThres),CEREAL_NVP(gi_minEllipseMinor),CEREAL_NVP(gi_minEllipseMajor),CEREAL_NVP(gi_maxEllipseMajor),
             CEREAL_NVP(gi_CannyThresSmall),CEREAL_NVP(gi_CannyThres),CEREAL_NVP(gdMOGBGRatio),
             CEREAL_NVP(MOGhistory),CEREAL_NVP(thresh_minfishblobarea),CEREAL_NVP(thresh_maxfishblobarea),CEREAL_NVP(iEyeHMaskSepRadius),CEREAL_NVP(iEyeVMaskSepWidth)
