@@ -169,7 +169,7 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     //KF.processNoiseCov.at<float>(35) = 1e-1f;
 
     // Measures Noise Covariance Matrix R - Set high/low so Filter Follows Measurement more closely
-    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(1e-1f)); // default is 1, increasing should smooth but I get erratic behaviour
+    cv::setIdentity(KF.measurementNoiseCov, cv::Scalar(2e-1f)); // default is 1, increasing should smooth but I get erratic behaviour
     //KF.measurementNoiseCov.at<float>(2,2) = 1e-3f; //Angular Diff (Speed)- per frame
     //KF.measurementNoiseCov.at<float>(3,3) = 1e-3f; //Angle Accell
     //KF.measurementNoiseCov.at<float>(1,2) = 1e-2f; // Y speed X pos
@@ -180,8 +180,8 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     //KF.measurementNoiseCov.at<float>(4,5) = 1e-3f; //1e-1f; //Angular V_speed - Accell Covar
     //KF.measurementNoiseCov.at<float>(5,6) = 0;//1e-4f;//1e-1f; //Angular Accelleration-
 
-    KF.measurementNoiseCov.at<float>(7,7) = 1e-3f; //Left Eye
-    KF.measurementNoiseCov.at<float>(8,8) = 1e-3f; //Right Eye
+    KF.measurementNoiseCov.at<float>(7,7) = 1e-0f; //Left Eye
+    KF.measurementNoiseCov.at<float>(8,8) = 1e-0f; //Right Eye
 
     KF.statePre = mState;
     KF.statePost = mState.clone();

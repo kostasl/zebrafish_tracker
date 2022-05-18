@@ -1344,7 +1344,7 @@ void MainWindow::on_spinBoxFishnetClassifierthres_valueChanged(double arg1)
 
 void MainWindow::on_spinBoxEyeMaskH_valueChanged(int arg1)
 {
-    gTrackerState.iEyeHMaskSepRadius = max(1,arg1);
+    gTrackerState.iEyeHMaskSepRadius = arg1;
 }
 
 

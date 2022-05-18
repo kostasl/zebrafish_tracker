@@ -853,8 +853,14 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     const float g_EyesUpScale = 2.0;
     cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size((int)pimgIn.cols*g_EyesUpScale,(int)pimgIn.rows*g_EyesUpScale));
 
-    //cv::imshow("Eye Isolate Rect",imgUpsampled_gray);
-    //int lengthLine = 13;
+    /// THRESHOLD - SEGMENT HEAD Image //
+    cv::Mat imgEyeDiscover,imgEyeDiscover_Mask;
+    /// MASK HEAD IMAGE ///
+    cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgUpsampled_gray.cols/2)-1,gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
+    imgUpsampled_gray.copyTo(imgEyeDiscover,imgEyeDiscover_Mask);
+
+
+    //MAKE FEATURE ISOLATION MASK //
     cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/3+7);
     /// Make Mask regions to Separate Eyes //
     cv::Point ptMaskCntr           = cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows);
@@ -864,7 +870,6 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     // Locate Eye Points //
     ///COVER Right Eye - Find Left EYE //
     cv::Rect rRightMask(imgUpsampled_gray.cols/2,0,imgUpsampled_gray.cols,imgUpsampled_gray.rows);
-    cv::Mat imgEyeDiscover = imgUpsampled_gray.clone();
 
     /// Make Body Mask For bOth ///
    // cv::circle(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows),gTrackerState.giHeadIsolationMaskVOffset, CV_RGB(0,250,50),cv::FILLED); //Mask Body
@@ -930,12 +935,13 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
     //cv::GaussianBlur(imgEyeDiscover,imgEyeDiscover_blur,cv::Size(3,3),3,3);
     //cv::Laplacian(imgEyeDiscover_blur,imgEdge_local,CV_8UC1,3);
-    cv::floodFill(imgEyeDiscover,cv::Point(1,1),0,nullptr,gTrackerState.thresEyeEdgeCanny_low,gTrackerState.thresEyeEdgeCanny_high); //Fill the Contour of the rest of the eye - Move Above and away lens
-    cv::floodFill(imgEyeDiscover,cv::Point(imgEyeDiscover.cols-1,1),0,nullptr,gTrackerState.thresEyeEdgeCanny_low,gTrackerState.thresEyeEdgeCanny_high);
+    //cv::floodFill(imgEyeDiscover,cv::Point(1,1),0,nullptr,gTrackerState.thresEyeEdgeCanny_low,gTrackerState.thresEyeEdgeCanny_high); //Fill the Contour of the rest of the eye - Move Above and away lens
+    //cv::floodFill(imgEyeDiscover,cv::Point(imgEyeDiscover.cols-1,1),0,nullptr,gTrackerState.thresEyeEdgeCanny_low,gTrackerState.thresEyeEdgeCanny_high);
 
     cv::Canny(imgEyeDiscover,imgEdge_local,gTrackerState.thresEyeEdgeCanny_low,
                                           gTrackerState.thresEyeEdgeCanny_high, 5, true);
 
+    cv::imshow("FishSeg",imgEyeDiscover);
     cv::imshow("Canny",imgEdge_local);
       //cv::dilate(imgEdge_local,imgEdge_local,kernelOpen,cv::Point(-1,-1),2);
     //cv::morphologyEx(imgEdge_local,imgEdge_local, cv::MORPH_CLOSE, kernelOpen,cv::Point(-1,-1),1);
@@ -1001,7 +1007,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     drawEyeExtractionMasks(img_colour,ptcentre);
 
 
-//    //cv::adaptiveThreshold(imgIn, imgIn_thres, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgIn.cols/2)-1,10 ); // Log Threshold Image + cv::THRESH_OTSU
+
 //    cv::line(img_colour,ptcentre,cv::Point(img_colour.cols/2,0),CV_RGB(0,250,50),1);//Split Eyes iEyeMaskSepWidth
 //    cv::circle(img_colour,cv::Point(img_colour.cols/2,img_colour.rows),gTrackerState.giHeadIsolationMaskVOffset, CV_RGB(0,250,50),1); //Mask Body
 //    //Make Inner eye Mask, covering back edges for both - Place centre on edge of Body Mask vertically, and centre horizontally

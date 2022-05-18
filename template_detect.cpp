@@ -83,7 +83,7 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     assert(szTempIcon.width > 5 && szTempIcon.height> 5);
     //cv::Point rotCentre = cv::Point(gTrackerState.gszTemplateImg.height/2+4,gTrackerState.gszTemplateImg.width/2+2); //HACK for better positioning of anteriorFrame
     cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2); //HACK for better positioning of anteriorFrame
-    ///
+
     /// Check If Track Centre Point Contains An image that matches a fish template
     /// \todo make HeadPoint/Tail point a Propery of FishBlob
     //cv::Point centroid = fishblob->pt;
@@ -105,8 +105,6 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
 
     // Look for Fish Template Within The Blob Region //
     cv::Rect rectFish(pBound1,pBound2);
-
-
 
     cv::Mat fishRegion(maskedImg_gray,rectFish); //Get Sub Region Image
 
@@ -142,10 +140,10 @@ double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int
     cv::Point top_left  = pBound1+gptmaxLoc; //Get top Left Corner Of Template Detected Region
     detectedPoint = top_left + rotCentre; //HACKED x1.5-Get Centre Of Template Detection Region - Used for Tracking
     /// Debug Draw //
-    //#ifdef _ZTFDEBUG_
+    #ifdef _ZTFDEBUG_
         cv::rectangle(frameOut,rectFish,CV_RGB(200,0,0),1); //Ucomment to debug template search Region
         cv::circle(frameOut,top_left,3,CV_RGB(200,0,0),2); //Best Match Point in Region
-     //#endif
+    #endif
 
 
 

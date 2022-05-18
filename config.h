@@ -286,9 +286,9 @@ class trackerState
       /// Eye Tracking Params
       int gi_CannyThres           = 150;
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-      int gi_maxEllipseMajor      = 14; /// thres  for Eye Ellipse Detection methods
-      int gi_minEllipseMajor      = 11; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
-      int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
+      int gi_maxEllipseMajor      = 32; /// thres  for Eye Ellipse Detection methods
+      int gi_minEllipseMajor      = 21; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
+      int gi_minEllipseMinor      = 0; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
       int thresEyeEdgeCanny_low             = 2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
