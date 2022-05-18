@@ -63,6 +63,8 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                                  "DS_8dpf"
                                  ),sep="/")
 
+strDataSetDirectories <- "/media/kostasl/D445GB_ext4/expData/Olivia_assay/Olivia_tracked/tracked"
+
 ### Set Colour Pallette Size from List Of Datasets
 G_DATASETPALLETSIZE = NROW(strDataSetDirectories)
 rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
@@ -74,8 +76,9 @@ strCondR  <- "*.csv";
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
 ##NOTE: Assumes Files Begin with "Auto" and end with "track"
-  lastDataSet = NROW(strDataSetDirectories)
-  firstDataSet = 1 
+  lastDataSet   = NROW(strDataSetDirectories)
+  firstDataSet  = 1 
+  strFileNameFn = "extractFileNameParams_OliviaAssay"
   source("runimportTrackerDataFiles.r") 
 
 ###### END OF IMPORT TRACKER DATA ############
@@ -96,15 +99,23 @@ strCondR  <- "*.csv";
   load(paste0(strDatDir,"/datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
   load(paste0(strDatDir,"groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData"))
   
-  load(file =paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
+  load(file =paste(strDatDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
   
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
-  source("processLoadedData.r")
+  strCondTags <- names(groupsrcdatList)
+  source("processLoadedData.r") ##Detects HuntEvents
 
-
-  ### Make Eye Phase Space Density Plots ##########
+  barplot(table(datHuntEvent$expID),main="Hunt Events Per Exp ID")
+  
+  ## Plot Prey Dynamics
+  plot(meanf(datAllFrames[datAllFrames$expID == 4,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
+  for (fID in unique(datAllFrames$expID) )
+    lines(meanf(datAllFrames[datAllFrames$expID == fID,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
+  
+    ### Make Eye Phase Space Density Plots ##########
+  strCondTags <- unique(datAllFrames$groupID)
   for (i in strCondTags)
   {
     message(paste("#### Eye ProcessGroup ",i," ###############"))
@@ -115,7 +126,7 @@ strCondR  <- "*.csv";
     #vexpID = unique(filtereddatAllFrames$expID)
     ##Select Larvaof this Group
     
-    datAllGroupFrames <- datAllFrames[which(datAllFrames$group == i),]
+    datAllGroupFrames <- datAllFrames[which(datAllFrames$groupID == i),]
     #Note:A Larva ID Corresponds to A specific Condition ex. NF1E (Same Fish Is tested in 2 conditions tho ex. NF1E, NF1L)
     vexpID = unique(datAllGroupFrames$expID)
     #plotGroupMotion(datAllGroupFrames,lHuntStat[[i]],vexpID)

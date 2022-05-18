@@ -130,7 +130,7 @@ The labels are taken from the directory names where each set of images is stored
 Images for training are extracted from videos by double click on fish to create new Box, and pressing CTRL+T to save as pgm file in the templates subdirectory. Make sure that fish training samples are accuratelly positioned fish anterior box (manually oriented using "[" and "]" keys)
 You may also want to save false positives (error templates) to train the classifier on non-fish objects too.
 Convert pgm to jpg prior to copying new samples in the training folder by running :
-
+ffm
 <code>
 mogrify -format jpg *.pgm && rm *.pgm
 </code>

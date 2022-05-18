@@ -59,7 +59,7 @@ public slots:
     void changeEvent(QEvent *e);
     void textEdited(const QString);
     void fishvalueChanged(int i);
-    void eyevalueChanged(int i);
+    //void eyevalueChanged(int i);
     void tailSizevalueChanged(float i);
     void maxEllipseSizevalueChanged(int i);
     void minEllipseSizevalueChanged(int i);
@@ -146,6 +146,10 @@ private slots:
     void on_spinBoxEyeMaskH_valueChanged(int arg1);
 
     void on_spinBoxTemplatethres_valueChanged(int arg1);
+
+    void on_spinBoxMaxEllipse_valueChanged(int arg1);
+
+    void on_spinBoxEyeThres_H_valueChanged(int arg1);
 
 private:
     void reportUserMeasurement(cv::Point ptMouse);

@@ -32,7 +32,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 int templatefindFishInImage(cv::Mat& imgGreyIn,cv::Mat& imgtempl,cv::Size templSz, double& matchScore, cv::Point& locations_tl,int& startRow,int& startCol,bool findFirstMatch);
 double doTemplateMatchAroundPoint(const cv::Mat& maskedImg_gray,cv::Point pt,int& iLastKnownGoodTemplateRow,
                                   int& iLastKnownGoodTemplateCol,int& detectedAngle, cv::Point& detectedPoint,
-                                  cv::Mat& frameOut );
+                                  const cv::Mat& frameOut );
 
 ///
 /// \brief addTemplateToCache Expands the Cache with all the fish body image templates by one row
