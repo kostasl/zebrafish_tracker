@@ -291,21 +291,21 @@ class trackerState
       int gi_minEllipseMinor      = 0; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int thresEyeEdgeCanny_low             = 2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int thresEyeEdgeCanny_low             = -2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
       int thresEyeEdgeCanny_high            = 2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
 
       int gEyeMaskErrosionIterations      = 1;
-      int gFishTailSpineSegmentLength     = 9;
+      int gFishTailSpineSegmentLength     = 16;
       // Eye Masks //
-      int iEyeHMaskSepRadius              = 40; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
+      int iEyeHMaskSepRadius              = 39; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
-      int iEyeVMaskSepWidth               = 25; //5 px width vertical line separates the eyes for segmentation
+      int iEyeVMaskSepWidth               = 15; //5 px width vertical line separates the eyes for segmentation
       int iEyeVMaskSepHeight              = 46; //Radius for rectMidEllipse : The Ellipsoid Mask Of Body In little Upsampled EyeDiscovery Image
       int eyeMaskVLineThickness           = 15; //Width Vertical Midline Separating The eyes
 
       /// Fishnet Classifier params //
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_classifier_thres  = 0.98f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_classifier_thres  = 0.99f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
       float fishnet_inputSparseness = 0.1f; //Ratio of Active Pixels in Binarized input Image
 
       // BackProp YAML model - DEpecrated

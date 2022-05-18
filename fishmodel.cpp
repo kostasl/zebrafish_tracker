@@ -399,8 +399,14 @@ void fishModel::setSplineParams(t_fishspline& inspline,std::vector<double>& inpa
         if (i==2) //Segment Size
         {
             dvarSpineSegLength = inparams[2];
-            inspline[0].spineSegLength = min(c_MaxSpineLengthLimit,dvarSpineSegLength);
-            //assert(dvarSpineSegLength < 50);
+            //check if change in spineSegLength too sudden - And Reject //
+            if (abs(dvarSpineSegLength - inspline[0].spineSegLength) < 2 )
+            {
+                // Impose Limits
+                inspline[0].spineSegLength = min(c_MaxSpineLengthLimit,dvarSpineSegLength);
+                inspline[0].spineSegLength = max(c_MinSpineLengthLimit,(double)inspline[0].spineSegLength);
+                //assert(dvarSpineSegLength < 50);
+            }
         }
         if (i>2)
         {
@@ -519,15 +525,18 @@ int fishModel::updateEyeMeasurement(tEllipsoids& vLeftEll,tEllipsoids& vRightEll
         this->nFailedEyeDetectionCount++; //Do not Update Measurement
     else
     {
-        this->leftEyeTheta  = this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
-        this->leftEye = mleftEye; //Measurement
+        mMeasurement.at<float>(7)  = fleftEyeTheta;//this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
+        this->leftEye              = mleftEye; // Copied Here to update axis Position, But Angle is corrected via Kalman Filtering
+        this->leftEye.rectEllipse.angle = this->leftEyeTheta;
     }
 
     if (std::isnan(frightEyeTheta) )
         this->nFailedEyeDetectionCount++;
     else{
-        this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
-        this->rightEye = mrightEye;
+        //this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
+        mMeasurement.at<float>(8)   = frightEyeTheta;//this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
+        this->rightEye              = mrightEye; // Copied Here to update axis Position, But Angle is corrected via Kalman Filtering
+        this->rightEye.rectEllipse.angle = this->rightEyeTheta;
     }
 
 
@@ -695,7 +704,7 @@ bool fishModel::stepPredict(unsigned int nFrame)
         assert(!std::isnan(this->bearingAngle));
         this->ptRotCentre    = cv::Point2f(mState.at<float>(0), mState.at<float>(1)); //bcentre;
         this->leftEyeTheta   = mState.at<float>(7); // Eye Angle Left;
-        this->rightEyeTheta   = mState.at<float>(8); // Eye Angle Right;
+        this->rightEyeTheta  = mState.at<float>(8); // Eye Angle Right;
 
         bPredictedPosition = true;
 
@@ -758,8 +767,8 @@ bool fishModel::updateState(zftblob* fblob, cv::Point2f bcentre,unsigned int nFr
     mMeasurement.at<float>(0) = bcentre.x;
     mMeasurement.at<float>(1) = bcentre.y;
     mMeasurement.at<float>(2) = mMeasurement.at<float>(3) = mMeasurement.at<float>(4) = mMeasurement.at<float>(5) = 0.0f;
-    mMeasurement.at<float>(7) = this->leftEye.getEyeAngle();
-    mMeasurement.at<float>(8) = this->rightEye.getEyeAngle();
+    //mMeasurement.at<float>(7) = this->leftEye.getEyeAngle(); Updated Separetelly In UpdateEyeState
+    //mMeasurement.at<float>(8) = this->rightEye.getEyeAngle();
 
     if (dT > 0){
         stepDisplacement = stepDisplacement/dT;
@@ -814,11 +823,11 @@ bool fishModel::updateState(zftblob* fblob, cv::Point2f bcentre,unsigned int nFr
     this->rightEyeTheta   = mCorrected.at<float>(8); // Eye Angle Right;
 
     //Update The Eye Ellipsoids
-    this->leftEye.rectEllipse.angle = this->leftEyeTheta;
+    this->leftEye.rectEllipse.angle  = this->leftEyeTheta;
     this->rightEye.rectEllipse.angle = this->rightEyeTheta;
 
-    this->leftEye = tDetectedEllipsoid(this->leftEye.rectEllipse,this->leftEye.fitscore);
-    this->rightEye = tDetectedEllipsoid(this->rightEye.rectEllipse,this->rightEye.fitscore);
+    //this->leftEye = tDetectedEllipsoid(this->leftEye.rectEllipse,this->leftEye.fitscore);
+    //this->rightEye = tDetectedEllipsoid(this->rightEye.rectEllipse,this->rightEye.fitscore);
 
     //Blob Position Is not FIltered
     this->zfishBlob      = *fblob;
@@ -1128,7 +1137,7 @@ void fishModel::drawBodyTemplateBounds(cv::Mat& outframe)
     ///Draw a center Point
     cv::circle(outframe,this->bodyRotBound.center,5,colour,1);
 
-    ///Draw a Red Rotated Frame around Detected Body
+    ///Draw a Rotated Frame around Detected Body
     drawAnteriorBox(outframe,colour);
 
     cv::putText(outframe,strlbl.toStdString(),this->bodyRotBound.boundingRect().br()+cv::Point(-10,15),cv::FONT_HERSHEY_PLAIN,0.4,colour,1);
@@ -1210,7 +1219,7 @@ void fishModel::fitSpineToIntensity(cv::Mat &frameimg_Blur,int c_tailscanAngle){
             spline[k].angleRad = spline[k-1].angleRad;
 
         //Constrain Large Deviations
-        if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/2.0)
+        if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/6.0)
            spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
 
     }
