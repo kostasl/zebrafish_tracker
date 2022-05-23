@@ -233,7 +233,9 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
           ##\TODO:  Perhaps Throw away Hunts That Began Before Recording Started or End After It Ends - remove Edge Points ##
           ##Find Hunt Event STARTs ## Needs A gap of At least #MINGAP Between Events To Be a new Episode
           ##attempting to Remove delay introduced by filtering 
-          vHuntStartFrames <- datHuntFrames$frameN[vsHuntDeltaFrames[1:NROW(datHuntFrames$frameN)] >= G_MINGAPBETWEENEPISODES ]-as.integer(nFrWidth/3) ##Note Ignores hunting event at the very beginning of recording frames for event  (<300 frames away from start)
+          vHuntStartEyeVergence <- datHuntFrames[vsHuntDeltaFrames[1:NROW(datHuntFrames$frameN)] >= G_MINGAPBETWEENEPISODES,"LEyeAngle"]-datHuntFrames[vsHuntDeltaFrames[1:NROW(datHuntFrames$frameN)] >= G_MINGAPBETWEENEPISODES,"REyeAngle"]
+          vHuntStartFrames      <- datHuntFrames[vsHuntDeltaFrames[1:NROW(datHuntFrames$frameN)] >= G_MINGAPBETWEENEPISODES,"frameN" ]-as.integer(nFrWidth/3) ##Note Ignores hunting event at the very beginning of recording frames for event  (<300 frames away from start)
+          vHuntStartFrameRowIDs <- rownames(datHuntFrames[vsHuntDeltaFrames[1:NROW(datHuntFrames$frameN)] >= G_MINGAPBETWEENEPISODES,])
           ##Find Hunt Event ENDs - Needs To Be atleast G_MINGAPBETWEENEPISODES Away from next start
           ##Shift (expanded) DFrame vector to pickup on adjacent Hunt-Frame number signifying the end of the Hunt Episode
           vsHuntDeltaFrames[2:NROW(vsHuntDeltaFrames)] <- vsHuntDeltaFrames[1:NROW(vsHuntDeltaFrames)-1]
@@ -243,6 +245,7 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
           ##End Frames Selected By FrameDIff > Than MinGapBetween Episodes
           ## But it can happen that a single episode is shorter than G_MINGAPBETWEENEPISODES if G_MINEPISODEDURATION < G_MINGAPBETWEENEPISODES
           vHuntEndFrames  <- datHuntFrames$frameN[vsHuntDeltaFrames[2:(NROW(vsHuntDeltaFrames)-1)+1] >= G_MINGAPBETWEENEPISODES ]-as.integer(nFrWidth/3) ##Note Ignores hunting event at the very beginning of recording frames for event  (<300 frames away from start)
+          vHuntEndFrameRowIDs <- rownames( datHuntFrames[vsHuntDeltaFrames[2:(NROW(vsHuntDeltaFrames)-1)+1] >= G_MINGAPBETWEENEPISODES, ])#datHuntFrames$frameN[vsHuntDeltaFrames[1:NROW(datHuntFrames$frameN)] >= G_MINGAPBETWEENEPISODES ]-as.integer(nFrWidth/3) ##Note Ignores hunting event at the very beginning of recording frames for event  (<300 frames away from start)
           ###
           
           #message(paste("Found i=",length(vHuntEndFrames)," Hunt End points and k=",length(vHuntStartFrames), "Start Points"))
@@ -286,8 +289,11 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
                                                      groupID             = groupID,
                                                      testCond            = testCond, ##Latest Additions / Previous ExpID minor decimal indicated condition
                                                      fileIdx             = unique(datHuntFrames$fileIdx),
+                                                     eyeVergence         = unlist(vHuntStartEyeVergence),
                                                      startFrame          = unlist(vHuntStartFrames),
                                                      endFrame            = unlist(vHuntEndFrames),
+                                                     startFrameRowID     = unlist(vHuntStartFrameRowIDs),
+                                                     endFrameRowID       = unlist(vHuntEndFrameRowIDs),
                                                      nextHuntFrame       = unlist(shiftHuntStartFrames), ## Indicates when next Event Starts / Last Hunt Episode will have an NA as next frame
                                                      nExpFrames          = nTotalRecordedFrames,
                                                      InitPreyCount      = nInitialPrey, ##Mean Prey Count Across Hunt PREY_COUNT_FRAMEWINDOW Frames of 1st Event
@@ -360,8 +366,11 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
                                                  groupID    = groupID,
                                                  testCond   = testCond, ##Latest Additions 
                                                  fileIdx    = 0,
+                                                 eyeVergence = 0,
                                                  startFrame = 0,
                                                  endFrame   = 0,
+                                                 startFrameRowID     = 0,
+                                                 endFrameRowID       = 0,
                                                  nextHuntFrame      = 0,
                                                  nExpFrames         = nTotalRecordedFrames,
                                                  InitPreyCount      = nInitialPrey,

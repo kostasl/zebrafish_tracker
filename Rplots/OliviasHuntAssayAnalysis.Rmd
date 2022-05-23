@@ -16,7 +16,8 @@ setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 source("HuntingEventAnalysis_lib.r")
 
 library(RColorBrewer);
-
+library(ggplot2)
+library(ggpubr) ##install.packages("ggpubr")
 
 mypalette<-brewer.pal(3,"Set1")
 
@@ -45,6 +46,7 @@ vCondIDs <- as.character(unique(datAllFrames$testCond))
 # Hunt Events
 
 ```{r, re-calcHuntStats,echo = FALSE}
+
 ##Calc Hunt Stat
 lHuntStat     <- list();
 i = 0
@@ -98,6 +100,28 @@ message("Significance WT vs HOM: ", testHEvents$WTvsHOM$p.value, " mean :",
 message( "Significance HOM vs HET: ", testHEvents$HOMvsHET$p.value, 
       " mean :", testHEvents$HOMvsHET$estimate[1]," vs ",testHEvents$HOMvsHET$estimate[2])
 
+## GGPlot Way ##
+#Prep dat
+datHuntEventCountsPerGroup <- rbind.data.frame(cbind(as.numeric(datHuntStat["WT",]$vHLarvaEventCount),"WT"),
+      cbind(as.numeric(datHuntStat["HET",]$vHLarvaEventCount),"HET"),
+      cbind(as.numeric(datHuntStat["HOM",]$vHLarvaEventCount),"HOM"),stringsAsFactors=FALSE
+      )
+datHuntEventCountsPerGroup$V1 <- as.numeric(datHuntEventCountsPerGroup$V1)
+names(datHuntEventCountsPerGroup)=c("LarvalEventCount","Group")
+
+p <- ggboxplot(datHuntEventCountsPerGroup, x = "Group", y = "LarvalEventCount",
+          color = "Group", palette = "jco",
+          add = "jitter",ylab="Number of hunt events per larva")
+
+comp_pairs <- list( c("WT", "HET"), c("WT", "HOM"), c("HOM", "HET") )
+#  Add p-value
+p + stat_compare_means(
+                       method = "wilcox.test",comparisons = comp_pairs)+ggtitle("Non-parametric comparison of total hunt duration")
+# Change method
+p + stat_compare_means(method = "t.test",comparisons = comp_pairs, label="p.format",label.y=c(15,20,30)) + ggtitle("Parametric comparison of hunt duration")
+
+#p + stat_compare_means( aes(label = paste0(..method.., "\n", "p =", ..p.format..)), 
+#                        label.x = 1.5, label.y = 40,comparisons = comp_pairs) 
 ```
 
 Significance t-test give WT vs HET 
@@ -159,21 +183,55 @@ Combined with number of hunt events we examine mean hunt event duration
 
 ## Prey Density Change
 
+Plot prey Trajectories per group
+
 ```{r preyDynamics, echo = FALSE, eval=FALSE}
 
   ## Plot Prey Dynamics ##
-  for (grpID in strCondTags)
-  plot(meanf(datAllFrames[datAllFrames$expID == 4,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
-  for (fID in unique(datAllFrames$expID) )
-    lines(meanf(datAllFrames[datAllFrames$expID == fID,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
+  for (grpID in vGroupIDs)
+  {
+    ## Plot 1st
+    plot(meanf(datAllFrames[datAllFrames$expID == unique(datAllFrames$expID)[1],]$PreyCount,k=100),
+         type="l",ylim=c(20,80),main=grpID,col=colourH[[grpID]] )  
+    for (fID in unique(datAllFrames$expID) )
+      lines(meanf(datAllFrames[datAllFrames$expID == fID,]$PreyCount, k=100),
+            type="l",ylim=c(20,80),col=colourH[[grpID]] )  
+    
+  }
+
 ```
+
 
 
 ## Eye Motion
 
+We summarize the left-right eye motion from each group plot 2D densities. One method produces a 2D distribution by counting the number of larvae whose eyes have occupied a particular point in L-R eye angle phase. The second method uses kernel density estimation methods to estimate the distirbution of eye movements.
+These plots usually serve to validate that eye tracking works as expected. A common resting point for the eyes is around -10 and 10 ie Vergence of 20 degrees, while Vergence above 45 degrees indicates larva has initiated hunting.
+
+
+```{r sampleHuntEventDetect-validation,echo=FALSE}
+ ### Make Eye Phase Space Density Plots ##########
+  s_expID <- 10
+  datSampleFish <- datAllFrames[datAllFrames$expID == s_expID,]
+  datSampleFish_EventFrames <- datHuntEvents[datHuntEvents$expID ==s_expID, ]
+  plot(datSampleFish$frameN/(datSampleFish$fps*60), #
+    (datSampleFish$LEyeAngle-datSampleFish$REyeAngle),type="l",#xlim=c(0.1,10),
+    xlab="Time (min)",ylab="Eye vergence angle (deg)",
+    main=paste(" fID:",s_expID, "hunt events:",NROW(datHuntEvents[datHuntEvents$expID == s_expID,] )),
+    ylim=c(-10,60))
+  abline(h=G_THRESHUNTVERGENCEANGLE,lty=2)
+  points(datSampleFish_EventFrames$startFrame/(mean(datSampleFish$fps)*60), datSampleFish_EventFrames$eyeVergence ,col="red" )
+
+```
+
+The above figure shows a sample where hunt events where detected for fish `{r s_expID}` based on eye- vergence data.
+
+
+
 ```{r eyemovements,echo = FALSE, eval=TRUE,cache=TRUE}
-    ### Make Eye Phase Space Density Plots ##########
   
+#  datSampleFish[datSampleFish$frameN %in% datSampleFish_EventFrames$startFrame,"LEyeAngle"]
+   
   for (i in vGroupIDs)
   {
     message(paste("#### Eye ProcessGroup ",i," ###############"))
@@ -195,3 +253,4 @@ Combined with number of hunt events we examine mean hunt event duration
   }
 ```
 
+The distribution of WT eye-motion shows less skew than HET and HOM, which suggests that WT eyes are more free to move independently of each other. 

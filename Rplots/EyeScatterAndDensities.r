@@ -57,17 +57,19 @@ for (i in vexpID)
   
   strScatterplotFileName <- paste(strPlotExportPath,"/scatter/EyeAngleScatter-Set-",strCond,"-lID_",i,".pdf",collapse=NULL,sep="");
   strDensityplotFileName <- paste(strPlotExportPath,"/densities/EyeAngleDensity-Set-",strCond,"-lID_",i,".pdf",collapse=NULL,sep="");
-  
+  ## SCATTER PLOT PDF - Export##
   ## Eye Trajectory Scatter Plot For all events from This Larva ##
-#  pdf(strScatterplotFileName,width=8,height=8)
+  pdf(strScatterplotFileName,width=8,height=8)
     sampleSize= length(unique(datLarvalAllFrames$fileIdx));
  
     TotalprocDatFrames = TotalprocDatFrames+procDatFrames
   
-    plot(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle,cex=.1,xlim=c(-50,20),ylim=c(-40,60),asp=1,
+    plot(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle,cex=.1,
+         xlim=c(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),
+         ylim=c(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),asp=1,
          xlab="Right Eye Angle",ylab="Left Eye Angle")
-    title(paste(strCond,"R-L Eye Density lID=",i," #n=", sampleSize, " T:",round(procDatFrames/G_APPROXFPS),"sec"),collapse=NULL);
-#  dev.off();
+    title(paste(strCond,"Eye Phase fID=",i," #n=", sampleSize, " T:",round(procDatFrames/G_APPROXFPS),"sec"),collapse=NULL);
+  dev.off();
   
   hR <- hist(datLarvalAllFrames$REyeAngle, breaks=seq(-G_THRESHCLIPEYEDATA-1,G_THRESHCLIPEYEDATA+1,length=60), plot=F)
   hL <- hist(datLarvalAllFrames$LEyeAngle, breaks=seq(-G_THRESHCLIPEYEDATA-1,G_THRESHCLIPEYEDATA+1,length=60), plot=F)
@@ -121,7 +123,7 @@ strDensityplotFileName <- paste(strPlotExportPath,"/binDensity/EyeAngleDensity-B
   hotMap <- c(rfHot(sampleSize),"#FF0000");
   image((-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),(-G_THRESHCLIPEYEDATA:G_THRESHCLIPEYEDATA),hGroupbinDensity,axes=TRUE,
       col=hotMap,xlab="Right Eye Angle",ylab="Left Eye Angle",asp=1)
-  title(paste(strCond,"R-L Eye Density #n=", sampleSize,  " T:",round(TotalprocDatFrames/G_APPROXFPS),"sec"),collapse=NULL);
+  title(paste(strCond," Eye-Motion Indicator Density (#n=", sampleSize,  " T:",round(TotalprocDatFrames/G_APPROXFPS),"sec)"),collapse=NULL);
 #dev.copy(jpeg,filename=paste(strDensityplotFileName,"-plot.jpg"));
 #dev.off()
 ###
@@ -151,9 +153,11 @@ strDensityplotFileName <- paste(strPlotExportPath,"/binDensity/EyeAngleDensity-B
                        lims=c(range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),range(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA)) ) 
    #(-lMax:lMin),(-lMin:lMax)
   hotMap <- c(rfHot(20),"#FF0000");
-  image(eGroupDens,col=hotMap,xlab="Right Eye Angle",ylab="Left Eye Angle",asp=1)
+  image(eGroupDens,col=hotMap, 
+        xlab="Right Eye Angle",
+        ylab="Left Eye Angle",asp=1)
   sampleSize  <- length(vexpID) #Number of Larvae Used 
-  title(paste(strCond,"R-L Eye Density #n=", sampleSize,  " T:",round(procDatFrames/G_APPROXFPS),"sec"),collapse=NULL);
+  title(paste(strCond," eye-motion density estimate (pooled #n=", sampleSize,  " T:",round(procDatFrames/G_APPROXFPS),"sec)"),collapse=NULL);
 #dev.off()
 ################################
 
