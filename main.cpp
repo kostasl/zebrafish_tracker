@@ -54,6 +54,7 @@
  ///                           --invideofile=/media/extStore/ExpData/zebrapreyCap/AnalysisSet/AutoSet450fps_18-01-18/AutoSet450fps_18-01-18_WTLiveFed4Roti_3591_009.mp4
  ///                           --outputdir=/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/
  ///
+  ///
  /// \note Example: /zebraprey_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1 --invideolist=VidFilesToProcessSplit1.txt --outputdir=/media/kostasl/Maxtor/KOSTAS/Tracked/
  /// \todo * Add Learning to exclude large detected blobs that fail to be detected as fish - so as to stop fish detection failures
  ///        :added fishdetector class
@@ -61,7 +62,7 @@
  /// \remarks * Using Kalman Filtering of Fish and GL filtering for Prey position
  ///          * Uses DNN trained model to classify blob as fish and locate head position - Template matching is the used to fix orientation of head inset for furtther feature detection
  ///
- ///
+ /// \bug Fish Blob fails to detected when running multiple instances (eg x4) of Tracker over list of video files.
  ////////
 
 #include <config.h>  // Tracker Constant Defines

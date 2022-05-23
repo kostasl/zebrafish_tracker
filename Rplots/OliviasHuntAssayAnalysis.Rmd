@@ -1,0 +1,197 @@
+---
+title: "OliviaFeedingAssay"
+author: "Konstantinos Lagogiannis"
+date: "23/05/2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("config_lib.R")
+
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+
+source("HuntingEventAnalysis_lib.r")
+
+library(RColorBrewer);
+
+
+mypalette<-brewer.pal(3,"Set1")
+
+colourH <- list(HET= mypalette[2], #rgb(0.9,0.01,0.01,0.2),
+                HOM = mypalette[3], #rgb(0.01,0.01,0.9,0.2))
+                WT=mypalette[1]) #rgb(0.01,0.7,0.01,0.2),
+                
+pchH <- list(HET= 1,
+                HOM = 16, #rgb(0.01,0.01,0.9,0.2))
+                WT=22) #rgb(0.01,0.7,0.01,0.2),
+
+##Load Hunt event data
+strHuntEventFile <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/FeedingAssay/HB_allHuntEvents.rds"
+datHuntEvents <-readRDS(strHuntEventFile)
+
+##load Tracked Frames
+strdatTrackedFramesFile = "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/FeedingAssay/setn1_Dataset_tracking_May2022.rds"
+
+datAllFrames <- readRDS(strdatTrackedFramesFile)
+
+vGroupIDs <- c("WT","HET","HOM") #(unique(datAllFrames$group)) ##Rearing Group names(groupsrcdatList)
+vCondIDs <- as.character(unique(datAllFrames$testCond))
+
+```
+
+# Hunt Events
+
+```{r, re-calcHuntStats,echo = FALSE}
+##Calc Hunt Stat
+lHuntStat     <- list();
+i = 0
+for (g in vGroupIDs)
+{
+  for (c in vCondIDs)
+  {
+    i = i + 1
+    message(paste("#### Process Rearing Group ",g," Tested in",c, "###############"))
+    lHuntStat[[g]] <- calcHuntStat3(datHuntEvents[datHuntEvents$groupID == g,])
+    #lHuntStat[[i]] = calcHuntStat3(datHuntEvent)
+    stopifnot(length(lHuntStat[[g]]$vHLarvaEventCount) > 0)
+  }
+}
+datHuntStat = do.call(rbind,lHuntStat)#
+
+message("~~ Finished Summarizing HuntEvent Data For Each Group ~~ ")
+
+```
+
+##  Number of Hunt Events
+
+```{r, hunteventsperGroup, echo = FALSE}
+
+#print(table(datAllHuntEvent$groupID))
+
+
+boxplot(as.numeric(datHuntStat[vGroupIDs[1],]$vHLarvaEventCount),
+        as.numeric(datHuntStat[vGroupIDs[2],]$vHLarvaEventCount),
+        as.numeric(datHuntStat[vGroupIDs[3],]$vHLarvaEventCount),
+        names = c(vGroupIDs[1],vGroupIDs[2],vGroupIDs[3]),
+        col=c(colourH[[vGroupIDs[1]]],colourH[[vGroupIDs[2] ]],colourH[[vGroupIDs[3] ]] ),
+        ylab="Number of Hunt events per larva ")
+
+testHEvents =  list(
+            WTvsHET = t.test(as.numeric(datHuntStat["WT",]$vHLarvaEventCount),
+            as.numeric(datHuntStat["HET",]$vHLarvaEventCount) ),
+            WTvsHOM = t.test(as.numeric(datHuntStat["WT",]$vHLarvaEventCount),
+            as.numeric(datHuntStat["HOM",]$vHLarvaEventCount) ),
+            HOMvsHET = t.test(as.numeric(datHuntStat["HOM",]$vHLarvaEventCount),
+            as.numeric(datHuntStat["HET",]$vHLarvaEventCount) )
+          )
+
+
+message("Significance WT vs HET: ", testHEvents$WTvsHET$p.value,
+      " mean :", as.numeric(testHEvents$WTvsHET$estimate[1]), 
+      " vs ", as.numeric(testHEvents$WTvsHET$estimate[2]) )
+
+message("Significance WT vs HOM: ", testHEvents$WTvsHOM$p.value, " mean :", 
+      testHEvents$WTvsHOM$estimate[1]," vs ", testHEvents$WTvsHOM$estimate[2] )
+message( "Significance HOM vs HET: ", testHEvents$HOMvsHET$p.value, 
+      " mean :", testHEvents$HOMvsHET$estimate[1]," vs ",testHEvents$HOMvsHET$estimate[2])
+
+```
+
+Significance t-test give WT vs HET 
+
+
+## Timing of Hunt events
+
+How are hunt events distributed during the 20min of prey encounters?
+We pool hunt event occurances withing each group and plot the cumulative distribution function across the 20min
+
+```{r hunteventsTiming, echo = FALSE}
+
+plot(ecdf(datHuntEvents[datHuntEvents$groupID == "HET",]$startFrame/(50*60)),col=colourH$HET,pch=pchH$HET,
+     main="Cumulative distribution of Hunt events through time",xlab="min")
+lines(ecdf(datHuntEvents[datHuntEvents$groupID == "HOM",]$startFrame/(50*60)),col=colourH$HOM,pch=pchH$HOM)
+lines(ecdf(datHuntEvents[datHuntEvents$groupID == "WT",]$startFrame/(50*60)),col=colourH$WT,pch=pchH$WT,)
+legend("topleft",legend=names(colourH), col=unlist(colourH),pch=unlist(pchH) )
+```
+
+##   Hunt-event Duration 
+
+### Total time spent hunting 
+
+```{r hunteventsDuration,echo = FALSE}
+
+t.test(datHuntStat["WT",]$vHDurationPerLarva,datHuntStat["HET",]$vHDurationPerLarva)
+
+c_FrmToMin <- 1/(60*mean(datAllFrames$fps))
+boxplot(datHuntStat[vGroupIDs[1],]$vHDurationPerLarva*c_FrmToMin,
+        datHuntStat[vGroupIDs[2],]$vHDurationPerLarva*c_FrmToMin,
+        datHuntStat[vGroupIDs[3],]$vHDurationPerLarva*c_FrmToMin,
+        names = c(vGroupIDs[1],vGroupIDs[2],vGroupIDs[3]),
+        col=c(colourH[[vGroupIDs[1]]],colourH[[vGroupIDs[2] ]],colourH[[vGroupIDs[3] ]] ),
+        ylab="Total time spent hunting per larva (min)")
+
+
+testHEvents =  list(
+            WTvsHET = t.test(as.numeric(datHuntStat["WT",]$vHDurationPerLarva*c_FrmToMin),
+            as.numeric(datHuntStat["HET",]$vHDurationPerLarva*c_FrmToMin) ),
+            WTvsHOM = t.test(as.numeric(datHuntStat["WT",]$vHDurationPerLarva*c_FrmToMin),
+            as.numeric(datHuntStat["HOM",]$vHDurationPerLarva*c_FrmToMin) ),
+            HOMvsHET = t.test(as.numeric(datHuntStat["HOM",]$vHDurationPerLarva*c_FrmToMin),
+            as.numeric(datHuntStat["HET",]$vHDurationPerLarva*c_FrmToMin) )
+          )
+
+
+message("Significance WT vs HET: ", testHEvents$WTvsHET$p.value, " mean :",testHEvents$WTvsHET$estimate[1]," vs ",testHEvents$WTvsHET$estimate[2] )
+message("Significance WT vs HOM: ", testHEvents$WTvsHOM$p.value, " mean:",testHEvents$WTvsHOM$estimate[1]," vs ",testHEvents$WTvsHOM$estimate[2] )
+message("Significance HOM vs HET: ", testHEvents$HOMvsHET$p.value, " mean:",testHEvents$HOMvsHET$estimate[1]," vs ",testHEvents$HOMvsHET$estimate[2] )
+
+```
+## Mean hunt-event duration
+
+Combined with number of hunt events we examine mean hunt event duration
+
+```{r durationperhuntevent,echo = FALSE}
+
+```
+
+## Prey Density Change
+
+```{r preyDynamics, echo = FALSE, eval=FALSE}
+
+  ## Plot Prey Dynamics ##
+  for (grpID in strCondTags)
+  plot(meanf(datAllFrames[datAllFrames$expID == 4,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
+  for (fID in unique(datAllFrames$expID) )
+    lines(meanf(datAllFrames[datAllFrames$expID == fID,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
+```
+
+
+## Eye Motion
+
+```{r eyemovements,echo = FALSE, eval=TRUE,cache=TRUE}
+    ### Make Eye Phase Space Density Plots ##########
+  
+  for (i in vGroupIDs)
+  {
+    message(paste("#### Eye ProcessGroup ",i," ###############"))
+    
+    
+    ##Take All larva IDs recorded - Regardless of Data Produced - No Tracks Is Also Data
+    #vexpID = unique(filtereddatAllFrames$expID)
+    ##Select Larvaof this Group
+    
+    datAllGroupFrames <- datAllFrames[which(datAllFrames$groupID == i),]
+    #Note:A Larva ID Corresponds to A specific Condition ex. NF1E (Same Fish Is tested in 2 conditions tho ex. NF1E, NF1L)
+    vexpID = unique(datAllGroupFrames$expID)
+    #plotGroupMotion(datAllGroupFrames,lHuntStat[[i]],vexpID)
+    #######################################################################
+    ###  EYE - PLOT Scatter and Eye Densities #####
+    strCond = i;
+    source("EyeScatterAndDensities.r")
+    #####
+  }
+```
+

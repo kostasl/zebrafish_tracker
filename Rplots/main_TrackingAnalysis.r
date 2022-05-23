@@ -40,7 +40,6 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 #setwd(here())
 source("config_lib.R")
 
-
 setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
@@ -58,12 +57,9 @@ source("DataLabelling/labelHuntEvents_lib.r")
 #                               ),sep="/")
 ## Hunger Exp
 strDataSetDirectories <- paste(strTrackInputPath, list(
-                                 "DS_6dpf/", ##Dataset 2
-                                 "DS_7dpf/",
-                                 "DS_8dpf"
+                                 "tracking_May2022/" ##Dataset 2
                                  ),sep="/")
 
-strDataSetDirectories <- "/media/kostasl/D445GB_ext4/expData/Olivia_assay/Olivia_tracked/tracked"
 
 ### Set Colour Pallette Size from List Of Datasets
 G_DATASETPALLETSIZE = NROW(strDataSetDirectories)
@@ -86,8 +82,8 @@ strCondR  <- "*.csv";
 
 ### LOAD Imported Data Sets - Starting From firstDataSet
   ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
-  firstDataSet = 1#NROW(strDataSetDirectories)#-14
-  lastDataSet = NROW(strDataSetDirectories)
+  #firstDataSet = 1#NROW(strDataSetDirectories)#-14
+  #lastDataSet = NROW(strDataSetDirectories)
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   ##Load All Tracked Frames into datAllFrames data frame ##
   ##Warning : Merging is memory intensive
@@ -98,8 +94,8 @@ strCondR  <- "*.csv";
   
   load(paste0(strDatDir,"/datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
   load(paste0(strDatDir,"groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData"))
-  
-  load(file =paste(strDatDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
+  ## Load Tracklet Stat
+  load(file = paste(strDatDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
   
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]
@@ -107,12 +103,6 @@ strCondR  <- "*.csv";
   strCondTags <- names(groupsrcdatList)
   source("processLoadedData.r") ##Detects HuntEvents
 
-  barplot(table(datHuntEvent$expID),main="Hunt Events Per Exp ID")
-  
-  ## Plot Prey Dynamics
-  plot(meanf(datAllFrames[datAllFrames$expID == 4,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
-  for (fID in unique(datAllFrames$expID) )
-    lines(meanf(datAllFrames[datAllFrames$expID == fID,]$PreyCount,k=100),type="l",ylim=c(20,80) )  
   
     ### Make Eye Phase Space Density Plots ##########
   strCondTags <- unique(datAllFrames$groupID)
@@ -138,7 +128,8 @@ strCondR  <- "*.csv";
   }
 
 
-######## Plot Hunt Statistics using datHuntStat##
+######## Plot Hunt Statistics using datHuntStat###
+strDataFileName <-"setn1D1-1_datHuntStat.RData" #strHuntStateFilename# paste("setn14-D5-18-HuntEvents-Merged",sep="" )
 source("plotHuntStat.r") 
 
 ###

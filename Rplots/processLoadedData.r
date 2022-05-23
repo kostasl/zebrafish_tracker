@@ -79,7 +79,9 @@ saveRDS(datAllHuntEvents,file=paste(strDataExportDir,"/HB_allHuntEvents.rds",sep
 
 save(datTrackletStat,lTrackletStat,file =paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep="")) 
 
-save(datHuntStat, file=paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datHuntStat.RData",sep=""))
+strHuntStateFilename <- paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datHuntStat.RData",sep="")
+save(datHuntStat, file=strHuntStateFilename)
+message("Saved hunt stat in :",strHuntStateFilename)
 save(datMotionStat, file=paste(strDataExportDir,"/","setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datMotionStat.RData",sep=""))
 
 ## Track Lengths ##

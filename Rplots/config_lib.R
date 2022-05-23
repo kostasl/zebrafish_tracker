@@ -139,7 +139,8 @@ setEnvFileLocations <- function(strSetName)
     strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release//" 
     strTrackeroutPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
     #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/"
-    strTrackInputPath <<- "/media/kostasl/D445GB_ext4/expData/trackerHunger/camA/" 
+    strTrackInputPath <<- "/media/kostasl/D445GB_ext4/expData/Olivia_assay/" 
+
     ##strDatDir         <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrkSessionHungerExp/camA/" ##Where Are the Imported RData Stored
     strDatDir         <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedOlivia/" ##Where Are the Imported RData Stored
     strDataExportDir  <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/FeedingAssay/"

@@ -7,10 +7,10 @@ library(RColorBrewer);
 source("plotHuntStat_lib.r")
 
 ### Load Merged Hunt Event Files datAllHuntEvent ###
-strDataFileName <- paste("setn14-D5-18-HuntEvents-Merged",sep="" )
+
 message(paste("Load datAllHuntEvent :",strDataFileName ) )
-load(file=paste(strDatDir,"/LabelledSet/",strDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-datAllHuntEvent <- datHuntEventAllGroupToLabel
+load(file=paste(strDatDir,"/LabelledSet/",strDataFileName,sep="" )) ##Save With Dataset Idx Identifier
+datAllHuntEvent <- datAllHuntEvents#datHuntEventAllGroupToLabel
 
 ## Load Hunt Stats from Merged Data
 strDataFileName <- paste("setn",NROW(unique(datAllHuntEvent$dataSetID)),"-D",min(as.numeric(datAllHuntEvent$dataSetID) ),
