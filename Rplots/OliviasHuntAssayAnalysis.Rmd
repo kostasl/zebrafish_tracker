@@ -3,8 +3,8 @@ title: "OliviaFeedingAssay"
 author: "Konstantinos Lagogiannis"
 date: "23/05/2022"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -147,7 +147,7 @@ We pool hunt event occurrences withing each group and plot the cumulative distri
 ```{r hunteventsTiming, echo = FALSE}
 
 plot(ecdf(datHuntEvents[datHuntEvents$groupID == "HET",]$startFrame/(50*60)),col=colourH$HET,pch=pchH$HET,
-     main="Cumulative distribution of Hunt events through time",xlab="min")
+     main="Cumulative distribution of hunt events through time",xlab="Time (min)")
 lines(ecdf(datHuntEvents[datHuntEvents$groupID == "HOM",]$startFrame/(50*60)),col=colourH$HOM,pch=pchH$HOM)
 lines(ecdf(datHuntEvents[datHuntEvents$groupID == "WT",]$startFrame/(50*60)),col=colourH$WT,pch=pchH$WT,)
 legend("topleft",legend=names(colourH), col=unlist(colourH),pch=unlist(pchH) )
@@ -271,6 +271,7 @@ Plot prey Trajectories per group
 
   ## Plot Prey Dynamics ##
   mat_y <- list()
+  PreyCountSampleFrames <- list()
   muPreyCount <- list()
   sdPreyCount <- list()
   errPreyCount <- list()
@@ -304,40 +305,39 @@ Plot prey Trajectories per group
     i = i + 1
     } ##For Each ExpID
     
-    muPreyCount[[grpID]] = apply(mat_y[[grpID]],2,mean,na.rm=T )
-    sdPreyCount[[grpID]] = apply(mat_y[[grpID]],2,sd,na.rm=T)
+    
+    muPreyCount[[grpID]] = apply(mat_y[[grpID]][],2,mean,na.rm=T)
+    PreyCountSampleFrames[[grpID]] <- which(!is.na(muPreyCount[[grpID]]))##Because Rot tracks have missing frames /recorded at intervals
+    muPreyCount[[grpID]] <- meanf(muPreyCount[[grpID]][PreyCountSampleFrames[[grpID]]],3500)
+    sdPreyCount[[grpID]] = meanf(apply(mat_y[[grpID]],2,sd,na.rm=T),3500)
     errPreyCount[[grpID]] = sdPreyCount[[grpID]]/sqrt(NROW(mat_y[[grpID]]) )
-    
-    
-    
+
     
   }##For Each GRoup
 
-x <- 1:NROW(muPreyCount$WT)/(50*60)
+x <- PreyCountSampleFrames$WT/(50*60)
 plot(x,muPreyCount$WT,col=colourH$WT,type="l",xlim=c(1,18),xlab="Time (min)",ylab="Mean prey count",lwd=3,ylim=c(40,70))
 #lines(x,muPreyCount$WT+errPreyCount$WT,col=colourH$WT,lwd=2)
 polygon(c(rev(x),x), c(rev(muPreyCount$WT-errPreyCount$WT), (muPreyCount$WT+errPreyCount$WT) ),
         density = 40,angle = -45, col=colourH$WT,lwd=1)
 
-
-
-x <- which(!is.na(muPreyCount$ROT))##Because Rot tracks have missing frames /recorded at intervals
-lines(x/(50*60) ,meanf(muPreyCount$ROT[x],3500),col=colourH$ROT,type="l",lwd=3,cex=0.5)
-#polygon(c(rev(x),x), c(rev(muPreyCount$ROT[x]-errPreyCount$ROT[x]), (muPreyCount$ROT[x]+errPreyCount$ROT[x]) ),
-        #density = 22,angle = 45, col=colourH$ROT,lwd=1)
-
-
+x <- PreyCountSampleFrames$HET/(50*60)
 lines(x,muPreyCount$HET,col=colourH$HET,type="l",lwd=3)
 polygon(c(rev(x),x), c(rev(muPreyCount$HET-errPreyCount$HET), (muPreyCount$HET+errPreyCount$HET) ),
         density = 30,angle = 15, col=colourH$HET,lwd=1)
 
-
+x <- PreyCountSampleFrames$HOM/(50*60)
 lines(x,muPreyCount$HOM,col=colourH$HOM,type="l",lwd=3)
 polygon(c(rev(x),x), c(rev(muPreyCount$HOM-errPreyCount$HOM), (muPreyCount$HOM+errPreyCount$HOM) ),
         density = 22,angle = 45, col=colourH$HOM,lwd=1)
 
+##Add The Mean Rotifer Trend
+x <- PreyCountSampleFrames$ROT/(50*60) #which(!is.na(muPreyCount$ROT))##Because Rot tracks have missing frames /recorded at intervals
+lines(x,muPreyCount$ROT,col=colourH$ROT,type="l",lwd=3,cex=0.5)
+#polygon(c(rev(x),x), c(rev(muPreyCount$ROT[x]-errPreyCount$ROT[x]), (muPreyCount$ROT[x]+errPreyCount$ROT[x]) ),
+        #density = 22,angle = 45, col=colourH$ROT,lwd=1)
 
-legend("topright",legend=c("WT","HET","HOM"), col=c(colourH$WT,colourH$HET,colourH$HOM),lty=1,lwd=2 )
+legend("topright",legend=c("WT","HET","HOM","ROT"), col=c(colourH$WT,colourH$HET,colourH$HOM,colourH$ROT),lty=1,lwd=2 )
 
 ## Prey Reduction 
 muPreyReduction<- list(
@@ -370,7 +370,7 @@ names(datPreyReductionPerGroup)=c("PreyReductionPerLarva","Group")
 
 p <- ggboxplot(datPreyReductionPerGroup, x = "Group", y = "PreyReductionPerLarva",
           color = "Group", palette = "jco",
-          add = "jitter",ylab="time spent hunting (sec)")
+          add = "jitter",ylab="Number of prey ")
 
 comp_pairs <- list( c("WT", "HET"), c("WT", "HOM"), c("HOM", "HET"),c("WT", "ROT") )
 #  Add p-value
@@ -421,7 +421,7 @@ These plots usually serve to validate that eye tracking works as expected. A com
 
 ```
 
-The above figure shows a sample where hunt events where detected for fish `{r s_expID}` based on eye- vergence data.
+The above figure shows a sample where hunt events where detected for fish ID `r print(s_expID)` based on eye-vergence data.
 
 
 
