@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
         "{EyeHistEqualization histEq | 0  | Use hist. equalization to enhance eye detection contrast  }"
         "{TrackFish ft | 1  | Track Fish not just the moving prey }"
         "{MeasureMode M | 0 | Click 2 points to measure distance to prey}"
-        "{DNNModelFile T | /home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/ | Location of Tensorflow model file used for classification}"
+        "{DNNModelFile T | /home/meyerlab/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/ | Location of Tensorflow model file used for classification}"
         ;
 
     ///Parse Command line Args

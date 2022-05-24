@@ -156,7 +156,7 @@ class trackerState
       const double dVarBlobArea                   = 20;
       const unsigned int gc_fishLength            = 100; //px Length Of Fish
       const unsigned int thresh_minfishblobarea     = 400; //Min area above which to Filter The fish blobs
-      const unsigned int thresh_maxfishblobarea     = 4650; //Min area above which to Filter The fish blobs
+      const unsigned int thresh_maxfishblobarea     = 4850; //max area for fish blob
       const unsigned int gthres_maxfoodblobarea     = thresh_minfishblobarea/3;
 
       const int gFitTailIntensityScanAngleDeg   = 60; //
@@ -244,7 +244,7 @@ class trackerState
       bool bDrawFoodBlob              = true; ///Draw circle around identified food blobs (prior to model matching)
       bool bOffLineTracking           = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
       bool bBlindSourceTracking       = false; /// Used for Data Labelling, so as to hide the data source/group/condition
-      bool bStaticBGMaskRemove        = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+      bool bStaticBGMaskRemove        = false; /// Problematic if fish not moving for too long- Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
       bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
@@ -380,7 +380,7 @@ class trackerState
             CEREAL_NVP(stroutfilename),
             CEREAL_NVP(strDNNTensorFlowModelFile),CEREAL_NVP(fishnet_classifier_thres),CEREAL_NVP(gTemplateMatchThreshold),
             CEREAL_NVP(userROI),CEREAL_NVP(bRecordToFile),CEREAL_NVP(bTrackFish),CEREAL_NVP(bSaveImages),CEREAL_NVP(bUseEllipseEdgeFittingMethod),
-            CEREAL_NVP(bTemplateSearchThroughRows),CEREAL_NVP(bApplyFishMaskBeforeFeatureDetection),bUseOpenCL,bUseGPU,bBlindSourceTracking,CEREAL_NVP(bStaticBGMaskRemove),
+            CEREAL_NVP(bTemplateSearchThroughRows),CEREAL_NVP(bApplyFishMaskBeforeFeatureDetection),bUseOpenCL,bUseGPU,CEREAL_NVP(bBlindSourceTracking),CEREAL_NVP(bStaticBGMaskRemove),
             CEREAL_NVP(gbUpdateBGModel),CEREAL_NVP(gbUpdateBGModelOnAllVids),
             CEREAL_NVP(bFitSpineToTail),CEREAL_NVP(bUseMaskedFishForSpineDetect),CEREAL_NVP(bUseHistEqualization),CEREAL_NVP(bRemovePixelNoise),bMeasure2pDistance,
             CEREAL_NVP(bRenderToDisplay),CEREAL_NVP(bRenderWithAlpha), CEREAL_NVP(bOffLineTracking),CEREAL_NVP(bDrawFoodBlob),
