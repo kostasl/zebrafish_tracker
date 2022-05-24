@@ -14,6 +14,7 @@ source("config_lib.R")
 setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 source("HuntingEventAnalysis_lib.r")
+source("TrajectoryAnalysis.r")
 
 library(RColorBrewer);
 library(ggplot2)
@@ -23,7 +24,8 @@ mypalette<-brewer.pal(3,"Set1")
 
 colourH <- list(HET= mypalette[2], #rgb(0.9,0.01,0.01,0.2),
                 HOM = mypalette[3], #rgb(0.01,0.01,0.9,0.2))
-                WT=mypalette[1]) #rgb(0.01,0.7,0.01,0.2),
+                WT=mypalette[1],
+                ROT="black") #rgb(0.01,0.7,0.01,0.2),
                 
 pchH <- list(HET= 1,
                 HOM = 16, #rgb(0.01,0.01,0.9,0.2))
@@ -45,7 +47,7 @@ vCondIDs <- as.character(unique(datAllFrames$testCond))
 
 # Hunt Events
 
-```{r, re-calcHuntStats,echo = FALSE}
+```{r, re-calcHuntStats, echo = FALSE}
 
 ##Calc Hunt Stat
 lHuntStat     <- list();
@@ -55,7 +57,7 @@ for (g in vGroupIDs)
   for (c in vCondIDs)
   {
     i = i + 1
-    message(paste("#### Process Rearing Group ",g," Tested in",c, "###############"))
+    #message(paste("#### Process Rearing Group ",g," Tested in",c, "###############"))
     lHuntStat[[g]] <- calcHuntStat3(datHuntEvents[datHuntEvents$groupID == g,])
     #lHuntStat[[i]] = calcHuntStat3(datHuntEvent)
     stopifnot(length(lHuntStat[[g]]$vHLarvaEventCount) > 0)
@@ -63,11 +65,13 @@ for (g in vGroupIDs)
 }
 datHuntStat = do.call(rbind,lHuntStat)#
 
-message("~~ Finished Summarizing HuntEvent Data For Each Group ~~ ")
+#message("~~ Finished Summarizing HuntEvent Data For Each Group ~~ ")
 
 ```
 
 ##  Number of Hunt Events
+
+Box plots comparing number of hunt events per larva across groups. Initial a basic boxplot without the test and p-values, followed by a plot with Wilcox non parametric test and a boxplot with pairwise parametric tests.
 
 ```{r, hunteventsperGroup, echo = FALSE}
 
@@ -78,7 +82,7 @@ boxplot(as.numeric(datHuntStat[vGroupIDs[1],]$vHLarvaEventCount),
         as.numeric(datHuntStat[vGroupIDs[2],]$vHLarvaEventCount),
         as.numeric(datHuntStat[vGroupIDs[3],]$vHLarvaEventCount),
         names = c(vGroupIDs[1],vGroupIDs[2],vGroupIDs[3]),
-        col=c(colourH[[vGroupIDs[1]]],colourH[[vGroupIDs[2] ]],colourH[[vGroupIDs[3] ]] ),
+        col=c(colourH[[vGroupIDs[1] ]], colourH[[vGroupIDs[2] ]], colourH[[vGroupIDs[3] ]] ),
         ylab="Number of Hunt events per larva ")
 
 testHEvents =  list(
@@ -116,21 +120,29 @@ p <- ggboxplot(datHuntEventCountsPerGroup, x = "Group", y = "LarvalEventCount",
 comp_pairs <- list( c("WT", "HET"), c("WT", "HOM"), c("HOM", "HET") )
 #  Add p-value
 p + stat_compare_means(
-                       method = "wilcox.test",comparisons = comp_pairs)+ggtitle("Non-parametric comparison of total hunt duration")
+                       method = "wilcox.test",comparisons = comp_pairs)+ggtitle("Non-parametric comparison on number of hunt events")
 # Change method
-p + stat_compare_means(method = "t.test",comparisons = comp_pairs, label="p.format",label.y=c(15,20,30)) + ggtitle("Parametric comparison of hunt duration")
+p + stat_compare_means(method = "t.test",comparisons = comp_pairs, label="p.format",label.y=c(15,20,30)) + ggtitle("Parametric comparison on number of hunt events")
 
 #p + stat_compare_means( aes(label = paste0(..method.., "\n", "p =", ..p.format..)), 
 #                        label.x = 1.5, label.y = 40,comparisons = comp_pairs) 
 ```
 
-Significance t-test give WT vs HET 
+
+The mean number of hunt-events  estimated per group is :
+
+```{r mean-huntevent_summary,echo=FALSE}
+print(tapply(datHuntEventCountsPerGroup$LarvalEventCount,datHuntEventCountsPerGroup$Group,mean))
+message("with SD :")
+print(tapply(datHuntEventCountsPerGroup$LarvalEventCount,datHuntEventCountsPerGroup$Group,sd))
+```
+
 
 
 ## Timing of Hunt events
 
 How are hunt events distributed during the 20min of prey encounters?
-We pool hunt event occurances withing each group and plot the cumulative distribution function across the 20min
+We pool hunt event occurrences withing each group and plot the cumulative distribution function across the 20min
 
 ```{r hunteventsTiming, echo = FALSE}
 
@@ -172,12 +184,82 @@ message("Significance WT vs HET: ", testHEvents$WTvsHET$p.value, " mean :",testH
 message("Significance WT vs HOM: ", testHEvents$WTvsHOM$p.value, " mean:",testHEvents$WTvsHOM$estimate[1]," vs ",testHEvents$WTvsHOM$estimate[2] )
 message("Significance HOM vs HET: ", testHEvents$HOMvsHET$p.value, " mean:",testHEvents$HOMvsHET$estimate[1]," vs ",testHEvents$HOMvsHET$estimate[2] )
 
+
+## GGPlot Way ##
+#Prep dat
+datHuntEventDurationPerGroup <- rbind.data.frame(cbind(as.numeric(datHuntStat["WT",]$vHDurationPerLarva),"WT"),
+      cbind(as.numeric(datHuntStat["HET",]$vHDurationPerLarva),"HET"),
+      cbind(as.numeric(datHuntStat["HOM",]$vHDurationPerLarva),"HOM"),stringsAsFactors=FALSE
+      )
+datHuntEventDurationPerGroup$V1 <- as.numeric(datHuntEventDurationPerGroup$V1)/(50) #Convert to seconds 50 fps
+names(datHuntEventDurationPerGroup)=c("HuntDurationPerLarva","Group")
+
+p <- ggboxplot(datHuntEventDurationPerGroup, x = "Group", y = "HuntDurationPerLarva",
+          color = "Group", palette = "jco",
+          add = "jitter",ylab="time spent hunting (sec)")
+
+comp_pairs <- list( c("WT", "HET"), c("WT", "HOM"), c("HOM", "HET") )
+#  Add p-value
+p + stat_compare_means(
+                       method = "wilcox.test",comparisons = comp_pairs) + ggtitle("Non-parametric comparison of total hunt duration")
+# Change method
+p + stat_compare_means(method = "t.test",comparisons = comp_pairs, label="p.format") + ggtitle("Parametric comparison of hunt duration")
+
+#p + stat_compare_means( aes(label = paste0(..method.., "\n", "p =", ..p.format..)), 
+#                        label.x = 1.5, label.y = 40,comparisons = comp_pairs) 
+
 ```
+
+
+The mean hunt duration (sec) estimated for each group is :
+```{r mean-huntduration,echo=FALSE}
+
+print(tapply(datHuntEventDurationPerGroup$HuntDurationPerLarva,datHuntEventDurationPerGroup$Group,mean))
+message("with SD:")
+print(tapply(datHuntEventDurationPerGroup$HuntDurationPerLarva,datHuntEventDurationPerGroup$Group,sd))
+
+```
+
+
 ## Mean hunt-event duration
 
-Combined with number of hunt events we examine mean hunt event duration
+The duration of each hunt event may be different between genetypes. In previous work I have found that the duration of a hunt episode appears to be intrinsically controlled - like an internal timer- clock that is not strongly influenced by external stimuli.
+We compare the mean duration of hunt-events between groups, by comparing the mean hunt-episode duration between larva of each group
 
 ```{r durationperhuntevent,echo = FALSE}
+
+datHuntStat["HET",]$meanEpisodeDuration
+datHuntStat["HOM",]$meanEpisodeDuration
+datHuntStat["WT",]$meanEpisodeDuration
+
+datHuntEvents$duration_sec <- (datHuntEvents$endFrame - datHuntEvents$startFrame)/mean(datAllFrames$fps)
+
+vHuntEventDurationPerLarva <-tapply(datHuntEvents$duration_sec,datHuntEvents$expID,mean)
+vGroupForLarva <- tapply(as.character(datHuntEvents$groupID),datHuntEvents$expID,head,1)
+datEventDurationPerLarva = cbind.data.frame(meanHuntEpisodeDuration_sec=as.numeric(vHuntEventDurationPerLarva),
+                                            Group=as.character(vGroupForLarva),stringsAsFactors=FALSE )
+
+## GGPLOT Episode Duration Stats ##
+
+p <- ggboxplot(datEventDurationPerLarva, x = "Group", y = "meanHuntEpisodeDuration_sec",
+          color = "Group", palette = "jco",
+          add = "jitter",ylab="mean hunt-even duration per larva (sec)")
+
+comp_pairs <- list( c("WT", "HET"), c("WT", "HOM"), c("HOM", "HET") )
+#  Add p-value
+p + stat_compare_means(
+                       method = "wilcox.test",comparisons = comp_pairs) + ggtitle("Non-parametric comparison of total hunt-event duration")
+# Change method
+p + stat_compare_means(method = "t.test",comparisons = comp_pairs, label="p.format") + ggtitle("Parametric comparison of hunt-event duration")
+
+
+```
+The mean hunt-episode duration (sec) is estimated for each group as :
+```{r mean-huntEventduration,echo=FALSE}
+
+print(tapply(datEventDurationPerLarva$meanHuntEpisodeDuration_sec,datEventDurationPerLarva$Group,mean))
+message("with SD :")
+print(tapply(datEventDurationPerLarva$meanHuntEpisodeDuration_sec,datEventDurationPerLarva$Group,sd))
 
 ```
 
@@ -185,22 +267,137 @@ Combined with number of hunt events we examine mean hunt event duration
 
 Plot prey Trajectories per group
 
-```{r preyDynamics, echo = FALSE, eval=FALSE}
+```{r preyDynamics, echo = FALSE, eval=TRUE}
 
   ## Plot Prey Dynamics ##
-  for (grpID in vGroupIDs)
+  mat_y <- list()
+  muPreyCount <- list()
+  sdPreyCount <- list()
+  errPreyCount <- list()
+  for (grpID in unique(datAllFrames$groupID) )
   {
-    ## Plot 1st
-    plot(meanf(datAllFrames[datAllFrames$expID == unique(datAllFrames$expID)[1],]$PreyCount,k=100),
-         type="l",ylim=c(20,80),main=grpID,col=colourH[[grpID]] )  
-    for (fID in unique(datAllFrames$expID) )
-      lines(meanf(datAllFrames[datAllFrames$expID == fID,]$PreyCount, k=100),
-            type="l",ylim=c(20,80),col=colourH[[grpID]] )  
+    datGroupFrames <- datAllFrames[datAllFrames$groupID== grpID,]
+    bFirst <- TRUE
+    nFrames <- max(datAllFrames$frameN)
+    mat_y[[grpID]] <- matrix(NA,nrow=NROW(unique(datGroupFrames$expID)),
+                               ncol=nFrames)
+    i = 1
+    ## This Is a very Slow Way to ensure sampling of Prey Counts across exp on same frameN 
+    for (fID in unique(datGroupFrames$expID) )
+    {
+      ## Cautionary way because dublicate frameN records may exist
+      x <- datGroupFrames[datGroupFrames$expID == fID & datGroupFrames$frameN <= nFrames,"frameN"]
+      y <- datGroupFrames[datGroupFrames$expID == fID &
+                                         datGroupFrames$frameN  <= nFrames ,]$PreyCount
+      ##fill specific frameIdx Colums for Vector - in case Frames are missing
+      mat_y[[grpID]][i,x] <- y
+      
+      if (bFirst){
+        
+        bFirst    <- FALSE
+        plot(x,y, type="l",ylim=c(0,100), #xlim=c(1,20)
+             main=grpID,col=colourH[[grpID]],ylab="Prey count",xlab="Time (min)" )  
+      }else{
+        
+        lines(x,y,col=colourH[[grpID]])
+      }
+    i = i + 1
+    } ##For Each ExpID
     
-  }
+    muPreyCount[[grpID]] = apply(mat_y[[grpID]],2,mean,na.rm=T )
+    sdPreyCount[[grpID]] = apply(mat_y[[grpID]],2,sd,na.rm=T)
+    errPreyCount[[grpID]] = sdPreyCount[[grpID]]/sqrt(NROW(mat_y[[grpID]]) )
+    
+    
+    
+    
+  }##For Each GRoup
+
+x <- 1:NROW(muPreyCount$WT)/(50*60)
+plot(x,muPreyCount$WT,col=colourH$WT,type="l",xlim=c(1,18),xlab="Time (min)",ylab="Mean prey count",lwd=3,ylim=c(40,70))
+#lines(x,muPreyCount$WT+errPreyCount$WT,col=colourH$WT,lwd=2)
+polygon(c(rev(x),x), c(rev(muPreyCount$WT-errPreyCount$WT), (muPreyCount$WT+errPreyCount$WT) ),
+        density = 40,angle = -45, col=colourH$WT,lwd=1)
+
+
+
+x <- which(!is.na(muPreyCount$ROT))##Because Rot tracks have missing frames /recorded at intervals
+lines(x/(50*60) ,meanf(muPreyCount$ROT[x],3500),col=colourH$ROT,type="l",lwd=3,cex=0.5)
+#polygon(c(rev(x),x), c(rev(muPreyCount$ROT[x]-errPreyCount$ROT[x]), (muPreyCount$ROT[x]+errPreyCount$ROT[x]) ),
+        #density = 22,angle = 45, col=colourH$ROT,lwd=1)
+
+
+lines(x,muPreyCount$HET,col=colourH$HET,type="l",lwd=3)
+polygon(c(rev(x),x), c(rev(muPreyCount$HET-errPreyCount$HET), (muPreyCount$HET+errPreyCount$HET) ),
+        density = 30,angle = 15, col=colourH$HET,lwd=1)
+
+
+lines(x,muPreyCount$HOM,col=colourH$HOM,type="l",lwd=3)
+polygon(c(rev(x),x), c(rev(muPreyCount$HOM-errPreyCount$HOM), (muPreyCount$HOM+errPreyCount$HOM) ),
+        density = 22,angle = 45, col=colourH$HOM,lwd=1)
+
+
+legend("topright",legend=c("WT","HET","HOM"), col=c(colourH$WT,colourH$HET,colourH$HOM),lty=1,lwd=2 )
+
+## Prey Reduction 
+muPreyReduction<- list(
+          HET=mean(muPreyCount$HET[120:2000])-mean(muPreyCount$HET[(nFrames-6000):(nFrames-5000)]),
+          WT=mean(muPreyCount$WT[120:2000])- mean(muPreyCount$WT[(nFrames-6000):(nFrames-5000)]),
+          HOM=mean(muPreyCount$HOM[120:2000])- mean(muPreyCount$HOM[(nFrames-6000):(nFrames-5000)]),
+          ROT=mean(muPreyCount$ROT[120:2000],na.rm=T)-mean(muPreyCount$ROT[(nFrames-6000):(nFrames-5000)],na.rm=T)
+          )
+
+message("Mean prey reduction for WT:",format(muPreyReduction$WT,digits =3),
+        " HET:",format(muPreyReduction$HET,digits =3)," HOM:",format(muPreyReduction$HOM,digits =3))
+
+## GGPlot Way ##
+#Prep dat of Reduction Per experiment
+
+##Special Treamtmet for ROT as data does not come from Hunt Event analysis
+vInitPreyPerExp <- apply(mat_y[["ROT"]][,1:2000],1,mean,na.rm=T)
+vFinalPreyPerExp <- apply(mat_y[["ROT"]][,(nFrames-6000):(nFrames-5000)],1,mean,na.rm=T)
+vNaturalPreyReduction <- vInitPreyPerExp-vFinalPreyPerExp
+vNaturalPreyReduction <- vNaturalPreyReduction[!is.nan(vNaturalPreyReduction)]
+
+datPreyReductionPerGroup <- rbind.data.frame(cbind(as.numeric(datHuntStat["WT",]$vHPreyReductionPerLarva),"WT"),
+      cbind(as.numeric(datHuntStat["HET",]$vHPreyReductionPerLarva),"HET"),
+      cbind(as.numeric(datHuntStat["HOM",]$vHPreyReductionPerLarva),"HOM"),
+      cbind(as.numeric(vNaturalPreyReduction),"ROT"),
+      stringsAsFactors=FALSE
+      )
+datPreyReductionPerGroup$V1 <- as.numeric(datPreyReductionPerGroup$V1) #Convert to seconds 50 fps
+names(datPreyReductionPerGroup)=c("PreyReductionPerLarva","Group")
+
+p <- ggboxplot(datPreyReductionPerGroup, x = "Group", y = "PreyReductionPerLarva",
+          color = "Group", palette = "jco",
+          add = "jitter",ylab="time spent hunting (sec)")
+
+comp_pairs <- list( c("WT", "HET"), c("WT", "HOM"), c("HOM", "HET"),c("WT", "ROT") )
+#  Add p-value
+p + stat_compare_means(
+                       method = "wilcox.test",comparisons = comp_pairs) + ggtitle("Non-parametric comparison of prey reduction")
+# Change method
+p + stat_compare_means(method = "t.test",comparisons = comp_pairs, label="p.format") + ggtitle("Parametric comparison of prey reduction")
+
 
 ```
 
+
+
+
+The mean prey reduction per larva of each group is :
+```{r mean-preyreduction, echo=FALSE}
+datPreyReductionPerGroup <- rbind.data.frame(cbind(as.numeric(datHuntStat["WT",]$vHPreyReductionPerLarva),"WT"),
+      cbind(as.numeric(datHuntStat["HET",]$vHPreyReductionPerLarva),"HET"),
+      cbind(as.numeric(datHuntStat["HOM",]$vHPreyReductionPerLarva),"HOM"),stringsAsFactors=FALSE
+      )
+datPreyReductionPerGroup$V1 <- as.numeric(datPreyReductionPerGroup$V1) #Convert to seconds 50 fps
+names(datPreyReductionPerGroup)=c("PreyReductionPerLarva","Group")
+
+print(tapply(datPreyReductionPerGroup$PreyReductionPerLarva, datPreyReductionPerGroup$Group,mean))
+message("with SD:")
+print(tapply(datPreyReductionPerGroup$PreyReductionPerLarva, datPreyReductionPerGroup$Group,sd))
+```
 
 
 ## Eye Motion

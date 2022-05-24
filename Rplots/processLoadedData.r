@@ -8,7 +8,6 @@ lHuntStat     <- list();
 lHuntEvents   <- list();
 lMotionStat   <- list();
 
-
 ### TRAJECTORIES Indicating Hunting  - With distinct colour for each larva ####
 #source("plotTrackScatterAndDensities.r")
 ##########
@@ -42,7 +41,7 @@ for (g in strRGroupsTags)
     vexpID = unique(datAllGroupFrames$expID)
     idxDataSet <- unique(datAllGroupFrames$dataSet)
     
-    datHuntEvent = detectHuntEvents(datAllGroupFrames,vexpID,c,dataSetsToProcess)
+    datHuntEvent     = detectHuntEvents(datAllGroupFrames,vexpID,c,dataSetsToProcess)
     lHuntEvents[[i]] = datHuntEvent ## Collect TO One Data File
     writeHuntEventToFile(datHuntEvent,dataSetsToProcess,groupsrcdatListPerDataSet)
     

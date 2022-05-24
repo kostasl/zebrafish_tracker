@@ -92,10 +92,10 @@ strCondR  <- "*.csv";
   #load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
   #load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
   
-  load(paste0(strDatDir,"/datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
-  load(paste0(strDatDir,"groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData"))
+  #load(paste0(strDatDir,"/datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
+  #load(paste0(strDatDir,"groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData"))
   ## Load Tracklet Stat
-  load(file = paste(strDatDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
+  #load(file = paste(strDatDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
   
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]

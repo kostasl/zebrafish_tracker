@@ -27,7 +27,7 @@ idx = 1;
 TotalprocDatFrames <- 0 ##Running Sum of all frames
 for (i in vexpID)
 {
-  print(i)  
+  #print(i)  
   
   datLarvalAllFrames <- datAllGroupFrames[datAllGroupFrames$expID == i 
                                           &datAllGroupFrames$REyeAngle > -G_THRESHCLIPEYEDATA &
@@ -59,17 +59,17 @@ for (i in vexpID)
   strDensityplotFileName <- paste(strPlotExportPath,"/densities/EyeAngleDensity-Set-",strCond,"-lID_",i,".pdf",collapse=NULL,sep="");
   ## SCATTER PLOT PDF - Export##
   ## Eye Trajectory Scatter Plot For all events from This Larva ##
-  pdf(strScatterplotFileName,width=8,height=8)
+ ## pdf(strScatterplotFileName,width=8,height=8)
     sampleSize= length(unique(datLarvalAllFrames$fileIdx));
  
     TotalprocDatFrames = TotalprocDatFrames+procDatFrames
-  
-    plot(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle,cex=.1,
-         xlim=c(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),
-         ylim=c(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),asp=1,
-         xlab="Right Eye Angle",ylab="Left Eye Angle")
-    title(paste(strCond,"Eye Phase fID=",i," #n=", sampleSize, " T:",round(procDatFrames/G_APPROXFPS),"sec"),collapse=NULL);
-  dev.off();
+  #  PLOT EACH fishe's eye Trajectory separatelly
+  #   plot(datLarvalAllFrames$REyeAngle,datLarvalAllFrames$LEyeAngle,cex=.1,
+  #        xlim=c(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),
+  #        ylim=c(-G_THRESHCLIPEYEDATA,G_THRESHCLIPEYEDATA),asp=1,
+  #        xlab="Right Eye Angle",ylab="Left Eye Angle")
+  #   title(paste(strCond,"Eye Phase fID=",i," #n=", sampleSize, " T:",round(procDatFrames/G_APPROXFPS),"sec"),collapse=NULL);
+  # dev.off();
   
   hR <- hist(datLarvalAllFrames$REyeAngle, breaks=seq(-G_THRESHCLIPEYEDATA-1,G_THRESHCLIPEYEDATA+1,length=60), plot=F)
   hL <- hist(datLarvalAllFrames$LEyeAngle, breaks=seq(-G_THRESHCLIPEYEDATA-1,G_THRESHCLIPEYEDATA+1,length=60), plot=F)
