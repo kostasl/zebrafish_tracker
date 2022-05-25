@@ -395,7 +395,7 @@ for (grpID in names(muPreyCount))
   
   abline(lfit[[grpID]],lwd=4,col="black",lty=2)
   legend("topright",
-         legend= paste(grpID,"w=",format(lfit[[grpID]]$coefficients,digits=4),"r2=",format(summary(lfit[[grpID]])$r.squared,digits=4) ))
+         legend= paste(grpID,"r2=",format(summary(lfit[[grpID]])$r.squared,digits=4), "\n c=",format(lfit[[grpID]]$coefficients[1],digits=4),", w=",format(lfit[[grpID]]$coefficients[2],digits=4)))
 }
 
 
