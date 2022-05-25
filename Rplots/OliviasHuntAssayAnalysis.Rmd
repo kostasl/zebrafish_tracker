@@ -292,16 +292,16 @@ Plot prey Trajectories per group
                                          datGroupFrames$frameN  <= nFrames ,]$PreyCount
       ##fill specific frameIdx Colums for Vector - in case Frames are missing
       mat_y[[grpID]][i,x] <- y
-      
-      if (bFirst){
-        
-        bFirst    <- FALSE
-        plot(x,y, type="l",ylim=c(0,100), #xlim=c(1,20)
-             main=grpID,col=colourH[[grpID]],ylab="Prey count",xlab="Time (min)" )  
-      }else{
-        
-        lines(x,y,col=colourH[[grpID]])
-      }
+      # 
+      # if (bFirst){
+      #   
+      #   bFirst    <- FALSE
+      #   plot(x,y, type="l",ylim=c(0,100), #xlim=c(1,20)
+      #        main=grpID,col=colourH[[grpID]],ylab="Prey count",xlab="Time (min)" )  
+      # }else{
+      #   
+      #   lines(x,y,col=colourH[[grpID]])
+      # }
     i = i + 1
     } ##For Each ExpID
     
@@ -316,26 +316,41 @@ Plot prey Trajectories per group
   }##For Each GRoup
 
 x <- PreyCountSampleFrames$WT/(50*60)
-plot(x,muPreyCount$WT,col=colourH$WT,type="l",xlim=c(1,18),xlab="Time (min)",ylab="Mean prey count",lwd=3,ylim=c(40,70))
+plot(x,muPreyCount$WT,col=colourH$WT,type="l",xlim=c(1,18),xlab="Time (min)",ylab="Mean prey count",lwd=1,ylim=c(40,70))
 #lines(x,muPreyCount$WT+errPreyCount$WT,col=colourH$WT,lwd=2)
 polygon(c(rev(x),x), c(rev(muPreyCount$WT-errPreyCount$WT), (muPreyCount$WT+errPreyCount$WT) ),
         density = 40,angle = -45, col=colourH$WT,lwd=1)
+##Linear Regression 
+lm.WT <- lm(x[6000:nFrames] ~ muPreyCount$WT[6000:nFrames])
+abline(lm.WT,lwd=3,lty=2,col=colourH$WT)
+lm.WT$effects
+
 
 x <- PreyCountSampleFrames$HET/(50*60)
-lines(x,muPreyCount$HET,col=colourH$HET,type="l",lwd=3)
+lines(x,muPreyCount$HET,col=colourH$HET,type="l",lwd=1)
 polygon(c(rev(x),x), c(rev(muPreyCount$HET-errPreyCount$HET), (muPreyCount$HET+errPreyCount$HET) ),
         density = 30,angle = 15, col=colourH$HET,lwd=1)
+##Linear Regression 
+lm.HET <- lm(x ~ muPreyCount$HET)
+abline(lm.HET,lwd=3,lty=2,col=colourH$HET)
+
 
 x <- PreyCountSampleFrames$HOM/(50*60)
 lines(x,muPreyCount$HOM,col=colourH$HOM,type="l",lwd=3)
 polygon(c(rev(x),x), c(rev(muPreyCount$HOM-errPreyCount$HOM), (muPreyCount$HOM+errPreyCount$HOM) ),
         density = 22,angle = 45, col=colourH$HOM,lwd=1)
+##Linear Regression 
+lm.HOM <- lm(x ~ muPreyCount$HOM)
+abline(lm.HOM,lwd=3,lty=2,col=colourH$HOM)
 
 ##Add The Mean Rotifer Trend
 x <- PreyCountSampleFrames$ROT/(50*60) #which(!is.na(muPreyCount$ROT))##Because Rot tracks have missing frames /recorded at intervals
 lines(x,muPreyCount$ROT,col=colourH$ROT,type="l",lwd=3,cex=0.5)
 #polygon(c(rev(x),x), c(rev(muPreyCount$ROT[x]-errPreyCount$ROT[x]), (muPreyCount$ROT[x]+errPreyCount$ROT[x]) ),
         #density = 22,angle = 45, col=colourH$ROT,lwd=1)
+##Linear Regression 
+lm.ROT <- lm(x ~ muPreyCount$ROT)
+abline(lm.ROT,lwd=3,lty=2,col=colourH$ROT)
 
 legend("topright",legend=c("WT","HET","HOM","ROT"), col=c(colourH$WT,colourH$HET,colourH$HOM,colourH$ROT),lty=1,lwd=2 )
 
@@ -349,6 +364,40 @@ muPreyReduction<- list(
 
 message("Mean prey reduction for WT:",format(muPreyReduction$WT,digits =3),
         " HET:",format(muPreyReduction$HET,digits =3)," HOM:",format(muPreyReduction$HOM,digits =3))
+
+### Linear Regression ## 
+##Prep data
+lvRot  <- list()
+ldatRot <- list()
+lfit <- list()
+
+for (grpID in names(muPreyCount))
+{
+ ##nEed to concatenate all timeseries into one long vector, and make a corresponding time vector 
+  x <- c(matrix(matrix( rep(seq(1,nFrames),nrow(mat_y[[grpID]]))/(50*60),nrow=nrow(mat_y[[grpID]]),byrow=F),nrow=1,byrow=T))
+  y <-   unlist(as.data.frame(t(mat_y[[grpID]]) ))
+  
+  # ldatRot[[grpID]] <- cbind.data.frame(frameN = x,
+  #                                      PreyCount = y)  #matrix(mat_y[[grpID]],nrow=1,byrow=T)
+  ## Do Fit On All Timeseries
+  lfit[[grpID]] <- lm(y ~ x)
+}
+
+##Show Data With Linear Fit 
+for (grpID in names(muPreyCount))
+{
+
+  message("Linear fit summary for group ",grpID)
+  print(summary(lfit[[grpID]]))
+    
+  plot(lfit[[grpID]]$model$x,lfit[[grpID]]$model$y, type="p",ylim=c(0,100), #xlim=c(1,20)
+             main=grpID,col=colourH[[grpID]],ylab="Prey count",xlab="Time (min)",cex=0.05 )  
+  
+  abline(lfit[[grpID]],lwd=4,col="black",lty=2)
+  legend("topright",
+         legend= paste(grpID,"w=",format(lfit[[grpID]]$coefficients,digits=4),"r2=",format(summary(lfit[[grpID]])$r.squared,digits=4) ))
+}
+
 
 ## GGPlot Way ##
 #Prep dat of Reduction Per experiment

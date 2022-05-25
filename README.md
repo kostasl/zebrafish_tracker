@@ -161,6 +161,12 @@ ffmpeg -v error -i source_broken_video.mp4 -c copy fixed_video.mp4
 ```
 
 
+The tracker allows saving of image sequences after pressing the s key. To convert the sequence of iumages to a video use :
+```
+ffmpeg -pattern_type glob -i '*.png'  -start_number 15200 -crf 20  -c:v libx264 -preset slow  -vf format=yuv420p,fps=50 -c:a aac -movflags +faststart out.mp4
+```
+
+
 ### Contribution guidelines ###
 
 * Code review : This is a prototype of a tracker and a new version of the tracker is required with a improved code organization.
