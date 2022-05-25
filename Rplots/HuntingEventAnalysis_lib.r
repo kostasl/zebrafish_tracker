@@ -490,7 +490,8 @@ calcHuntStat3 <- function(datHuntEvent)
   
   stopifnot( NROW(tblPreyCountReductionPerLarvaHunt[ is.nan(tblPreyCountReductionPerLarvaHunt) ]) == 0 )
   
-  # Prey Reduction Per Experiment
+  # Prey Reduction Per Experiment ##
+  ## \todo This does not seems to work Correctly - Better Use the continuously recorded Prey Number
   tblPreyCountReductionPerLarva <-  tapply(datHuntEvent$FinalPreyCount, datHuntEvent$expID,sum, na.rm=TRUE)   
   #tblPreyCountReductionPerLarva <- replace(tblPreyCountReductionPerLarva,is.nan(tblPreyCountReductionPerLarva),NA)
   
