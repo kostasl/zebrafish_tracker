@@ -368,7 +368,7 @@ for (grpID in names(muPreyCount))
   # ldatRot[[grpID]] <- cbind.data.frame(frameN = x,
   #                                      PreyCount = y)  #matrix(mat_y[[grpID]],nrow=1,byrow=T)
   ## Do Fit On All Timeseries
-  #lfit[[grpID]] <- lm(y ~ x)
+  lfit[[grpID]] <- lm(y ~ x)
 }
 datPreyReduction <-  do.call(rbind,ldatFrm)
 
@@ -417,20 +417,32 @@ p + stat_compare_means(method = "t.test",comparisons = comp_pairs, label="p.form
 
 ```
 
+
+
+The mean prey reduction per larva of each group is :
+```{r mean-preyreduction, echo=FALSE}
+
+print(tapply(datPreyReductionPerGroup$PreyReductionPerLarva, datPreyReductionPerGroup$Group,mean))
+message("with SD:")
+print(tapply(datPreyReductionPerGroup$PreyReductionPerLarva, datPreyReductionPerGroup$Group,sd))
+```
+
+### Compare consumption using linear regression 
+
 ```{r prey-linear-regression}
-lfit <- lm(x~y*group,data=datPreyReduction)
-anova(lfit)
+lfit_group <- lm(x~y*group,data=datPreyReduction)
+anova(lfit_group)
 
 # Compare slopes #
 library(lsmeans)
-lfit$coefficients
-lfit.lst <- lstrends(lfit,"group",var="y")
-pairs(lfit.lst)
+lfit_group$coefficients
+lfit_group.lst <- lstrends(lfit_group,"group",var="y")
+pairs(lfit_group.lst)
 
-##Show Data With Linear Fit 
+##Show Data With Linear Fit ##Fix this To Overall
 for (grpID in names(muPreyCount))
 {
-
+ 
   message("Linear fit summary for group ",grpID)
   print(summary(lfit[[grpID]]))
     
@@ -445,20 +457,6 @@ for (grpID in names(muPreyCount))
 
 ```
 
-
-The mean prey reduction per larva of each group is :
-```{r mean-preyreduction, echo=FALSE}
-datPreyReductionPerGroup <- rbind.data.frame(cbind(as.numeric(datHuntStat["WT",]$vHPreyReductionPerLarva),"WT"),
-      cbind(as.numeric(datHuntStat["HET",]$vHPreyReductionPerLarva),"HET"),
-      cbind(as.numeric(datHuntStat["HOM",]$vHPreyReductionPerLarva),"HOM"),stringsAsFactors=FALSE
-      )
-datPreyReductionPerGroup$V1 <- as.numeric(datPreyReductionPerGroup$V1) #Convert to seconds 50 fps
-names(datPreyReductionPerGroup)=c("PreyReductionPerLarva","Group")
-
-print(tapply(datPreyReductionPerGroup$PreyReductionPerLarva, datPreyReductionPerGroup$Group,mean))
-message("with SD:")
-print(tapply(datPreyReductionPerGroup$PreyReductionPerLarva, datPreyReductionPerGroup$Group,sd))
-```
 
 
 ## Eye Motion
