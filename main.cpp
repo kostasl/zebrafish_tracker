@@ -54,6 +54,7 @@
  ///                           --invideofile=/media/extStore/ExpData/zebrapreyCap/AnalysisSet/AutoSet450fps_18-01-18/AutoSet450fps_18-01-18_WTLiveFed4Roti_3591_009.mp4
  ///                           --outputdir=/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/
  ///
+  ///
  /// \note Example: /zebraprey_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1 --invideolist=VidFilesToProcessSplit1.txt --outputdir=/media/kostasl/Maxtor/KOSTAS/Tracked/
  /// \todo * Add Learning to exclude large detected blobs that fail to be detected as fish - so as to stop fish detection failures
  ///        :added fishdetector class
@@ -61,7 +62,7 @@
  /// \remarks * Using Kalman Filtering of Fish and GL filtering for Prey position
  ///          * Uses DNN trained model to classify blob as fish and locate head position - Template matching is the used to fix orientation of head inset for furtther feature detection
  ///
- ///
+ /// \bug Fish Blob fails to detected when running multiple instances (eg x4) of Tracker over list of video files.
  ////////
 
 #include <config.h>  // Tracker Constant Defines
@@ -172,7 +173,7 @@ int main(int argc, char *argv[])
         "{UseTemplateMatching T | 1  | After DNN Classifier, also use template matching to Detect orientation and position of larva (speed up if false)}" //bUseTemplateMatching
         "{BGThreshold bgthres | 2  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
         "{HeadMaskVW hmw | 25  | Head Vertical mask width that separates eyes}"
-        "{HeadMaskHR hmh | 23  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
+        "{HeadMaskHR hmh | 48  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{CircleROIRadius cr | 512  | px radius for default centred ROI}"
@@ -184,7 +185,7 @@ int main(int argc, char *argv[])
         "{EyeHistEqualization histEq | 0  | Use hist. equalization to enhance eye detection contrast  }"
         "{TrackFish ft | 1  | Track Fish not just the moving prey }"
         "{MeasureMode M | 0 | Click 2 points to measure distance to prey}"
-        "{DNNModelFile T | /home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/ | Location of Tensorflow model file used for classification}"
+        "{DNNModelFile T | /home/meyerlab/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/ | Location of Tensorflow model file used for classification}"
         ;
 
     ///Parse Command line Args
@@ -593,9 +594,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
 
 
 
-
-
-
+             /// Draw Tracks And Eye Angles //
             //If A fish Is Detected Then Draw Its tracks
             fishModels::iterator ft = vfishmodels.begin();
             while (ft != vfishmodels.end() && gTrackerState.bRenderToDisplay) //Render All Fish
@@ -604,8 +603,8 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
                 assert(pfish);
                 zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, cv::FONT_HERSHEY_PLAIN, gTrackerState.trackFntScale+0.2 );
                 //Draw KFiltered Axis
-                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->leftEye,CV_RGB(200,250,200));
-                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->rightEye,CV_RGB(200,250,200));
+                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->leftEye,CV_RGB(200,0,0));
+                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->rightEye,CV_RGB(0,200,0));
 
                 ++ft;
             }
@@ -1229,7 +1228,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
                                    gTrackerState.gFishTailSpineSegmentLength,0,0);
 
            pfish->tailTopPoint = gptTail;
-           pfish->drawBodyTemplateBounds(frameOut); //Predicted Position /
+           pfish->drawBodyTemplateBounds(frameOut); //Corrected Position /
 
            qfishrank.push(pfish);
 
@@ -1337,7 +1336,8 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
             if ( ( gTrackerState.bAllowOnlyOneTrackedItem
                  || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) &&
-                    !pfish->binFocus) //Check If it Timed Out / Then Delete
+                    !pfish->binFocus &&
+                 maxTemplateScore > pfish->matchScore ) //Check If it Timed Out / or If Better fish has been found and Only One fish is allowed - Then Delete
             {
                 std::clog << gTimer.elapsed()/60000 << " " << nFrame << "# Deleted fishmodel: " << pfish->ID << " Inactive:"<< pfish->inactiveFrames << " Low Template Score :" << pfish->matchScore << " when Best is :"<< maxTemplateScore << std::endl;
                 ft = vfishmodels.erase(ft);
@@ -2766,8 +2766,8 @@ void CallBackHistFunc(int event, int x, int y, int flags, void* userdata)
             mousepnt.x = x;
             mousepnt.y = y;
 
-            gTrackerState.gthresEyeSeg = x;
-            std::cout << "Eye Threshold Set to:" << gTrackerState.gthresEyeSeg << std::endl;
+            gTrackerState.thresEyeEdgeCanny_low = x;
+            std::cout << "Eye Threshold Set to:" << gTrackerState.thresEyeEdgeCanny_low << std::endl;
     }
 }
 
@@ -2930,6 +2930,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
    // cv::Point rotCentre = cv::Point(szTempIcon.width/2,szTempIcon.height/2);
 
 //    ///Detect Head Feature //
+    int activefish_idx = 0;
+    cv::Rect pasteRegion = gTrackerState.rect_pasteregion; //Shifted for eahc fish
     for (fishModels::iterator it=vfishmodels.begin(); it!=vfishmodels.end(); ++it)
     {
           fishModel* fish = (*it).second;
@@ -2939,6 +2941,7 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                 continue;
             if (!fish->isValid())
                 continue;
+
 
           //Draw A general Region Where the FIsh Is located,
           cv::Point centre = fish->ptRotCentre;//fish->zfishBlob.pt; // Use unfiltered position // //top_left + rotCentre;
@@ -3087,43 +3090,41 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
               }
               //else
                   //gTrackerState.bStoreThisTemplate = true; //Save FishLike Templates
-
-
-              //Copy Detected Ellipse Frame To The Output Frame
-              if (imgFishHeadProcessed.u)
-                  imgFishHeadProcessed.copyTo(outimgFishHeadProcessed);
-
-              cv::Rect pasteRegion = gTrackerState.rect_pasteregion;
+              // Update Measurements for Fish
+              double fitScoreReward = 0.001*fish->updateEyeMeasurement(vellLeft,vellRight) + gTrackerState.gUserReward;
 
               // Debug test //
               //if (gthresEyeSeg < 0)
               //    gUserReward = -500;
 
-              /// Auto Eye Threshold Adjustment And Learning ///
-              /// Pass detected Ellipses to Update the fish model's Eye State //
-              //  Make Fit score count very little
-              double fitScoreReward = 0.001*fish->updateEyeMeasurement(vellLeft,vellRight) + gTrackerState.gUserReward;
-              gTrackerState.gUserReward = 0.0; //Reset User Provided Rewards
-              //qDebug() << "R:" << fitScoreReward;
-              tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
-              current_eyeState.iSegThres1        = gTrackerState.gthresEyeSeg; //Update to what the environment state is
-              current_eyeState.iDSegThres2       = gTrackerState.gthresEyeSeg-gTrackerState.gthresEyeSegL;
-              current_eyeState.setVergenceState( fish->leftEyeTheta - fish->rightEyeTheta);
-              //Test - Add Target Vector
-              //fitScoreReward += -10.0*abs(40.25 - fish->leftEyeTheta) -10.0*abs(34.7 - fish->rightEyeTheta);
-              pRLEye->UpdateStateValue(current_eyeState,fitScoreReward); //Tell RL that we moved state so it calc value and updates internal state
-              pRLEye->setCurrentState(current_eyeState);
-              /// \note RL Is disabled - No State changes
-              //tEyeDetectorState new_eyeState = pRLEye->DrawNextAction(current_eyeState); //RL choose next Action /
-              //gthresEyeSeg = new_eyeState.iSegThres1; //Action Sets a partial state -> Update threshold as indicated by algorithm
-              //gthresEyeSegL = new_eyeState.iSegThres1-new_eyeState.iDSegThres2;
-              pwindow_main->UpdateSpinBoxToValue();
+              /// \deprecated Reinforcement Learning Of Eye Segmentation RL Is disabled - No State changes
+                  /// Auto Eye Threshold Adjustment And Learning ///
+                  // Pass detected Ellipses to Update the fish model's Eye State //
+                  //  Make Fit score count very little
+
+                  //gTrackerState.gUserReward = 0.0; //Reset User Provided Rewards
+                  //qDebug() << "R:" << fitScoreReward;
+                  //tEyeDetectorState current_eyeState = pRLEye->getCurrentState();
+                  // current_eyeState.iSegThres1        = gTrackerState.thresEyeEdgeCanny_low; //Update to what the environment state is
+                  //current_eyeState.iDSegThres2       = gTrackerState.thresEyeEdgeCanny_low-gTrackerState.gEyeMaskErrosionIterations;
+                  //current_eyeState.setVergenceState( fish->leftEyeTheta - fish->rightEyeTheta);
+
+                  //pRLEye->UpdateStateValue(current_eyeState,fitScoreReward); //Tell RL that we moved state so it calc value and updates internal state
+                  //pRLEye->setCurrentState(current_eyeState);
+                  //tEyeDetectorState new_eyeState = pRLEye->DrawNextAction(current_eyeState); //RL choose next Action /
+                  //gthresEyeSeg = new_eyeState.iSegThres1; //Action Sets a partial state -> Update threshold as indicated by algorithm
+                  //gthresEyeSegL = new_eyeState.iSegThres1-new_eyeState.iDSegThres2;
+                  //pwindow_main->UpdateSpinBoxToValue();
               /// END OF Auto Seg Param Learning
 
-              ///  Print Out Values //
+
+              ///  PRINT OUT EYE VALUES  //
               /// \todo Figure out Why/how is it that nan Values Appeared in Output File : NA Values in ./Tracked07-12-17/LiveFed/Empty//AutoSet420fps_07-12-17_WTLiveFed4Empty_286_005_tracks_2.csv
               /// \todo Move this to specialized Function Like @renderFrameText
               ///If Both Eyes Detected Then Print Vergence Angle
+
+
+              pasteRegion.x -= activefish_idx*(gTrackerState.rect_pasteregion.width+1); //Slide Window When Multiple Inset OUtputs
               ss.precision(3);
               cv::Scalar colTxt;
               if (fR < gTrackerState.fishnet_classifier_thres)
@@ -3132,7 +3133,6 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                   colTxt = CV_RGB(200,50,0);
 
               {
-
                   ss.str(""); //Empty String
                   ss << "L:" << fish->leftEyeTheta;
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45,pasteRegion.br().y+10),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
@@ -3147,7 +3147,6 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+55),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
               }
 
-
               //Check If Too Many Eye Detection Failures - Then Switch Template
               if (fish->nFailedEyeDetectionCount > 40)
               {
@@ -3155,8 +3154,13 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                     //pwindow_main->LogEvent(QString("[warning] Too Many Eye detection Failures - Change Template Randomly to :" + QString::number(iLastKnownGoodTemplateRow)));
               }
 
+              // Filtered Versions Of Eye Axis are drawn on calling function - when Draw Tracks Is called //
 
-              /// END OF EYE DETECTION //
+                //Copy Detected Ellipse Frame To The Output Frame
+                if (imgFishHeadProcessed.u)
+                    imgFishHeadProcessed.copyTo(outimgFishHeadProcessed);
+
+              /// END - EYE DETECTION SECTION //
 
 
               /// SPINE Fitting And Drawing ///
@@ -3214,7 +3218,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
              /// END OF Fit Spine ////
               //Eye Detection Ret > 0
-                //Shift Paste Region For Next info info
+
+           ///Shift Paste Region For Next info info
               if ((pasteRegion.x-pasteRegion.width) > 0 )
                   pasteRegion.x -= pasteRegion.width;
               else{
@@ -3224,6 +3229,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                   else
                       pasteRegion.y = gTrackerState.rect_pasteregion.y;
               }
+
+       activefish_idx++;
     } //For eAch Fish Model
     gTrackerState.bEyesDetected = false; //Flip Back to off in case it was eye features were marked for saving
 

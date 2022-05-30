@@ -204,13 +204,13 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
       message(paste("Found #Rec:",  length(TrackerData[[i]][[j]]$frameN) ))
       
       ## Extract fields values from filename using function name provided##
-      lNameDat <- do.call(strNameFieldFUN, list(temp[[j]]) )
-      groupTag <-lNameDat$groupID
+      lNameDat <- do.call(strNameFieldFUN, list( temp[[j]]) )
+      groupTag <- lNameDat$groupID
       ##
       if (nDat >0)
-        message(paste("#### Load Data Files Of Group ",i,groupTag," ###############"))
+        message(paste("#### Load Data Files Of Group ",i, groupTag," ###############"))
       else{
-        message(paste("#### No Data Files Found for Group ",i,groupTag," ###############"))
+        message(paste("#### No Data Files Found for Group ",i, groupTag," ###############"))
         next()
       }
       
@@ -564,11 +564,11 @@ extractFileNameParams_OliviaAssay <- function(strFileName)
   trackID <- as.numeric(gsub("[^0-9]","",brokenname[6]) );
   
   vpath <- strsplit(normalizePath(dirname(strFileName) ),"/")[[1]]
-  #expDir <- vpath[length(vpath)-1] ## Extract parent Dir with Exp iNfo
-  #vexpDir <- unlist(strsplit(expDir,"_"))
+  expDir <- vpath[length(vpath)] ## Extract parent Dir with Exp iNfo
+  ##vexpDir <- unlist(strsplit(expDir,"_"))
   #stopifnot(vexpDir[1] == brokenname[1])
   
-  strGroupID <- "LR"#vexpDir[3]
+  strGroupID <- expDir# "LR"#vexpDir[3]
   ageDPF <- 7  #as.numeric(gsub("[^0-9]","",vexpDir[2]) );
   fps = 50
   

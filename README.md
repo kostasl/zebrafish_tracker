@@ -130,7 +130,7 @@ The labels are taken from the directory names where each set of images is stored
 Images for training are extracted from videos by double click on fish to create new Box, and pressing CTRL+T to save as pgm file in the templates subdirectory. Make sure that fish training samples are accuratelly positioned fish anterior box (manually oriented using "[" and "]" keys)
 You may also want to save false positives (error templates) to train the classifier on non-fish objects too.
 Convert pgm to jpg prior to copying new samples in the training folder by running :
-
+ffm
 <code>
 mogrify -format jpg *.pgm && rm *.pgm
 </code>
@@ -158,6 +158,12 @@ The program can accept a list of videos to process as a parameter to invideolist
 If you run into problems with broken videos, such as the number of frames not being correctly recognized, try fixing it with :
 ```
 ffmpeg -v error -i source_broken_video.mp4 -c copy fixed_video.mp4
+```
+
+
+The tracker allows saving of image sequences after pressing the s key. To convert the sequence of iumages to a video use :
+```
+ffmpeg -pattern_type glob -i '*.png'  -start_number 15200 -crf 20  -c:v libx264 -preset slow  -vf format=yuv420p,fps=50 -c:a aac -movflags +faststart out.mp4
 ```
 
 

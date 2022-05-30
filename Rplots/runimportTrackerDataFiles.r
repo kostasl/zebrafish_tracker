@@ -35,7 +35,7 @@ for ( idxDataSet in firstDataSet:lastDataSet )
   datAllFrames$dataSet <- idxDataSet ##Identify DataSet
   
   datAllSets[[n]] <- datAllFrames
-  message("Imported frames for GroupID:",unique(datAllFrames$groupID) )
+  message("Imported frames for GroupID:",paste(unique(datAllFrames$groupID),",") )
   ##CHeck If Exp Ids not found 
   stopifnot(NROW(datAllFrames[which(is.na(datAllFrames$expID)), ]) == 0)
   
@@ -52,4 +52,7 @@ save(groupsrcdatListPerDataSet,file=paste(strDataExportDir,"/groupsrcdatListPerD
 
 #datAllFrames <- rbindlist(datAllSets);
 datAllFrames = do.call(rbind,datAllSets);
-save(datAllFrames,file=paste(strDataExportDir,"datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
+strOutFileName <- paste(strDataExportDir,"datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep="")
+save(datAllFrames,file=strOutFileName)
+
+message("Saved Imported frames to:",strOutFileName)

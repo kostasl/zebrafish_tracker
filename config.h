@@ -156,7 +156,7 @@ class trackerState
       const double dVarBlobArea                   = 20;
       const unsigned int gc_fishLength            = 100; //px Length Of Fish
       const unsigned int thresh_minfishblobarea     = 400; //Min area above which to Filter The fish blobs
-      const unsigned int thresh_maxfishblobarea     = 4650; //Min area above which to Filter The fish blobs
+      const unsigned int thresh_maxfishblobarea     = 4850; //max area for fish blob
       const unsigned int gthres_maxfoodblobarea     = thresh_minfishblobarea/3;
 
       const int gFitTailIntensityScanAngleDeg   = 60; //
@@ -164,7 +164,7 @@ class trackerState
       const int gcFishContourSize               = ZTF_FISHCONTOURSIZE;
       const int gMaxFitIterations               = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
 
-      int gcMaxFishModelInactiveFrames          = gfVidfps/2; //Number of frames inactive until track is deleted
+      int gcMaxFishModelInactiveFrames          = gfVidfps; //Number of frames inactive until track is deleted
       int gcMaxFoodModelInactiveFrames          = gfVidfps/5; //Number of frames inactive (Not Matched to a Blob) until track is deleted
       int gcMinFoodModelActiveFrames            = gfVidfps/20; //Min Number of consecutive frames it needs to be active  otherwise its deleted
       float gMaxClusterRadiusFoodToBlob           = 3; //Per Sec / This changes depending on FPS (setFPS)
@@ -244,7 +244,7 @@ class trackerState
       bool bDrawFoodBlob              = true; ///Draw circle around identified food blobs (prior to model matching)
       bool bOffLineTracking           = false; ///Skip Frequent Display Updates So as to  Speed Up Tracking
       bool bBlindSourceTracking       = false; /// Used for Data Labelling, so as to hide the data source/group/condition
-      bool bStaticBGMaskRemove        = true; /// Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
+      bool bStaticBGMaskRemove        = false; /// Problematic if fish not moving for too long- Remove Pixs from FG mask that have been shown static in the Accumulated Mask after the BGLearning Phase
       bool bUseBGModelling                      = true; ///Use BG Modelling TO Segment FG Objects
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
@@ -286,25 +286,26 @@ class trackerState
       /// Eye Tracking Params
       int gi_CannyThres           = 150;
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-      int gi_maxEllipseMajor      = 30; /// thres  for Eye Ellipse Detection methods
-      int gi_minEllipseMajor      = 13; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
-      int gi_minEllipseMinor      = 0; /// ellipse detection width - When 0 it allows for detecting straight line
+      int gi_maxEllipseMajor      = 32; /// thres  for Eye Ellipse Detection methods
+      int gi_minEllipseMajor      = 21; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
+      int gi_minEllipseMinor      = 0; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int gthresEyeSeg                    = -5; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int thresEyeEdgeCanny_low             = -2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int thresEyeEdgeCanny_high            = 2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
 
-      int gthresEyeSegL                   = 2;
-      int gFishTailSpineSegmentLength     = 9;
+      int gEyeMaskErrosionIterations      = 1;
+      int gFishTailSpineSegmentLength     = 16;
       // Eye Masks //
-      int iEyeHMaskSepRadius                = 18; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
+      int iEyeHMaskSepRadius              = 39; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
-      int iEyeVMaskSepWidth               = 25; //5 px width vertical line separates the eyes for segmentation
-      int iEyeVMaskSepHeight              = 46;
+      int iEyeVMaskSepWidth               = 15; //5 px width vertical line separates the eyes for segmentation
+      int iEyeVMaskSepHeight              = 46; //Radius for rectMidEllipse : The Ellipsoid Mask Of Body In little Upsampled EyeDiscovery Image
       int eyeMaskVLineThickness           = 15; //Width Vertical Midline Separating The eyes
 
       /// Fishnet Classifier params //
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_classifier_thres  = 0.94f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_classifier_thres  = 0.99f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
       float fishnet_inputSparseness = 0.1f; //Ratio of Active Pixels in Binarized input Image
 
       // BackProp YAML model - DEpecrated
@@ -318,7 +319,7 @@ class trackerState
       int gEyeTemplateAngleSteps      = 5;
 
       double eyeStepIncrement         = 0.8; //Eye Angles Can be Slowly Updated on each Frame- Change with Step Size eyeStepIncrement
-      double gTemplateMatchThreshold  = 0.73; //Template Matching is tested After Fish Net Classifier Has passed-
+      double gTemplateMatchThreshold  = 0.81; //Template Matching is tested After Fish Net Classifier Has passed-
       double gTemplateMatchThreshold_LowLimit = 0.65;
       double gTemplateMatchThreshold_UpLimit = 0.95;
 
@@ -379,7 +380,7 @@ class trackerState
             CEREAL_NVP(stroutfilename),
             CEREAL_NVP(strDNNTensorFlowModelFile),CEREAL_NVP(fishnet_classifier_thres),CEREAL_NVP(gTemplateMatchThreshold),
             CEREAL_NVP(userROI),CEREAL_NVP(bRecordToFile),CEREAL_NVP(bTrackFish),CEREAL_NVP(bSaveImages),CEREAL_NVP(bUseEllipseEdgeFittingMethod),
-            CEREAL_NVP(bTemplateSearchThroughRows),CEREAL_NVP(bApplyFishMaskBeforeFeatureDetection),bUseOpenCL,bUseGPU,bBlindSourceTracking,CEREAL_NVP(bStaticBGMaskRemove),
+            CEREAL_NVP(bTemplateSearchThroughRows),CEREAL_NVP(bApplyFishMaskBeforeFeatureDetection),bUseOpenCL,bUseGPU,CEREAL_NVP(bBlindSourceTracking),CEREAL_NVP(bStaticBGMaskRemove),
             CEREAL_NVP(gbUpdateBGModel),CEREAL_NVP(gbUpdateBGModelOnAllVids),
             CEREAL_NVP(bFitSpineToTail),CEREAL_NVP(bUseMaskedFishForSpineDetect),CEREAL_NVP(bUseHistEqualization),CEREAL_NVP(bRemovePixelNoise),bMeasure2pDistance,
             CEREAL_NVP(bRenderToDisplay),CEREAL_NVP(bRenderWithAlpha), CEREAL_NVP(bOffLineTracking),CEREAL_NVP(bDrawFoodBlob),
@@ -387,7 +388,7 @@ class trackerState
             CEREAL_NVP(bUseBGModelling),CEREAL_NVP(bStaticBGMaskRemove), CEREAL_NVP(gbUpdateBGModel),CEREAL_NVP(gbUpdateBGModelOnAllVids),
             CEREAL_NVP(bSkipExisting),CEREAL_NVP(bTrackFood),CEREAL_NVP(bTracking),CEREAL_NVP(bStartPaused),
             CEREAL_NVP(gfVidfps),CEREAL_NVP(uiStartFrame),CEREAL_NVP(uiStopFrame),CEREAL_NVP(uiTotalFrames),
-            CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(gthresEyeSeg),CEREAL_NVP(gthresEyeSegL),
+            CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(thresEyeEdgeCanny_low),CEREAL_NVP(gEyeMaskErrosionIterations),
             CEREAL_NVP(gi_MaxEllipseSamples),CEREAL_NVP(gi_VotesEllipseThres),CEREAL_NVP(gi_minEllipseMinor),CEREAL_NVP(gi_minEllipseMajor),CEREAL_NVP(gi_maxEllipseMajor),
             CEREAL_NVP(gi_CannyThresSmall),CEREAL_NVP(gi_CannyThres),CEREAL_NVP(gdMOGBGRatio),
             CEREAL_NVP(MOGhistory),CEREAL_NVP(thresh_minfishblobarea),CEREAL_NVP(thresh_maxfishblobarea),CEREAL_NVP(iEyeHMaskSepRadius),CEREAL_NVP(iEyeVMaskSepWidth)

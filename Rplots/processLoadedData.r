@@ -8,7 +8,6 @@ lHuntStat     <- list();
 lHuntEvents   <- list();
 lMotionStat   <- list();
 
-
 ### TRAJECTORIES Indicating Hunting  - With distinct colour for each larva ####
 #source("plotTrackScatterAndDensities.r")
 ##########
@@ -42,7 +41,7 @@ for (g in strRGroupsTags)
     vexpID = unique(datAllGroupFrames$expID)
     idxDataSet <- unique(datAllGroupFrames$dataSet)
     
-    datHuntEvent = detectHuntEvents(datAllGroupFrames,vexpID,c,dataSetsToProcess)
+    datHuntEvent     = detectHuntEvents(datAllGroupFrames,vexpID,c,dataSetsToProcess)
     lHuntEvents[[i]] = datHuntEvent ## Collect TO One Data File
     writeHuntEventToFile(datHuntEvent,dataSetsToProcess,groupsrcdatListPerDataSet)
     
@@ -79,7 +78,9 @@ saveRDS(datAllHuntEvents,file=paste(strDataExportDir,"/HB_allHuntEvents.rds",sep
 
 save(datTrackletStat,lTrackletStat,file =paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep="")) 
 
-save(datHuntStat, file=paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datHuntStat.RData",sep=""))
+strHuntStateFilename <- paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datHuntStat.RData",sep="")
+save(datHuntStat, file=strHuntStateFilename)
+message("Saved hunt stat in :",strHuntStateFilename)
 save(datMotionStat, file=paste(strDataExportDir,"/","setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datMotionStat.RData",sep=""))
 
 ## Track Lengths ##
