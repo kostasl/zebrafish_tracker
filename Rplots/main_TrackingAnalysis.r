@@ -40,7 +40,7 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 #setwd(here())
 source("config_lib.R")
 
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
 
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
@@ -57,7 +57,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
 #                               ),sep="/")
 ## Hunger Exp
 strDataSetDirectories <- paste(strTrackInputPath, list(
-                                 "tracking_May2022/" ##Dataset 2
+                                 "DS_7dpf/" ##Dataset 2
                                  ),sep="/")
 
 
@@ -72,9 +72,10 @@ strCondR  <- "*.csv";
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
 ##NOTE: Assumes Files Begin with "Auto" and end with "track"
+## These need to be grouped in folders per GroupID
   lastDataSet   = NROW(strDataSetDirectories)
   firstDataSet  = 1 
-  strFileNameFn = "extractFileNameParams_OliviaAssay"
+  strFileNameFn = "extractFileNameParams_FOntogeny"
   source("runimportTrackerDataFiles.r") 
 
 ###### END OF IMPORT TRACKER DATA ############

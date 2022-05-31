@@ -167,7 +167,8 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
     nFinalPrey  <- NA
     for (k in vEventID)
     {
-      
+        k <- max(k,1) ##Event ID min is 1 / Do not Allow 0
+        
         ##Select Hunt Frames of this Event ## 
         ## Note Criterion - Left Eye Angle >  Min & Right Eye Angle <  Min (Turned Inwards) & Vergence Angle > 40
         ## Warning - This criterion Is repeated in the plot Function of plotTrackScatterAndDensities - Warning

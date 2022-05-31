@@ -549,6 +549,37 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
 
 
 
+
+##Aux Functions used for importing data from CSV Files - Processes file name :
+#/// Returns a list of name value pairs extracted from TrackerFile name used for the Hunting  Assay
+extractFileNameParams_FOntogeny <- function(strFileName)
+{
+  ##Extract Experiment ID
+  basename <- basename(strFileName)
+  brokenname = unlist(strsplit(basename,"_"))
+  expID <-  as.numeric(gsub("[^0-9]","",brokenname[1]) )
+  eventID <- as.numeric(brokenname[4]);
+  camID <- (brokenname[3])
+  
+  larvaID <- as.numeric(gsub("[^0-9]","",brokenname[1]) );
+  strGroupID <- brokenname[2]
+  ageDPF <-    as.numeric(gsub("[^0-9]","",brokenname[3]) );
+  testCond <-brokenname[4]
+  eventID <- as.numeric(brokenname[5]); ##Sometimes Missing
+  if (is.na(eventID)) eventID = 0
+  trackID <- as.numeric(gsub("[^0-9]","", tail(brokenname,1)) );
+  
+  vpath <- strsplit(normalizePath(dirname(strFileName) ),"/")[[1]]
+  expDir <- vpath[length(vpath)-1] ## Extract parent Dir with Exp iNfo
+  vexpDir <- unlist(strsplit(expDir,"_"))
+  
+  #stopifnot(vexpDir[1] == brokenname[1])
+  
+  fps = NA
+  
+  return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps,groupID=strGroupID,testCond=testCond,age=ageDPF) )
+}
+
 ##Aux Functions used for importing data from CSV Files - Processes file name :
 #/// Returns a list of name value pairs extracted from TrackerFile name used for the Hunting  Assay
 extractFileNameParams_OliviaAssay <- function(strFileName)
@@ -588,11 +619,12 @@ extractFileNameParams_HungerExp_camA <- function(strFileName)
   camID <- (brokenname[3])
   testCond <- brokenname[2]
   larvaID <- as.numeric(gsub("[^0-9]","",brokenname[1]) );
-  
+  trackID <- as.numeric(gsub("[^0-9]","", tail(brokenname,1)) );
   vpath <- strsplit(normalizePath(dirname(strFileName) ),"/")[[1]]
   expDir <- vpath[length(vpath)-1] ## Extract parent Dir with Exp iNfo
   vexpDir <- unlist(strsplit(expDir,"_"))
-  stopifnot(vexpDir[1] == brokenname[1])
+  
+  #stopifnot(vexpDir[1] == brokenname[1])
 
   strGroupID <- vexpDir[3]
   ageDPF <-    as.numeric(gsub("[^0-9]","",vexpDir[2]) );
