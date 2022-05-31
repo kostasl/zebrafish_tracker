@@ -732,7 +732,7 @@ writeHuntEventToFile <- function(datHuntEvent,dataSetsToProcess,groupsrcdatListP
       
       ##Get Files Used for This DataSet, and this Condition
       
-      filelist <- getVideofilePath(unlist(groupsrcdatListPerDataSet[d][[1]][[tcond]][[1]]),strVideoFilePath)
+      filelist <- getVideofilePath(unlist(groupsrcdatListPerDataSet[d][[1]][[rgroup]][[1]]),strVideoFilePath)
       ## Override 
       #filelist <- groupsrcdatListPerDataSet[d][[1]][[tcond]][[1]] 
       

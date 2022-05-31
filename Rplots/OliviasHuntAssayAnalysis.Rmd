@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 source("config_lib.R")
 
-setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 source("HuntingEventAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
