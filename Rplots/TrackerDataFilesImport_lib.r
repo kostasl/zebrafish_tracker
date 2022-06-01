@@ -558,7 +558,7 @@ extractFileNameParams_FOntogeny <- function(strFileName)
   basename <- basename(strFileName)
   brokenname = unlist(strsplit(basename,"_"))
   expID <-  as.numeric(gsub("[^0-9]","",brokenname[1]) )
-  eventID <- as.numeric(brokenname[4]);
+  
   camID <- (brokenname[3])
   
   larvaID <- as.numeric(gsub("[^0-9]","",brokenname[1]) );
@@ -566,7 +566,8 @@ extractFileNameParams_FOntogeny <- function(strFileName)
   ageDPF <-    as.numeric(gsub("[^0-9]","",brokenname[3]) );
   testCond <-brokenname[4]
   eventID <- as.numeric(brokenname[5]); ##Sometimes Missing
-  if (is.na(eventID)) eventID = 0
+  if (is.na(eventID)) 
+    eventID = 1 ## Make Default 1 when Missing
   trackID <- as.numeric(gsub("[^0-9]","", tail(brokenname,1)) );
   
   vpath <- strsplit(normalizePath(dirname(strFileName) ),"/")[[1]]

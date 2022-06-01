@@ -119,8 +119,8 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
   #lHuntingDuration <-list()
   #vHuntStartFrames <- list()  
   #vHuntEndFrames <- list()  
-  
-  try(rm("vHuntStartFrames","vHuntEndFrames","vHuntDeltaFrames","lHuntingDuration"),silent=TRUE)
+  if (exists("vHuntStartFrames"))
+    try(rm("vHuntStartFrames","vHuntEndFrames","vHuntDeltaFrames","lHuntingDuration"),silent=TRUE)
   
   
   nHuntingEventsForLarva   <- 0
