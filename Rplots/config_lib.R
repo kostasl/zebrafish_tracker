@@ -135,17 +135,19 @@ setEnvFileLocations <- function(strSetName)
     ## Required Variables - Locations -- Choose According To 
     # Home Desktop
     setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-    strVideoFilePath  <<- "/media/kostasl/ARXEIO1TB/Behaviour/" 
+    #strVideoFilePath  <<- "/media/kostasl/ARXEIO1TB/Behaviour/" 
+    strVideoFilePath  <<- "/media/kostasl/zFish-Heta-T7/HungerExp"
     strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release//" 
     strTrackeroutPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
     #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/"
-    strTrackInputPath <<- "/media/kostasl/D445GB_ext4/expData/Olivia_assay/" 
+    #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/expData/Olivia_assay/" 
+    strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/" 
 
-    ##strDatDir         <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrkSessionHungerExp/camA/" ##Where Are the Imported RData Stored
-    strDatDir         <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedOlivia/" ##Where Are the Imported RData Stored
-    strDataExportDir  <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/FeedingAssay/"
-    strDataStore      <<-  "/media/kostasl/D445GB_ext4/kostasl/nextcloud/Dropbox_overflow/Calculations/zebrafishtrackerData/out/FeedingAssay" ##Where Large Data Is stored because Dropbox-Overflows
-    strPlotExportPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
+    strDatDir         <<-  "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat" ##Where Are the Imported RData Stored
+    #strDatDir         <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedOlivia/" ##Where Are the Imported RData Stored
+    strDataExportDir  <<-  "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat"
+    strDataStore      <<-  "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows
+    strPlotExportPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat/plots" ##Where to source the Tracker csv files from 
   }
   
   
@@ -154,14 +156,16 @@ setEnvFileLocations <- function(strSetName)
       
       ## Office PC ##
     setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
-    strVideoFilePath  <<- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/" 
+    #strVideoFilePath  <<- "/media/LinuxDat/expDataKostas/AnalysisSetAlpha/"
+    strVideoFilePath  <<- "/media/kostasl/T7/HungerExp/" 
     strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_1_GCC_64bit-Release/"
     strTrackeroutPath <<- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
     #strTrackInputPath <- "/mnt/570dce97-0c63-42db-8655-fbd28d22751d/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
     #strTrackInputPath <<- "/media/LinuxDat/TrackerOut/TrackASetRepeat/" ##Where to source the Tracker csv files from
-    strTrackInputPath <<- "/media/LinuxDat/expDataKostas/HungerExp/trackedDat/" 
-    strDatDir         <<- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrkSessionHungerExp" ##Where Are the Imported RData Stored
-    strDataExportDir  <<- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/HungerExp"
+    #strTrackInputPath <<- "/media/LinuxDat/expDataKostas/HungerExp/trackedDat/" 
+    strTrackInputPath <<-  "/media/kostasl/T7/HungerExp/tracked/"
+    strDatDir         <<- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/OntogenyOfFeeding/" ##Where Are the Imported RData Stored
+    strDataExportDir  <<- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/OntogenyOfFeeding/out/"
     strDataStore      <<-  "/home/kostasl/nextcloud-client/10/Nextcloud/Dropbox_overflow/Calculations/zebrafishtrackerData/out/HungerExp" ##Where Large Data Is stored because Dropbox-Overflows
     strPlotExportPath <<- "/media/LinuxDat/kostasl/Dropbox/Calculations/zebrafishtrackerData/plots" ##Where to source the Tracker csv files from 
   }

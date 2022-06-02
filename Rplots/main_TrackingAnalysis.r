@@ -57,7 +57,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
 #                               ),sep="/")
 ## Hunger Exp
 strDataSetDirectories <- paste(strTrackInputPath, list(
-                                 "tracking_May2022/" ##Dataset 2
+                                 "DS_7dpf/" ##Dataset 2
                                  ),sep="/")
 
 
@@ -72,9 +72,10 @@ strCondR  <- "*.csv";
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
 ##NOTE: Assumes Files Begin with "Auto" and end with "track"
+## These need to be grouped in folders per GroupID
   lastDataSet   = NROW(strDataSetDirectories)
   firstDataSet  = 1 
-  strFileNameFn = "extractFileNameParams_OliviaAssay"
+  strFileNameFn = "extractFileNameParams_FOntogeny"
   source("runimportTrackerDataFiles.r") 
 
 ###### END OF IMPORT TRACKER DATA ############
@@ -82,8 +83,8 @@ strCondR  <- "*.csv";
 
 ### LOAD Imported Data Sets - Starting From firstDataSet
   ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
-  #firstDataSet = 1#NROW(strDataSetDirectories)#-14
-  #lastDataSet = NROW(strDataSetDirectories)
+  firstDataSet = 1#NROW(strDataSetDirectories)#-14
+  lastDataSet = NROW(strDataSetDirectories)
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   ##Load All Tracked Frames into datAllFrames data frame ##
   ##Warning : Merging is memory intensive
@@ -92,11 +93,12 @@ strCondR  <- "*.csv";
   #load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
   #load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
   
-  #load(paste0(strDatDir,"/datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
-  #load(paste0(strDatDir,"groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData"))
+  load(paste0(strDatDir,"/datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
+  load(paste0(strDatDir,"/groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData"))
   ## Load Tracklet Stat
   #load(file = paste(strDatDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
   
+  ## \todo Problem Detecting Hunt Events -Across conditions
   ## Calculates HuntEvents And Hunt Statistics On Loaded Data ##
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)

@@ -119,8 +119,8 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
   #lHuntingDuration <-list()
   #vHuntStartFrames <- list()  
   #vHuntEndFrames <- list()  
-  
-  try(rm("vHuntStartFrames","vHuntEndFrames","vHuntDeltaFrames","lHuntingDuration"),silent=TRUE)
+  if (exists("vHuntStartFrames"))
+    try(rm("vHuntStartFrames","vHuntEndFrames","vHuntDeltaFrames","lHuntingDuration"),silent=TRUE)
   
   
   nHuntingEventsForLarva   <- 0
@@ -167,7 +167,8 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
     nFinalPrey  <- NA
     for (k in vEventID)
     {
-      
+        k <- max(k,1) ##Event ID min is 1 / Do not Allow 0
+        
         ##Select Hunt Frames of this Event ## 
         ## Note Criterion - Left Eye Angle >  Min & Right Eye Angle <  Min (Turned Inwards) & Vergence Angle > 40
         ## Warning - This criterion Is repeated in the plot Function of plotTrackScatterAndDensities - Warning
@@ -731,7 +732,7 @@ writeHuntEventToFile <- function(datHuntEvent,dataSetsToProcess,groupsrcdatListP
       
       ##Get Files Used for This DataSet, and this Condition
       
-      filelist <- getVideofilePath(unlist(groupsrcdatListPerDataSet[d][[1]][[tcond]][[1]]),strVideoFilePath)
+      filelist <- getVideofilePath(unlist(groupsrcdatListPerDataSet[d][[1]][[rgroup]][[1]]),strVideoFilePath)
       ## Override 
       #filelist <- groupsrcdatListPerDataSet[d][[1]][[tcond]][[1]] 
       
