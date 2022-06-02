@@ -175,8 +175,11 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
   ##CHANGE HASH/ID to select between datasets/groups ##
   strCondTags = names(listSrcFiles);
   
+  
+  procDatFrames = 0;
   procDatIdx = 1;
   groupDatIdx = 1;
+  
   for (i in strCondTags)
   {
 
