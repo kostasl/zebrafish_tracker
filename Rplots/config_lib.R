@@ -37,7 +37,7 @@ DIM_DISHVOLUME     <- 1000*(0.035/2)^2*pi*0.01 ## in  Liters
 DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
-G_APPROXFPS              <- 410
+G_APPROXFPS              <- 60
 G_THRESHUNTANGLE         <- 20 #Define Min Angle Both Eyes need for a hunting event to be assumed
 G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
 G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
