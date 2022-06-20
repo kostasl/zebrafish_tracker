@@ -47,30 +47,80 @@ huntLabels <- convertToScoreLabel(5) #factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10
 ##Loads the Latest Labelled Hunt Events Set - Centralize Here so Changes Propagate To scripts
 ## Removes Thos Labelled As Dublicate OR Non Hunt Events
 ## Notes : Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
-getLabelledHuntEventsSet <- function()
+# For the 2020 publication the file used was "setn15-HuntEvents-SB-Updated-Merged3"
+getLabelledHuntEventsSet <- function(strProcDataFileName = "HB_allHuntEvents.rds",vxCludeExpID=NA)
 {
 #  datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$expID == 4491,] ##Is A lonely NL with no Matching NE
+  bNewFile <- FALSE
+  if (!dir.exists(paste0(strDatDir,"/LabelledSet/")))
+  {
+      message("Creating LabelledSet subdir to save labeled hunt events..")
+      dir.create(paste0(strDatDir,"/LabelledSet/"))  
+      file.copy(paste0(strDatDir,"/",strProcDataFileName), paste0(strDatDir,"/LabelledSet/",strProcDataFileName),overwrite=FALSE)
+      bNewFile <- TRUE
+     
+  }
   
-  
-  strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3"
   #strProcDataFileName <-"setn3-D1-3-HuntEvents-140"
-  assign("file_LabelledHuntEventsSet", paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ), envir = .GlobalEnv)
+  assign("file_LabelledHuntEventsSet", paste(strDatDir,"/LabelledSet/",strProcDataFileName,sep="" ), envir = .GlobalEnv)
   message(paste(" Loading Hunt Event List to Analyse... ",strProcDataFileName))
   #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-  datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-  #datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/",strProcDataFileName,".rds",sep="" ))
+  datHuntLabelledEventsSB <- readRDS(file=paste0(strDatDir,"/LabelledSet/",strProcDataFileName))
   
-  #saveRDS(datHuntLabelledEventsSB,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+  if (!("filename" %in% names(datHuntLabelledEventsSB)) )
+    datHuntLabelledEventsSB$filename <- ""
+  #datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/",strProcDataFileName,".rds",sep="" ))
+
+  ##Attach Video file name to Each Hunt Event
+  if (any(datHuntLabelledEventsSB$filename == "")){
+    ## Attach File Names - TrackerFiles Have same basename as video file - Use this to locate Vid
+    vAvailableVideoFiles <- list.files(path = strVideoFilePath, 
+                                       pattern = ".avi|.mp4" , all.files = FALSE,
+                                      full.names = TRUE, recursive = TRUE,
+                                      ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
+    
+    
+    for (i in 1:NROW(datHuntLabelledEventsSB) )
+    {
+      rec <- datHuntLabelledEventsSB[i,] 
+      ##Locate Via pattern of Exp/Group/Event Id In file name
+      strFpatt <- paste0(rec$expID,"_.*",as.character(rec$groupID),".*",as.character(rec$testCond) )
+
+      vMatchedFileNames <- vAvailableVideoFiles[which(grepl(strFpatt ,vAvailableVideoFiles))]
+      if (NROW(vMatchedFileNames) == 1)
+      {
+        datHuntLabelledEventsSB[i,"filename"] <- basename(vMatchedFileNames)
+        #message(i,datHuntLabelledEventsSB[i,"filename"])
+      }
+      else{
+          message(i,"**No unique filename found : ", strFpatt, "Retrying with filter event ID:",as.character(rec$eventID))
+          ##Retry with Event Number
+          strFpatt <- paste0(rec$expID,"_.*",as.character(rec$groupID),".*",as.character(rec$testCond),"_.*",as.character(rec$eventID) )
+          vMatchedFileNames <- vAvailableVideoFiles[which(grepl(strFpatt ,vAvailableVideoFiles))]
+          datHuntLabelledEventsSB[i,"filename"] <- basename(vMatchedFileNames)
+      }
+      ## Another Way is to search in Saved Records of tracked File Names
+      #rec$filename <- basename(groupsrcdatListPerDataSet[[1]][[rec$groupID]][[1]][rec$fileIdx])
+      ##Remove csv extention 
+      #rec$filename <- substr(rec$filename, 1, nchar(rec$filename)-4)
+      
+    }
+    ##Save Updated
+    message(" Added video file names to hunt-event records.")
+    saveRDS(datHuntLabelledEventsSB,file=paste0(strDatDir,"/LabelledSet/",strProcDataFileName))
+  }
+
+  
   ##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
   #AutoSet420fps_14-12-17_WTNotFed2RotiR_297_003.mp4
   # 4491 <- Is a lonely NL - No Match NE
-  vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411,4491)
-  vWeirdDataSetID <- c(11,17,18,19) ##These Dataset Have a total N  Experiments Less than 4(larvae)*2(cond)*3(groups)=24
+  #vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411,4491)
+  #vWeirdDataSetID <- c(11,17,18,19) ##These Dataset Have a total N  Experiments Less than 4(larvae)*2(cond)*3(groups)=24
   
   ##We Can Choose To Exclude The Fish That Produced No Hunting Events
-  datHuntLabelledEventsSB <- datHuntLabelledEventsSB[  !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) 
-                                                       #& datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL")
-                                                          ,]
+  datHuntLabelledEventsSB <- datHuntLabelledEventsSB[ !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) 
+                                                      #& datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL")
+                                                      ,]
   
   ##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
   datHuntLabelledEventsSB_filtered <- datHuntLabelledEventsSB [
@@ -85,8 +135,8 @@ getLabelledHuntEventsSet <- function()
   #                                                                                !(datHuntLabelledEventsSBMerged_filtered$expID %in% vxCludeExpID),]
   
   ## Check Event Number in Strange List
-  for (dID in vWeirdDataSetID )
-    print(NROW(unique(datHuntLabelledEventsSB_filtered[datHuntLabelledEventsSB_filtered$dataSetID ==  dID ,]$expID)))
+  #for (dID in vWeirdDataSetID )
+  #  print(NROW(unique(datHuntLabelledEventsSB_filtered[datHuntLabelledEventsSB_filtered$dataSetID ==  dID ,]$expID)))
   
   
   
@@ -155,12 +205,12 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     }
     
     ##Get Respective Video  Filename / Path
-    strVideoFile <- list.files(path =strVideoFilePath, pattern = rec$filenames , all.files = FALSE,
+    strVideoFile <- list.files(path = strVideoFilePath, pattern = rec$filename , all.files = FALSE,
                                full.names = TRUE, recursive = TRUE,
                                ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
     
-    if (NROW(strVideoFile) == 0)
-      stop(paste("Could not find video file matching,",rec$filenames, " ,in : ",strVideoFilePath ) )
+    if (NROW(strVideoFile) == 0 | NROW(strVideoFile) > 1 )
+      stop(paste("Could not find unique video file matching,",rec$filename, " ,in : ",strVideoFilePath ) )
     if (!file.exists(strVideoFile) )
       stop(paste("Video File ",strVideoFile, "does not exist" ) )
       
@@ -168,8 +218,12 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     
     message(paste("\n", row.names(rec) ,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame, "ExpID:",rec$expID ) )
     ##--
-    strArgs = paste(" --HideDataSource=0 --MeasureMode=1 --ModelBG=0 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
+    strArgs = paste(" --HideDataSource=0 --MeasureMode=1 --ModelBG=0 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile,
+                    " --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1),
+                    " --stopframe=",rec$endFrame," --startpaused=1",sep="")
+    
     message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
+    
     if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
       stop(paste("Tracker software not found in :",strTrackerPath ))
     
@@ -193,7 +247,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       
       setLabel <- factor(x=rec$huntScore,levels=seq(0,NROW(vHuntEventLabels)-1),labels=vHuntEventLabels )
       message(paste("\n\n ### Event's ", row.names(rec) , " Current Label is :",setLabel," ####" ) )
-      message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
+      message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filename, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
       
       
       for (g in levels(huntLabels) )

@@ -27,7 +27,7 @@
  ///    * E Manually Set Eye Angles
  ///    * F Manually set prey position (which is then tracked)
  ///    * q Exit Quit application
- ///*Ε
+ ///*
  ///*
 
 ///
@@ -156,7 +156,6 @@ int main(int argc, char *argv[])
 
     MainWindow window_main;
     pwindow_main = &window_main;
-
 
     /// Handle Command Line Parameters //
     const cv::String keys =
@@ -903,23 +902,23 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
                 else //Not Stuck On 1st Frame / Maybe Vid Is Over?>
                 {
                    std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << "# *Unable to read next frame." << std::endl;
-                   std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << "# frame of " << gTrackerState.uiTotalFrames <<  " of Video. Moving to next video." <<std::endl;
+                   std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << "# frame of " << gTrackerState.uiTotalFrames <<  " of Video. Moving to next video." << std::endl;
                    //assert(outframe.cols > 1);
 
                    double dVidRelativePosition = capture.get(cv::CAP_PROP_POS_AVI_RATIO);
-                   cout << " Relative Vid.Position : " << dVidRelativePosition << std::endl;
+                   std::cerr << gTimer.elapsed()/60000.0 << " [INFO] Relative Vid.Position : " << dVidRelativePosition << std::endl;
                    if (nFrame < gTrackerState.uiTotalFrames -1 || nFrame < stopFrame || dVidRelativePosition < 0.99)
                    {
-                       std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " [Error] Cannot read next frame! Skipping " << std::endl;
+                       std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " [Error] Cannot read next frame! Skipping to " << nFrame+nErrorFrames << std::endl;
                        nErrorFrames++;
-                       capture.set(cv::CAP_PROP_POS_FRAMES,nFrame+nErrorFrames); //Skip Frame
+                       capture.set(cv::CAP_PROP_POS_FRAMES, nFrame+nErrorFrames); //Skip Frame
                        //removeDataFile(outdatafile); //Delete The Output File
                        //continue; //Skip Frame
                        /// Too Many Errors On Reading Frame
                        if (nErrorFrames > gTrackerState.c_MaxFrameErrors) //Avoid Getting Stuck Here
                        {
                            // Too Many Errors / Fail On Tracking
-                           std::cerr << gTimer.elapsed()/60000.0 << " [Error]  Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
+                           std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nErrorFrames << "  Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
                            gTrackerState.saveState("TrackerConfig.xml");
                            removeDataFile(outdatafile);
                            break;
@@ -1334,7 +1333,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
 
             //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
-            if ( ( gTrackerState.bAllowOnlyOneTrackedItem
+            if ( ( gTrackerState.bTrackedOneFishOnly
                  || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) &&
                     !pfish->binFocus &&
                  maxTemplateScore > pfish->matchScore ) //Check If it Timed Out / or If Better fish has been found and Only One fish is allowed - Then Delete

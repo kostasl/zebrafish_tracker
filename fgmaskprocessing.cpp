@@ -573,7 +573,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
     outFishMask = cv::Mat::zeros(frameImg_grey.rows,frameImg_grey.cols,CV_8UC1);
 
     //Shring-Grow -Erase Thin Border Lines
-    cv::morphologyEx(fgMask,fgMask,cv::MORPH_DILATE, kernelDilateMOGMask,cv::Point(-1,-1),4);
+    cv::morphologyEx(fgMask,fgMask,cv::MORPH_DILATE, kernelDilateMOGMask,cv::Point(-1,-1),2);
     //cv::morphologyEx(fgMask,fgMask, cv::MORPH_OPEN, kernelOpenfish,cv::Point(-1,-1),2);
     cv::morphologyEx(fgMask,fgMask, cv::MORPH_CLOSE, kernelOpenfish,cv::Point(-1,-1),3);
 
@@ -600,7 +600,8 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
         //circle(outFishMask,pfish->bodyRotBound.center,50,CV_RGB(255,255,255),cv::FILLED);
        // drawContours(fgEdgeMask,pfish->contour,0,CV_RGB(255,255,255),cv::FILLED);
     }
-    //cv::imshow("FishMAsk Edge",fgEdgeMask);
+    if (gTrackerState.bshowMask)
+        cv::imshow("FishMask Edge",fgEdgeMask);
     cv::findContours( fgEdgeMask, fishbodycontours,fishbodyhierarchy, cv::RETR_CCOMP,
                       cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
 
@@ -855,7 +856,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                 cv::imshow((QString("FishNet Norm ") + QString::number(iHitCount)).toStdString() ,imgFishAnterior_NetNorm);
             } //If ImgAnt Exists
 
-          if (gTrackerState.bAllowOnlyOneTrackedItem)
+          if (gTrackerState.bTrackedOneFishOnly && vFilteredFishbodycontours_classified.size() > 0)
               break; //Found A blob Exit Loop //Otherwise I need to Cluster Nearby Blobs so I don get double hits
         } //If DNN classifier Success
 

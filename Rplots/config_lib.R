@@ -137,8 +137,8 @@ setEnvFileLocations <- function(strSetName)
     setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
     #strVideoFilePath  <<- "/media/kostasl/ARXEIO1TB/Behaviour/" 
     strVideoFilePath  <<- "/media/kostasl/zFish-Heta-T7/HungerExp"
-    strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop-Release//" 
-    strTrackeroutPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
+    strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_15_0_GCC_64bit-Release" 
+    strTrackeroutPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/Huntevents_retracked"#/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
     #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/"
     #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/expData/Olivia_assay/" 
     strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/" 

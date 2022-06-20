@@ -57,6 +57,13 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                               "/Tracked14-06-18/",##Dataset 18
                               "/Tracked_21-08-18/"##Dataset n ##Dataset n 
                               ),sep="/")
+
+strDataSetDirectories <- paste(strTrackInputPath, list(
+  "DS_7dpf/" ##Dataset 2
+),sep="/")
+
+
+
 ##Add Source Directory
 strCondR  <- "*.csv"; 
 
@@ -71,7 +78,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
 resample <- function(x, ...) x[sample.int(length(x), ...)]
 
 
-firstDataSet = NROW(strDataSetDirectories)-13
+firstDataSet = NROW(strDataSetDirectories)#-13
 lastDataSet = NROW(strDataSetDirectories)
 dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
 
@@ -85,7 +92,8 @@ dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
 
 #strProcDataFileName <-paste("setn-12","-HuntEvents-SB-ALL",sep="") ##To Which To Save After Loading
 #strProcDataFileName <- paste("setn14-HuntEventsFixExpID-SB-Updated-Merged",sep="") ##To Which To Save After Loading
-strProcDataFileName <- paste("setn15-HuntEvents-SB-Updated-Merged3") ##To Which To Save After Loading
+#strProcDataFileName <- paste("setn15-HuntEvents-SB-Updated-Merged3") ##To Which To Save After Loading
+strProcDataFileName <- paste("HB_allHuntEvents.rds") ##To Which To Save After Loading
 message(paste(" Loading Hunt Event List to Process... ",strProcDataFileName))
 #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
 #datHuntEventAllGroupToLabel <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
@@ -93,7 +101,7 @@ message(paste(" Loading Hunt Event List to Process... ",strProcDataFileName))
 
 datHuntEventAllGroupToLabel  <- getLabelledHuntEventsSet()
  ##<- datHuntEvent
-groupsList <- c("DL","NL","LL") ##unique(datHuntEventAllGroupToLabel$groupID)
+groupsList <- unique(datHuntEventAllGroupToLabel$groupID)
 str_FilterLabel <- "UnLabelled"
 #str_FilterLabel <- "NA"
 ##Select Randomly From THe Already Labelled Set ##
@@ -158,7 +166,7 @@ while (Keyc != 'q')
                                                  strTrackerPath,strTrackeroutPath,
                                                  TargetLabels,expID,eventID,idx)
   
-  ##Saving is done in labelHuntEvent on Every loop - But repeated here
+  ##Saving is done in labelHuntEvent on Every loop - But repeated nhere
   save(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) 
   save(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,"-backup.RData",sep="" )) ##Save With Dataset Idx Identifier
   saveRDS(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
@@ -167,7 +175,7 @@ while (Keyc != 'q')
 }
 
 tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0,]$huntScore),datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0,]$groupID)
-write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary-SB.csv",sep="") )
+write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary.csv",sep="") )
 
 lLabelSummary <- list()
 nLabelledDL <- sum(tblRes[3:13,"DL"])
