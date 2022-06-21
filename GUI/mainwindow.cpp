@@ -1445,6 +1445,7 @@ void MainWindow::on_btnAddHEvent_clicked()
     btblUpdating = true;
     ui->tblHuntEvents->insertRow(ui->tblHuntEvents->currentRow()+1);
     t_HuntEvent newEvent(ui->tblHuntEvents->currentRow()+1,nFrame,nFrame+100,0);
+    newEvent.rowID = ui->tblHuntEvents->currentRow()+1;
     gTrackerState.vHuntEvents.push_back(newEvent);
     btblUpdating = false;
 }

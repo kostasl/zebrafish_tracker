@@ -492,7 +492,8 @@ std::vector<t_HuntEvent> trackerState::loadHuntEvents(QString filename)
                                lstData.at(2).toUInt(), //end
                                lstData.at(3).toUInt(),
                                lstData.at(4).toInt()); //Label
-//           newHEvent.startFrame = (uint);
+
+             newHEvent.rowID = lstData.at(0).toUInt();
 //           newHEvent.endFrame   = lstData.at(1).toUInt();
 //           newHEvent.label      =
 
