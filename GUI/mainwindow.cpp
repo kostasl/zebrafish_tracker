@@ -1405,12 +1405,16 @@ void MainWindow::on_tblHuntEvents_cellDoubleClicked(int row, int column)
 
 }
 
-
+/// \brief take user to begining of selected hunt event
 void MainWindow::on_tblHuntEvents_cellClicked(int row, int column)
 {
 
     gTrackerState.bPaused = false;
     int eventIdx          = row;
+    //Check if Cell is empty
+    if (ui->tblHuntEvents->item(row,0)->text().length() < 1)
+        return;
+    // Go to Selected Hunt Event
     gTrackerState.uiStartFrame =  nFrame = ui->tblHuntEvents->item(row,0)->text().toUInt();
     gTrackerState.uiStopFrame  =  ui->tblHuntEvents->item(row,1)->text().toUInt();
     this->ui->spinBoxFrame->setValue(nFrame);
@@ -1438,19 +1442,21 @@ void MainWindow::on_tblHuntEvents_itemChanged(QTableWidgetItem *item)
 
 void MainWindow::on_btnAddHEvent_clicked()
 {
-
+    btblUpdating = true;
+    ui->tblHuntEvents->insertRow(ui->tblHuntEvents->currentRow()+1);
+    t_HuntEvent newEvent(ui->tblHuntEvents->currentRow()+1,nFrame,nFrame+100,0);
+    gTrackerState.vHuntEvents.push_back(newEvent);
+    btblUpdating = false;
 }
 
 
 void MainWindow::on_btnAddHEvent_triggered(QAction *arg1)
 {
-    ui->tblHuntEvents->insertRow(ui->tblHuntEvents->currentRow()+1);
 }
 
 
 void MainWindow::on_btnRemoveHEvent_triggered(QAction *arg1)
 {
-    ui->tblHuntEvents->removeRow(ui->tblHuntEvents->currentRow());
 }
 
 
@@ -1460,5 +1466,15 @@ void MainWindow::on_btnSaveHEvents_released()
                                        gTrackerState.vHuntEvents);
     if (!ret)
         QMessageBox::warning(this, "Saving hunt event table","Failed to save updated hunt events to file :"+gTrackerState.strHuntEventsDataFile);
+}
+
+
+void MainWindow::on_btnRemoveHEvent_released()
+{
+
+    btblUpdating = true;
+    gTrackerState.vHuntEvents.erase(gTrackerState.vHuntEvents.begin() + ui->tblHuntEvents->currentRow());
+    ui->tblHuntEvents->removeRow(ui->tblHuntEvents->currentRow());
+    btblUpdating = false;
 }
 

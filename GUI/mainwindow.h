@@ -167,6 +167,8 @@ private slots:
 
     void on_btnSaveHEvents_released();
 
+    void on_btnRemoveHEvent_released();
+
 private:
     void reportUserMeasurement(cv::Point ptMouse);
 
