@@ -486,14 +486,14 @@ std::vector<t_HuntEvent> trackerState::loadHuntEvents(QString filename)
            line = file.readLine();
            QList<QByteArray> lstData = line.split(',');
 
-           if(lstData.size() < 5)
+           if(lstData.size() < 4)
                break;
-           huntEvent newHEvent(lstData.at(1).toUInt(), //start
-                               lstData.at(2).toUInt(), //end
-                               lstData.at(3).toUInt(),
-                               lstData.at(4).toInt()); //Label
+           huntEvent newHEvent(lstData.at(0).toUInt(), //start
+                               lstData.at(1).toUInt(), //end
+                               lstData.at(2).toUInt(),
+                               lstData.at(3).toInt()); //Label
 
-             newHEvent.rowID = lstData.at(0).toUInt();
+
 //           newHEvent.endFrame   = lstData.at(1).toUInt();
 //           newHEvent.label      =
 
