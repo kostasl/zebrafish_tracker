@@ -88,6 +88,7 @@
 #include <cereal/archives/xml.hpp> //Data Serialize of EyeDetector
 #include <fstream>
 
+#include <QFile>
 #include <QDirIterator>
 #include <QDir>
 #include <QDebug>
@@ -171,8 +172,8 @@ int main(int argc, char *argv[])
         "{ModelBG b | 1  | Initiate BG modelling by running over scattered video frames to obtain Foreground mask}"
         "{UseTemplateMatching T | 1  | After DNN Classifier, also use template matching to Detect orientation and position of larva (speed up if false)}" //bUseTemplateMatching
         "{BGThreshold bgthres | 2  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
-        "{HeadMaskVW hmw | 25  | Head Vertical mask width that separates eyes}"
-        "{HeadMaskHR hmh | 48  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
+        "{HeadMaskVW hmw | 16  | Head Vertical mask width that separates eyes}"
+        "{HeadMaskHR hmh | 36  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{CircleROIRadius cr | 512  | px radius for default centred ROI}"
@@ -185,6 +186,7 @@ int main(int argc, char *argv[])
         "{TrackFish ft | 1  | Track Fish not just the moving prey }"
         "{MeasureMode M | 0 | Click 2 points to measure distance to prey}"
         "{DNNModelFile T | /home/meyerlab/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/ | Location of Tensorflow model file used for classification}"
+        "{HuntEventsFile H |  | csv data file with detected hunt events}"
         ;
 
     ///Parse Command line Args
@@ -214,7 +216,7 @@ int main(int argc, char *argv[])
     window_main.show();
 
     gTrackerState.initGlobalParams(parser,gTrackerState.inVidFileNames);
-
+    pwindow_main->updateHuntEventTable(gTrackerState.vHuntEvents); //Update Hunt Events Table
     //If No video Files have been loaded then Give GUI to User //
     if (gTrackerState.inVidFileNames.empty())
             gTrackerState.inVidFileNames =QFileDialog::getOpenFileNames(nullptr, "Select videos to Process",gTrackerState.gstrinDirVid.c_str(),

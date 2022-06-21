@@ -34,15 +34,15 @@ DIM_PXRADIUS       <- 790 #Is the DIAMETER Of the dish In the Video
 DIM_PXDIAMETER       <- 790 #Is the DIAMETER Of the dish In the Video
 DIM_MMPERPX        <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
 DIM_DISHVOLUME     <- 1000*(0.035/2)^2*pi*0.01 ## in  Liters 
-DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
+DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from Centroid To Mouth based on head template size used in tracker
 DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
 G_APPROXFPS              <- 60
 G_THRESHUNTANGLE         <- 20 #Define Min Angle Both Eyes need for a hunting event to be assumed
-G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_THRESHUNTVERGENCEANGLE <- 50 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
 G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
-G_MINGAPBETWEENEPISODES  <- 300
-G_MINEPISODEDURATION     <- 100
+G_MINGAPBETWEENEPISODES  <- G_APPROXFPS
+G_MINEPISODEDURATION     <- G_APPROXFPS/2
 G_MIN_BOUTSPEED          <- 0.2 ##mm/frame - Need to be above to be considered A Motion Bout
 G_THRES_CAPTURE_SPEED    <-  16 ###15##mm/sec ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
 G_THRES_MOTION_BOUT_SPEED <- 2.9 ##Got from Clustering #4 ##mm/sec

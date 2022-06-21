@@ -10,6 +10,7 @@
 #include <QEvent>
 #include <QKeyEvent>
 #include <QStringListModel>
+#include <QTableWidgetItem>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
@@ -33,7 +34,7 @@ public:
     void showInsetimg(cv::Mat& img); //Used to Show Small IMage Next to main scene
     void showInsetTemplateimg(cv::Mat& img); //For Showing The template Image
     void showVideoFrame(cv::Mat& img,unsigned int nFrame);
-
+    void updateHuntEventTable(std::vector<t_HuntEvent> vHuntEvents);
     void saveScreenShot();
     void saveTemplateImage(cv::Mat& templ);
     void tickProgress();
@@ -81,6 +82,7 @@ protected:
     QImage qimg; //SCene Image Updated in ShowCV Image
     QImage qimgHead; //SCene Image Updated in ShowCV Image
     cv::Mat frameScene; //CvMat Last Frame Drawn
+    bool btblUpdating = false;
 private slots:
 
     void on_spinBoxTemplateThres_valueChanged(int arg1);
@@ -150,6 +152,20 @@ private slots:
     void on_spinBoxMaxEllipse_valueChanged(int arg1);
 
     void on_spinBoxEyeThres_H_valueChanged(int arg1);
+
+    void on_tblHuntEvents_cellDoubleClicked(int row, int column);
+
+    void on_tblHuntEvents_cellClicked(int row, int column);
+
+    void on_tblHuntEvents_itemChanged(QTableWidgetItem *item);
+
+    void on_btnAddHEvent_clicked();
+
+    void on_btnAddHEvent_triggered(QAction *arg1);
+
+    void on_btnRemoveHEvent_triggered(QAction *arg1);
+
+    void on_btnSaveHEvents_released();
 
 private:
     void reportUserMeasurement(cv::Point ptMouse);

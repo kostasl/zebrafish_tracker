@@ -177,16 +177,17 @@ while (Keyc != 'q')
 tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0,]$huntScore),datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0,]$groupID)
 write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary.csv",sep="") )
 
-lLabelSummary <- list()
-nLabelledDL <- sum(tblRes[3:13,"DL"])
-nLabelledLL <- sum(tblRes[3:13,"LL"])
-nLabelledNL <- sum(tblRes[3:13,"NL"])
-
-
-message(paste("HuntEvents Labelled (exclude NA) #DL:",nLabelledDL,"#LL:",nLabelledLL,"#NL:",nLabelledNL ) )
-lLabelSummary$HuntEventCount <- list(DL=nLabelledDL,LL=nLabelledLL,NL=nLabelledNL)
-lLabelSummary$Success <- list(DL=sum(tblRes[c(3,12),"DL"]),LL=sum(tblRes[c(3,12),"LL"]),NL=sum(tblRes[c(3,12),"NL"]) )
-lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$HuntEventCount$DL,LL=lLabelSummary$Success$LL/lLabelSummary$HuntEventCount$LL,NL=lLabelSummary$Success$NL/lLabelSummary$HuntEventCount$NL )
+print(tblRes)
+# lLabelSummary <- list()
+# nLabelledDL <- sum(tblRes[3:13,"DL"])
+# nLabelledLL <- sum(tblRes[3:13,"LL"])
+# nLabelledNL <- sum(tblRes[3:13,"NL"])
+# 
+# 
+# message(paste("HuntEvents Labelled (exclude NA) #DL:",nLabelledDL,"#LL:",nLabelledLL,"#NL:",nLabelledNL ) )
+# lLabelSummary$HuntEventCount <- list(DL=nLabelledDL,LL=nLabelledLL,NL=nLabelledNL)
+# lLabelSummary$Success <- list(DL=sum(tblRes[c(3,12),"DL"]),LL=sum(tblRes[c(3,12),"LL"]),NL=sum(tblRes[c(3,12),"NL"]) )
+# lLabelSummary$SuccessRatio <- list(DL=lLabelSummary$Success$DL/lLabelSummary$HuntEventCount$DL,LL=lLabelSummary$Success$LL/lLabelSummary$HuntEventCount$LL,NL=lLabelSummary$Success$NL/lLabelSummary$HuntEventCount$NL )
 
 ####
 ##Testing on 4581/542 , 446/1529

@@ -116,6 +116,24 @@ extern cv::Point gptHead,gptTail; //Candidate Fish Contour Position Of HEad - Us
 //extern cv::Point ptROI3 ;
 //extern cv::Point ptROI4 ;
 
+///\brief Data Structure For Hunt Event Record //
+typedef struct huntEvent {
+    huntEvent();
+    huntEvent(uint prowID,uint pstartFrame,uint pendFrame,int plabel) {
+        rowID = prowID;
+        startFrame = pstartFrame;
+        endFrame = pendFrame;
+        label = plabel;
+    }
+public:
+    uint rowID = 0;
+    uint startFrame = 0;
+    uint endFrame = 0;
+    int label = 0;
+
+} t_HuntEvent;
+
+
 
 class trackerState
 {
@@ -128,6 +146,8 @@ class trackerState
      void initGlobalParams(cv::CommandLineParser& parser,QStringList& inVidFileNames); //Read Command Line/Config Options
      /// \brief Initializes ROI at start of tracking depending on user params / either large circle or user defined/configurable polygon
      void  initROI(uint framewidth,uint frameheight);
+     std::vector<t_HuntEvent> loadHuntEvents(QString filename); //Load List Of HuntEvent Frames to Validate
+     bool saveHuntEventsToFile(QString filename,std::vector<t_HuntEvent> vHuntEvents); //Save Updated Hunt Event List TO File
 
      /// \brief Load Q Resources
      static void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = cv::IMREAD_COLOR); //Load Resources
@@ -297,7 +317,7 @@ class trackerState
       int gEyeMaskErrosionIterations      = 1;
       int gFishTailSpineSegmentLength     = 16;
       // Eye Masks //
-      int iEyeHMaskSepRadius              = 39; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
+      int iEyeHMaskSepRadius              = 36; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
       int iEyeVMaskSepWidth               = 15; //5 px width vertical line separates the eyes for segmentation
       int iEyeVMaskSepHeight              = 46; //Radius for rectMidEllipse : The Ellipsoid Mask Of Body In little Upsampled EyeDiscovery Image
@@ -313,6 +333,10 @@ class trackerState
       string strBackPropModelYMLFile                = "/home/meyerlab/workspace/zebrafishtrack/Rplots/fishNet.yml"; ///\deprecated NN method
       string strDNNTensorFlowModelFile              = "~/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/"; /// Updated DNN model file location - Where TensorDNN.py script output is saved.
       string strDNNTensorFlowVerticalModelFile      = "~/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir/"; ///\deprecated \remarks Load  Directional model to correct up-right image of fish in image region - used for direction detection
+
+      /// Hunt Event Data
+      QString  strHuntEventsDataFile;
+      std::vector<t_HuntEvent> vHuntEvents;
 
       ///Fish Features Detection Params
       int gFishTemplateAngleSteps     = 1;

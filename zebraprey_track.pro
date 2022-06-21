@@ -10,7 +10,7 @@
 
 TEMPLATE = app
 
-QT += widgets gui qml quick testlib
+QT += widgets gui qml quick testlib core
 #QTDIR = "/opt/Qt/5.15.0"
 
 

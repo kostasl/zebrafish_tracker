@@ -437,9 +437,16 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
     if (parser.has("MeasureMode"))
          bMeasure2pDistance = (parser.get<int>("MeasureMode") == 1)?true:false;
 
-
+     //Usually provided to validate specific hunt event
      uiStartFrame = parser.get<uint>("startframe");
      uiStopFrame = parser.get<uint>("stopframe");
+
+    // Check if list of hunt events provided
+     strHuntEventsDataFile =  QString::fromStdString( parser.get<string>("HuntEventsFile"));
+     if (QFileInfo::exists((strHuntEventsDataFile))){
+         std::cout << "Loading Hunt events from " << strHuntEventsDataFile.toStdString()  << "\n " <<std::endl;
+         vHuntEvents = loadHuntEvents(strHuntEventsDataFile);
+     }
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen          = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
@@ -453,6 +460,73 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
 
 }
 /// END OF INIT GLOBAL PARAMS //
+
+/// HuntEvent Data Handling
+
+QTextStream& operator<<(QTextStream& out, const t_HuntEvent& h)
+{
+        out << h.rowID << "," << h.startFrame << "," << h.endFrame << "," << h.label << endl;
+
+        return(out);
+}
+
+std::vector<t_HuntEvent> trackerState::loadHuntEvents(QString filename)
+{
+       std::vector<t_HuntEvent> vHuntEvents;
+
+       QFile file(filename);
+       if (!file.open(QIODevice::ReadOnly)) {
+           qDebug() << file.errorString();
+           return(vHuntEvents);
+       }
+
+
+       while (!file.atEnd()) {
+           QByteArray line = file.readLine(); //Skip Header Line
+           line = file.readLine();
+           QList<QByteArray> lstData = line.split(',');
+
+           if(lstData.size() < 5)
+               break;
+           huntEvent newHEvent(lstData.at(1).toUInt(), //start
+                               lstData.at(2).toUInt(), //end
+                               lstData.at(3).toUInt(),
+                               lstData.at(4).toInt()); //Label
+//           newHEvent.startFrame = (uint);
+//           newHEvent.endFrame   = lstData.at(1).toUInt();
+//           newHEvent.label      =
+
+           vHuntEvents.push_back(newHEvent);
+       }
+
+       qDebug() << line;
+       return(vHuntEvents);
+}
+
+bool trackerState::saveHuntEventsToFile(QString filename,std::vector<t_HuntEvent> vHuntEvents)
+{
+
+       QFile fileHEvents(filename);
+       if (!fileHEvents.open(QIODevice::WriteOnly)) {
+           qDebug() << fileHEvents.errorString();
+           return(false);
+       }
+        QTextStream output(&fileHEvents);
+
+       output << "rowID,startFrame,endFrame,label" << endl;
+
+       std::vector<t_HuntEvent>::iterator vHit;
+       for ( vHit  = vHuntEvents.begin(); vHit!=vHuntEvents.end(); ++vHit)
+       {
+           t_HuntEvent* pHE = vHit.base();
+           output << *pHE;
+       }
+
+
+
+       return(true);
+}
+
 
 /// \brief Initializes ROI at start of tracking depending on user params / either large circle or user defined/configurable polygon
 void  trackerState::initROI(uint framewidth,uint frameheight)
