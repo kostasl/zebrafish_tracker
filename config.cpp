@@ -487,7 +487,10 @@ std::vector<t_HuntEvent> trackerState::loadHuntEvents(QString filename)
            QList<QByteArray> lstData = line.split(',');
 
            if(lstData.size() < 4)
+           {
+               qDebug() << "Hunt event csv file does not have sufficient columns";
                break;
+           }
            huntEvent newHEvent(lstData.at(0).toUInt(), //start
                                lstData.at(1).toUInt(), //end
                                lstData.at(2).toUInt(),

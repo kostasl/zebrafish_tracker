@@ -1411,7 +1411,7 @@ void MainWindow::on_tblHuntEvents_cellClicked(int row, int column)
 
     gTrackerState.bPaused = false;
     int eventIdx          = row;
-    //Check if Cell is empty
+    //Check if Cell is empty BUG: \todo find a better way
     if (ui->tblHuntEvents->item(row,0)->text().length() < 1)
         return;
     // Go to Selected Hunt Event
