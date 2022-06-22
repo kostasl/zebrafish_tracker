@@ -91,15 +91,14 @@ getLabelledHuntEventsSet <- function(strProcDataFileName = "HB_allHuntEvents.rds
       vMatchedFileNames <- vAvailableVideoFiles[which(grepl(strFpatt ,vAvailableVideoFiles))]
       if (NROW(vMatchedFileNames) == 1)
       {
-        datHuntLabelledEventsSB[i,"filename"] <- basename(vMatchedFileNames)
-        #message(i,datHuntLabelledEventsSB[i,"filename"])
-      }
-      else{
+          datHuntLabelledEventsSB[i,"filename"] <- (vMatchedFileNames) #basename
+          #message(i,datHuntLabelledEventsSB[i,"filename"])
+      }else{
           message(i,"**No unique filename found : ", strFpatt, "Retrying with filter event ID:",as.character(rec$eventID))
           ##Retry with Event Number
           strFpatt <- paste0(rec$expID,"_.*",as.character(rec$groupID),".*",as.character(rec$testCond),"_.*",as.character(rec$eventID) )
           vMatchedFileNames <- vAvailableVideoFiles[which(grepl(strFpatt ,vAvailableVideoFiles))]
-          datHuntLabelledEventsSB[i,"filename"] <- basename(vMatchedFileNames)
+          datHuntLabelledEventsSB[i,"filename"] <- (vMatchedFileNames) #xbasename 
       }
       ## Another Way is to search in Saved Records of tracked File Names
       #rec$filename <- basename(groupsrcdatListPerDataSet[[1]][[rec$groupID]][[1]][rec$fileIdx])
@@ -617,3 +616,85 @@ findLabelledEvent <- function (EventRegisterRec)
   
   return(recs)
 }
+
+
+
+
+## This is the old method of validating individual Hunt Events 
+scoreIndividualEventsRandomly <- function(datHuntEventAllGroupToLabel,str_FilterLabel = "UnLabelled")
+{
+  ##Select Randomly From THe Already Labelled Set ##
+  ##Main Sample Loop
+  Keyc <- 'n'
+  while (Keyc != 'q')
+  {
+    Keyc <- readline(prompt="### Press q to exit, 'n' for next, or type event number you wish to label  :")
+    
+    if (Keyc == 'q')
+      break
+    
+    TargetLabel = which(vHuntEventLabels == str_FilterLabel)-1; ##Convert to Number Score
+    gc <- resample(groupsList,1)
+    idx <- NA
+    TargetLabels <- vHuntEventLabels
+    
+    #message(gc)
+    
+    if (Keyc == 'n')
+    {
+      ##Choose From THe Set Of Videos Already Labelled From Another User (Kostasl) So as to Verify The Label # Sample Only From THose ExpID that have not been already verified
+      #datHuntEventPool <- datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$huntScore != "UnLabelled" & datHuntEventAllGroupToValidate$eventID != 0
+      #                                           & (datHuntEventAllGroupToValidate$expID %in% datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$huntScore == TargetLabel,]$expID ),]
+      
+      datHuntEventPool <- datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0 & datHuntEventAllGroupToLabel$groupID == gc,]
+      datHuntEventPool <- datHuntEventPool[ datHuntEventPool$huntScore == TargetLabel ,] #& is.na(datHuntEventPool$markTracked)
+      if (NROW(datHuntEventPool)  == 0)
+      {
+        message( paste("Finished with Hunt Events for group with label ",TargetLabels[TargetLabel+1], ". Try Again") )
+        groupsList <- groupsList[which(groupsList != gc)]
+        next
+      }
+      
+      expID <- resample(datHuntEventPool$expID,1)
+      datHuntEventPool <- datHuntEventPool[datHuntEventPool$expID == expID ,]
+      eventID <- resample(datHuntEventPool$eventID,1)
+      ###
+      TargetLabels <- vHuntEventLabels[vHuntEventLabels==str_FilterLabel] ##Convert to Text Label Score to Use for Filtering OUt
+    }
+    ##Extract If Any Numbers In Input/ Then User Picked a specific Row
+    if (!is.na(as.numeric(gsub("[^0-9]","",Keyc)) ) )
+    {
+      message(paste("Goto Event:",Keyc ) )
+      idx <- as.character(Keyc) ##Note It acts as key only as string, numeric would just bring out the respective order idx record
+      datHuntEventPool <- datHuntEventAllGroupToLabel[idx,]
+      expID <- datHuntEventPool$expID
+      eventID <- datHuntEventPool$eventID
+      TargetLabels <- vHuntEventLabels
+      
+      if (is.na(datHuntEventAllGroupToLabel[idx,]$expID))
+      {
+        message("Event Not Found")
+        next
+      }
+    }
+    ##ExPORT 
+    
+    
+    datHuntEventAllGroupToLabel <- labelHuntEvents(datHuntEventAllGroupToLabel,
+                                                   strProcDataFileName,strVideoFilePath,
+                                                   strTrackerPath,strTrackeroutPath,
+                                                   TargetLabels,expID,eventID,idx)
+    
+    ##Saving is done in labelHuntEvent on Every loop - But repeated nhere
+    save(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) 
+    save(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,"-backup.RData",sep="" )) ##Save With Dataset Idx Identifier
+    saveRDS(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+    message(paste("Saved :",strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="") )
+    
+  }
+  
+  tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0,]$huntScore),datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0,]$groupID)
+  write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary.csv",sep="") )
+  
+  print(tblRes)
+} ## Old Method of Scoring Events Individually
