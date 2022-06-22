@@ -228,7 +228,7 @@ class trackerState
      // Global Control Vars ///
      /// \brief bTracking
      ///// Option Flags //
-      bool bTrackedOneFishOnly = false;
+      bool bTrackedOneFishOnly      = true;
       bool bshowMask                = false; //Debug option True will show the BGSubstracted IMage/Processed Mask
       bool bshowDetectorDebugImg    = false; //Debug option  True will show the classifier scoring Masks and Extracted Fish Anterior Images
 
