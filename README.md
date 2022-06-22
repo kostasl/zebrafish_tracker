@@ -159,7 +159,10 @@ If you run into problems with broken videos, such as the number of frames not be
 ```
 ffmpeg -v error -i source_broken_video.mp4 -c copy fixed_video.mp4
 ```
-
+to account for subdirectory use:
+```
+for file in HungerExp/**/**/**/**/*mpeg.avi; do ffmpeg -v error -i "$file" -c copy "${file/mpeg/mpeg_fixed}"; done;
+```
 
 ### Contribution guidelines ###
 
