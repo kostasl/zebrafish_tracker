@@ -116,6 +116,24 @@ extern cv::Point gptHead,gptTail; //Candidate Fish Contour Position Of HEad - Us
 //extern cv::Point ptROI3 ;
 //extern cv::Point ptROI4 ;
 
+///\brief Data Structure For Hunt Event Record //
+typedef struct huntEvent {
+    huntEvent();
+    huntEvent(string prowID,uint pstartFrame,uint pendFrame,int plabel) {
+        rowID      = prowID; //Used to Connect Updated RoWS With Original HUntEvent Table in R
+        startFrame = pstartFrame;
+        endFrame   = pendFrame;
+        label      = plabel;
+    }
+public:
+    string rowID    = "N";
+    uint startFrame = 0;
+    uint endFrame   = 0;
+    int label       = 0;
+
+} t_HuntEvent;
+
+
 
 class trackerState
 {
@@ -128,11 +146,13 @@ class trackerState
      void initGlobalParams(cv::CommandLineParser& parser,QStringList& inVidFileNames); //Read Command Line/Config Options
      /// \brief Initializes ROI at start of tracking depending on user params / either large circle or user defined/configurable polygon
      void  initROI(uint framewidth,uint frameheight);
+     std::vector<t_HuntEvent> loadHuntEvents(QString filename); //Load List Of HuntEvent Frames to Validate
+     bool saveHuntEventsToFile(QString filename,std::vector<t_HuntEvent> vHuntEvents); //Save Updated Hunt Event List TO File
 
      /// \brief Load Q Resources
      static void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = cv::IMREAD_COLOR); //Load Resources
 
-      enum state {PAUSED,TRACKING,DIST_MEASURE,SAVING,EXITING};
+     enum state {PAUSED,TRACKING,DIST_MEASURE,SAVING,EXITING};
 
       /// VIDEO AND BACKGROUND PROCESSING //
       float gfVidfps                   = 1;
@@ -155,7 +175,7 @@ class trackerState
       const double dMeanBlobArea                  = 100; //Initial Value that will get updated
       const double dVarBlobArea                   = 20;
       const unsigned int gc_fishLength            = 100; //px Length Of Fish
-      const unsigned int thresh_minfishblobarea     = 400; //Min area above which to Filter The fish blobs
+      const unsigned int thresh_minfishblobarea     = 800; //Min area above which to Filter The fish blobs
       const unsigned int thresh_maxfishblobarea     = 4850; //max area for fish blob
       const unsigned int gthres_maxfoodblobarea     = thresh_minfishblobarea/3;
 
@@ -173,7 +193,7 @@ class trackerState
       int gFoodReportInterval                       = (int)gfVidfps;
       const int nTemplatesToLoad                    = 11; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
       const int gi_FoodModelNumberLimit             = 250; // Maximum Number of Food Objects /Prey To track
-      const int c_MaxFrameErrors                    = 20; //Limit of frame read errors before quiting tracking
+      const int c_MaxFrameErrors                    = 200; //Limit of frame read errors before quiting tracking
 
       int keyboard; //input from keyboard
       int screenx,screeny;
@@ -208,7 +228,7 @@ class trackerState
      // Global Control Vars ///
      /// \brief bTracking
      ///// Option Flags //
-      bool bAllowOnlyOneTrackedItem = true;
+      bool bTrackedOneFishOnly = true;
       bool bshowMask                = false; //Debug option True will show the BGSubstracted IMage/Processed Mask
       bool bshowDetectorDebugImg    = false; //Debug option  True will show the classifier scoring Masks and Extracted Fish Anterior Images
 
@@ -260,7 +280,7 @@ class trackerState
       bool bUseGPU                              = false;
       bool bUseOpenCL                           = true;
       bool bUseHistEqualization                 = true; //To enhance to contrast in Eye Ellipse detection
-      bool bUseEllipseEdgeFittingMethod         = true; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
+      bool bUseEllipseEdgeFittingMethod         = false; //Use the 2nd Efficient Method of Ellipsoid Fitting as standart after 1st method / False: Only used if the 1st one fails - Set to false to Make tracking Faster
       bool bAdaptEyeMaskVOffset                 = true; // Check in fishDetector.cpp
 
       /// \todo Make this path relative or embed resource
@@ -288,7 +308,8 @@ class trackerState
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
       int gi_maxEllipseMajor      = 32; /// thres  for Eye Ellipse Detection methods
       int gi_minEllipseMajor      = 21; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
-      int gi_minEllipseMinor      = 0; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
+      int gi_minEllipseMinor      = 1; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
+      int gi_maxEllipseMinor      = 25; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
       int thresEyeEdgeCanny_low             = -2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
@@ -297,7 +318,7 @@ class trackerState
       int gEyeMaskErrosionIterations      = 1;
       int gFishTailSpineSegmentLength     = 16;
       // Eye Masks //
-      int iEyeHMaskSepRadius              = 39; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
+      int iEyeHMaskSepRadius              = 36; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
       int iEyeVMaskSepWidth               = 15; //5 px width vertical line separates the eyes for segmentation
       int iEyeVMaskSepHeight              = 46; //Radius for rectMidEllipse : The Ellipsoid Mask Of Body In little Upsampled EyeDiscovery Image
@@ -313,6 +334,10 @@ class trackerState
       string strBackPropModelYMLFile                = "/home/meyerlab/workspace/zebrafishtrack/Rplots/fishNet.yml"; ///\deprecated NN method
       string strDNNTensorFlowModelFile              = "~/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/"; /// Updated DNN model file location - Where TensorDNN.py script output is saved.
       string strDNNTensorFlowVerticalModelFile      = "~/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir/"; ///\deprecated \remarks Load  Directional model to correct up-right image of fish in image region - used for direction detection
+
+      /// Hunt Event Data
+      QString  strHuntEventsDataFile;
+      std::vector<t_HuntEvent> vHuntEvents;
 
       ///Fish Features Detection Params
       int gFishTemplateAngleSteps     = 1;

@@ -27,7 +27,7 @@
  ///    * E Manually Set Eye Angles
  ///    * F Manually set prey position (which is then tracked)
  ///    * q Exit Quit application
- ///*Ε
+ ///*
  ///*
 
 ///
@@ -54,6 +54,7 @@
  ///                           --invideofile=/media/extStore/ExpData/zebrapreyCap/AnalysisSet/AutoSet450fps_18-01-18/AutoSet450fps_18-01-18_WTLiveFed4Roti_3591_009.mp4
  ///                           --outputdir=/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/
  ///
+  ///
  /// \note Example: /zebraprey_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1 --invideolist=VidFilesToProcessSplit1.txt --outputdir=/media/kostasl/Maxtor/KOSTAS/Tracked/
  /// \todo * Add Learning to exclude large detected blobs that fail to be detected as fish - so as to stop fish detection failures
  ///        :added fishdetector class
@@ -61,7 +62,7 @@
  /// \remarks * Using Kalman Filtering of Fish and GL filtering for Prey position
  ///          * Uses DNN trained model to classify blob as fish and locate head position - Template matching is the used to fix orientation of head inset for furtther feature detection
  ///
- ///
+ /// \bug Fish Blob fails to detected when running multiple instances (eg x4) of Tracker over list of video files.
  ////////
 
 #include <config.h>  // Tracker Constant Defines
@@ -87,6 +88,7 @@
 #include <cereal/archives/xml.hpp> //Data Serialize of EyeDetector
 #include <fstream>
 
+#include <QFile>
 #include <QDirIterator>
 #include <QDir>
 #include <QDebug>
@@ -156,7 +158,6 @@ int main(int argc, char *argv[])
     MainWindow window_main;
     pwindow_main = &window_main;
 
-
     /// Handle Command Line Parameters //
     const cv::String keys =
         "{help h usage ? |    | print this help  message}"
@@ -171,8 +172,8 @@ int main(int argc, char *argv[])
         "{ModelBG b | 1  | Initiate BG modelling by running over scattered video frames to obtain Foreground mask}"
         "{UseTemplateMatching T | 1  | After DNN Classifier, also use template matching to Detect orientation and position of larva (speed up if false)}" //bUseTemplateMatching
         "{BGThreshold bgthres | 2  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
-        "{HeadMaskVW hmw | 25  | Head Vertical mask width that separates eyes}"
-        "{HeadMaskHR hmh | 48  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
+        "{HeadMaskVW hmw | 16  | Head Vertical mask width that separates eyes}"
+        "{HeadMaskHR hmh | 36  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{CircleROIRadius cr | 512  | px radius for default centred ROI}"
@@ -185,6 +186,7 @@ int main(int argc, char *argv[])
         "{TrackFish ft | 1  | Track Fish not just the moving prey }"
         "{MeasureMode M | 0 | Click 2 points to measure distance to prey}"
         "{DNNModelFile T | /home/meyerlab/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/ | Location of Tensorflow model file used for classification}"
+        "{HuntEventsFile H |  | csv data file with detected hunt events}"
         ;
 
     ///Parse Command line Args
@@ -214,7 +216,7 @@ int main(int argc, char *argv[])
     window_main.show();
 
     gTrackerState.initGlobalParams(parser,gTrackerState.inVidFileNames);
-
+    pwindow_main->updateHuntEventTable(gTrackerState.vHuntEvents); //Update Hunt Events Table
     //If No video Files have been loaded then Give GUI to User //
     if (gTrackerState.inVidFileNames.empty())
             gTrackerState.inVidFileNames =QFileDialog::getOpenFileNames(nullptr, "Select videos to Process",gTrackerState.gstrinDirVid.c_str(),
@@ -902,23 +904,23 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
                 else //Not Stuck On 1st Frame / Maybe Vid Is Over?>
                 {
                    std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << "# *Unable to read next frame." << std::endl;
-                   std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << "# frame of " << gTrackerState.uiTotalFrames <<  " of Video. Moving to next video." <<std::endl;
+                   std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << "# frame of " << gTrackerState.uiTotalFrames <<  " of Video. Moving to next video." << std::endl;
                    //assert(outframe.cols > 1);
 
                    double dVidRelativePosition = capture.get(cv::CAP_PROP_POS_AVI_RATIO);
-                   cout << " Relative Vid.Position : " << dVidRelativePosition << std::endl;
+                   std::cerr << gTimer.elapsed()/60000.0 << " [INFO] Relative Vid.Position : " << dVidRelativePosition << std::endl;
                    if (nFrame < gTrackerState.uiTotalFrames -1 || nFrame < stopFrame || dVidRelativePosition < 0.99)
                    {
-                       std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " [Error] Cannot read next frame! Skipping " << std::endl;
+                       std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " [Error] Cannot read next frame! Skipping to " << nFrame+nErrorFrames << std::endl;
                        nErrorFrames++;
-                       capture.set(cv::CAP_PROP_POS_FRAMES,nFrame+nErrorFrames); //Skip Frame
+                       capture.set(cv::CAP_PROP_POS_FRAMES, nFrame+nErrorFrames); //Skip Frame
                        //removeDataFile(outdatafile); //Delete The Output File
                        //continue; //Skip Frame
                        /// Too Many Errors On Reading Frame
                        if (nErrorFrames > gTrackerState.c_MaxFrameErrors) //Avoid Getting Stuck Here
                        {
                            // Too Many Errors / Fail On Tracking
-                           std::cerr << gTimer.elapsed()/60000.0 << " [Error]  Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
+                           std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nErrorFrames << "  Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
                            gTrackerState.saveState("TrackerConfig.xml");
                            removeDataFile(outdatafile);
                            break;
@@ -1333,7 +1335,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
 
             //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
-            if ( ( gTrackerState.bAllowOnlyOneTrackedItem
+            if ( ( gTrackerState.bTrackedOneFishOnly
                  || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) &&
                     !pfish->binFocus &&
                  maxTemplateScore > pfish->matchScore ) //Check If it Timed Out / or If Better fish has been found and Only One fish is allowed - Then Delete

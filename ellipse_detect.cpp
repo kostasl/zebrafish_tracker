@@ -724,7 +724,8 @@ std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::ve
 
 /// \TODO Finish THis code Clean Up
 /// \brief Detect All likely Eye ellipsoids in the Image region and return List with N best matches
-void getBestEllipsoidFits(cv::Mat& imgRegion,tRankQueueEllipsoids& qEllipsoids)
+/// \param ptLoc: Identify contour that contains this point(Eye Location)
+void getBestEllipsoidFits(cv::Mat& imgRegion,tRankQueueEllipsoids& qEllipsoids,cv::Point ptLoc)
 {
     tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
     vedgePoints_all.clear();
@@ -734,47 +735,51 @@ void getBestEllipsoidFits(cv::Mat& imgRegion,tRankQueueEllipsoids& qEllipsoids)
     std::vector<std::vector<cv::Point> > contours_canny;
     std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
 
+    /// 1st Use Standard Opencv Ellipsoid Detection
+    //Find Eye On Left Side / as brightest spot
+    //double minVal,maxVal;
+    //cv::Point ptMax,ptMin;
+    //cv::minMaxLoc(imgRegion,&minVal,&maxVal,&ptMin,&ptMax);
 
-    if (gTrackerState.bUseEllipseEdgeFittingMethod)
+    /// Use OpencV COnvex Hull method and overlay a fitted ellipsoid onto eyes-Add Eliptical edges
+    cv::findContours(imgRegion, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+
+    int iEye = findMatchingContour(contours_canny,hierarchy_canny,ptLoc,2);
+    if (iEye != -1)
     {
-        /// \TODO This Crashes //
-        //assert(!imgRegion.empty());
-        getEdgePoints(imgRegion,vedgePoints_all);
-        detectEllipse(imgRegion,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
-    }
+        std::vector<cv::Point> vEyeHull; //Eye Hull Shape
 
-    ///If The STD method Failed Or is inactivated then Use CVs contour and Ellipsoid method
-    if (qEllipsoids.size() == 0 )
-    {   //qDebug() << " L Eye Ellipse Detection Failed";
-        //Find Eye On Left Side / as brightest spot
-        double minVal,maxVal;
-        cv::Point ptMax,ptMin;
-        cv::minMaxLoc(imgRegion,&minVal,&maxVal,&ptMin,&ptMax);
+        std::vector<std::vector<cv::Point>> vEyes;
+        cv::RotatedRect rcLEye,rcREye;
 
-        /// Use OpencV COnvex Hull method and overlay a fitted ellipsoid onto eyes-Add Eliptical edges
-        cv::findContours(imgRegion, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
-
-        int iEye = findMatchingContour(contours_canny,hierarchy_canny,ptMax,2);
-        if (iEye != -1)
+        cv::convexHull( cv::Mat(contours_canny[iEye]), vEyeHull, false );
+        if (vEyeHull.size() > 4)
         {
-
-            std::vector<cv::Point> vEyeHull; //Eye Hull Shape
-
-            std::vector<std::vector<cv::Point>> vEyes;
-            cv::RotatedRect rcLEye,rcREye;
-
-            cv::convexHull( cv::Mat(contours_canny[iEye]), vEyeHull, false );
-            if (vEyeHull.size() > 4)
+            vEyes.push_back(vEyeHull);
+            rcLEye =  cv::fitEllipse(vEyeHull);
+            //Check If Ellipse Axis Within Range
+            if (rcLEye.boundingRect2f().height > gTrackerState.gi_minEllipseMajor &
+                rcLEye.boundingRect2f().width > gTrackerState.gi_minEllipseMinor &
+                rcLEye.boundingRect2f().height <= gTrackerState.gi_maxEllipseMajor &
+                rcLEye.boundingRect2f().width <= gTrackerState.gi_maxEllipseMinor)
             {
-                vEyes.push_back(vEyeHull);
-                rcLEye =  cv::fitEllipse(vEyeHull);
-                tDetectedEllipsoid dEll(rcLEye,10);
-//                ellipseDetected.fitscore       = dEll.fitscore;
-//                ellipseDetected.rectEllipse    = dEll.rectEllipse;
+                tDetectedEllipsoid dEll(rcLEye,100);
+                //ellipseDetected.fitscore       = dEll.fitscore;
+                //ellipseDetected.rectEllipse    = dEll.rectEllipse;
                 qEllipsoids.push(dEll); //Add As last resort candidate
                 //cv::ellipse(imgEdge_local, lEll.rectEllipse ,CV_RGB(255,255,255),1); //Draw detected Ellipse
             }
+
         }
+    }
+
+    ///If The STD method Failed Or is inactivated then Use CVs contour and Ellipsoid method
+    if (gTrackerState.bUseEllipseEdgeFittingMethod || qEllipsoids.size() == 0 )
+    {   //qDebug() << " L Eye Ellipse Detection Failed";
+
+        getEdgePoints(imgRegion,vedgePoints_all);
+        detectEllipse(imgRegion,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
+
     }
     //    qDebug() << " L Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
 
@@ -967,7 +972,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::rectangle(imgEdge_local,r,cv::Scalar(0),cv::FILLED);
     //cv::imshow("LEftEye",imgEdge_local_LEye);
     // Get a ranked list of detected ellipsoids in the image
-    getBestEllipsoidFits(imgEdge_local,qEllipsoids);
+    getBestEllipsoidFits(imgEdge_local,qEllipsoids,ptLEyeMid);
     imgEdge_local_Orig.copyTo(imgEdge_local);
     assert(!imgEdge_local.empty());
     ///Store Left Eye (Optional :Draw Detected Ellipsoid)
@@ -1003,7 +1008,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::rectangle(imgEdge_local,rl,cv::Scalar(0),-1);
 
     // Get a ranked list of detected ellipsoids in the image
-    getBestEllipsoidFits(imgEdge_local,qEllipsoids);
+    getBestEllipsoidFits(imgEdge_local,qEllipsoids,ptREyeMid);
     imgEdge_local_Orig.copyTo(imgEdge_local); //Restore
     //Initialize One Ellipse That is the mean of all detected ellipsoids
     tDetectedEllipsoid rEllMean(qEllipsoids,gTrackerState.gi_MaxEllipseSamples);

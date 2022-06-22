@@ -175,8 +175,11 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
   ##CHANGE HASH/ID to select between datasets/groups ##
   strCondTags = names(listSrcFiles);
   
+  
+  procDatFrames = 0;
   procDatIdx = 1;
   groupDatIdx = 1;
+  
   for (i in strCondTags)
   {
 
@@ -204,13 +207,13 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
       message(paste("Found #Rec:",  length(TrackerData[[i]][[j]]$frameN) ))
       
       ## Extract fields values from filename using function name provided##
-      lNameDat <- do.call(strNameFieldFUN, list(temp[[j]]) )
-      groupTag <-lNameDat$groupID
+      lNameDat <- do.call(strNameFieldFUN, list( temp[[j]]) )
+      groupTag <- lNameDat$groupID
       ##
       if (nDat >0)
-        message(paste("#### Load Data Files Of Group ",i,groupTag," ###############"))
+        message(paste("#### Load Data Files Of Group ",i, groupTag," ###############"))
       else{
-        message(paste("#### No Data Files Found for Group ",i,groupTag," ###############"))
+        message(paste("#### No Data Files Found for Group ",i, groupTag," ###############"))
         next()
       }
       
@@ -549,6 +552,38 @@ mergeFoodTrackerFilesToFrame <- function(listSrcFoodFiles,datHuntEventFrames) {
 
 
 
+
+##Aux Functions used for importing data from CSV Files - Processes file name :
+#/// Returns a list of name value pairs extracted from TrackerFile name used for the Hunting  Assay
+extractFileNameParams_FOntogeny <- function(strFileName)
+{
+  ##Extract Experiment ID
+  basename <- basename(strFileName)
+  brokenname = unlist(strsplit(basename,"_"))
+  expID <-  as.numeric(gsub("[^0-9]","",brokenname[1]) )
+  
+  camID <- (brokenname[3])
+  
+  larvaID <- as.numeric(gsub("[^0-9]","",brokenname[1]) );
+  strGroupID <- brokenname[2]
+  ageDPF <-    as.numeric(gsub("[^0-9]","",brokenname[3]) );
+  testCond <-brokenname[4]
+  eventID <- as.numeric(brokenname[5]); ##Sometimes Missing
+  if (is.na(eventID)) 
+    eventID = 1 ## Make Default 1 when Missing
+  trackID <- as.numeric(gsub("[^0-9]","", tail(brokenname,1)) );
+  
+  vpath <- strsplit(normalizePath(dirname(strFileName) ),"/")[[1]]
+  expDir <- vpath[length(vpath)-1] ## Extract parent Dir with Exp iNfo
+  vexpDir <- unlist(strsplit(expDir,"_"))
+  
+  #stopifnot(vexpDir[1] == brokenname[1])
+  
+  fps = NA
+  
+  return(list(expID=expID,eventID=eventID,trackID=trackID,larvaID=larvaID,fps=fps,groupID=strGroupID,testCond=testCond,age=ageDPF) )
+}
+
 ##Aux Functions used for importing data from CSV Files - Processes file name :
 #/// Returns a list of name value pairs extracted from TrackerFile name used for the Hunting  Assay
 extractFileNameParams_OliviaAssay <- function(strFileName)
@@ -564,11 +599,11 @@ extractFileNameParams_OliviaAssay <- function(strFileName)
   trackID <- as.numeric(gsub("[^0-9]","",brokenname[6]) );
   
   vpath <- strsplit(normalizePath(dirname(strFileName) ),"/")[[1]]
-  #expDir <- vpath[length(vpath)-1] ## Extract parent Dir with Exp iNfo
-  #vexpDir <- unlist(strsplit(expDir,"_"))
+  expDir <- vpath[length(vpath)] ## Extract parent Dir with Exp iNfo
+  ##vexpDir <- unlist(strsplit(expDir,"_"))
   #stopifnot(vexpDir[1] == brokenname[1])
   
-  strGroupID <- "LR"#vexpDir[3]
+  strGroupID <- expDir# "LR"#vexpDir[3]
   ageDPF <- 7  #as.numeric(gsub("[^0-9]","",vexpDir[2]) );
   fps = 50
   
@@ -588,11 +623,12 @@ extractFileNameParams_HungerExp_camA <- function(strFileName)
   camID <- (brokenname[3])
   testCond <- brokenname[2]
   larvaID <- as.numeric(gsub("[^0-9]","",brokenname[1]) );
-  
+  trackID <- as.numeric(gsub("[^0-9]","", tail(brokenname,1)) );
   vpath <- strsplit(normalizePath(dirname(strFileName) ),"/")[[1]]
   expDir <- vpath[length(vpath)-1] ## Extract parent Dir with Exp iNfo
   vexpDir <- unlist(strsplit(expDir,"_"))
-  stopifnot(vexpDir[1] == brokenname[1])
+  
+  #stopifnot(vexpDir[1] == brokenname[1])
 
   strGroupID <- vexpDir[3]
   ageDPF <-    as.numeric(gsub("[^0-9]","",vexpDir[2]) );

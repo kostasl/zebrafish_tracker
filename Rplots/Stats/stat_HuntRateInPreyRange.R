@@ -42,7 +42,7 @@ close(fileConn)
 
 ## Run Baysian Inference on Model for Hunt Event Counts IN A Group/ Test Condition
 ## Return Samples Drawn structure
-mcmc_drawEventCountModels <- function(datHuntVsPrey,preyCountRange,strModelFilename)
+mcmc_drawEventCountModels <- function(datHuntVsPrey,preyCntRange,strModelFilename)
 {
   varnames1=c("n","q","r")
   burn_in=1000;
@@ -303,7 +303,7 @@ for (i in 1:4)
 print(vEventCount)
 
 
-### Rum The Sampler ###
+### Run The Sampler ###
 drawLL2 <- mcmc_drawEventCountModels(datHuntVsPreyLL,preyCntRange,"modelGroupEventRate.tmp")
 drawNL2 <- mcmc_drawEventCountModels(datHuntVsPreyNL,preyCntRange,"modelGroupEventRate.tmp")
 drawDL2 <- mcmc_drawEventCountModels(datHuntVsPreyDL,preyCntRange,"modelGroupEventRate.tmp")

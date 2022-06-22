@@ -13,19 +13,21 @@ resample <- function(x, ...) x[sample.int(length(x), ...)]
 if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE) 
 {
   Sys.setenv(LD_LIBRARY_PATH="")
+  
   #Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"",sep=":" ) ) 
   #Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.12.0/gcc_64/lib/",sep=":" ) ) ##Home PC/
-  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.12.0/gcc_64/lib/",sep=":" ) ) ##Home PC/
+  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.15.0/gcc_64/lib/",sep=":" ) ) ##Home PC/
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/media/kostasl/D445GB_ext4/opt/Qt3.0.1/5.10.0/gcc_64/lib/",sep=":" ) ) ##Home PC - OpenCV QT5 lib link/
   
-  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.11.1/gcc_64/lib/",sep=":" ) ) #### Office
+  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.15.0/gcc_64/lib/",sep=":" ) ) #### Office
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/usr/lib/x86_64-linux-gnu/",sep=":" ) )
   
-  Sys.setenv(DISPLAY=":0")
-  Sys.setenv(PATH="/opt/Qt/5.11.1/gcc_64/bin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin")
-  Sys.setenv(QT_DIR="/opt/Qt/5.11.1/gcc_64")
+  Sys.setenv(DISPLAY=":1.0") #<- If getting Errors with loading xcb check paths above and DISPLAY value  here
+  Sys.setenv(PATH="/opt/Qt/5.15.0/gcc_64/bin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin")
+  Sys.setenv(QT_DIR="/opt/Qt/5.15.0/gcc_64")
   Sys.setenv(XDG_DATA_DIRS="/usr/share/ubuntu:/usr/local/share:/usr/share:/var/lib/snapd/desktop")
   Sys.setenv(XDG_RUNTIME_DIR="/run/user/1000")
+  Sys.setenv(QT_DEBUG_PLUGINS=1)
 
 }
 
@@ -47,30 +49,79 @@ huntLabels <- convertToScoreLabel(5) #factor(x=5,levels=c(0,1,2,3,4,5,6,7,8,9,10
 ##Loads the Latest Labelled Hunt Events Set - Centralize Here so Changes Propagate To scripts
 ## Removes Thos Labelled As Dublicate OR Non Hunt Events
 ## Notes : Merged2 Contains the Fixed, Remerged EventID 0 files, so event Counts appear for all larvae recorded.
-getLabelledHuntEventsSet <- function()
+# For the 2020 publication the file used was "setn15-HuntEvents-SB-Updated-Merged3"
+getLabelledHuntEventsSet <- function(strProcDataFileName = "HB_allHuntEvents.rds",vxCludeExpID=NA)
 {
 #  datHuntLabelledEventsSBMerged_fixed[datHuntLabelledEventsSBMerged_fixed$expID == 4491,] ##Is A lonely NL with no Matching NE
+  bNewFile <- FALSE
+  if (!dir.exists(paste0(strDatDir,"/LabelledSet/")))
+  {
+      message("Creating LabelledSet subdir to save labeled hunt events..")
+      dir.create(paste0(strDatDir,"/LabelledSet/"))  
+      file.copy(paste0(strDatDir,"/",strProcDataFileName), paste0(strDatDir,"/LabelledSet/",strProcDataFileName),overwrite=FALSE)
+      bNewFile <- TRUE
+     
+  }
   
-  
-  strProcDataFileName <- "setn15-HuntEvents-SB-Updated-Merged3"
   #strProcDataFileName <-"setn3-D1-3-HuntEvents-140"
-  assign("file_LabelledHuntEventsSet", paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ), envir = .GlobalEnv)
+  assign("file_LabelledHuntEventsSet", paste(strDatDir,"/LabelledSet/",strProcDataFileName,sep="" ), envir = .GlobalEnv)
   message(paste(" Loading Hunt Event List to Analyse... ",strProcDataFileName))
   #load(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) ##Save With Dataset Idx Identifier
-  datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
-  #datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/",strProcDataFileName,".rds",sep="" ))
+  datHuntLabelledEventsSB <- readRDS(file=paste0(strDatDir,"/LabelledSet/",strProcDataFileName))
   
-  #saveRDS(datHuntLabelledEventsSB,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+  if (!("filename" %in% names(datHuntLabelledEventsSB)) )
+    datHuntLabelledEventsSB$filename <- ""
+  #datHuntLabelledEventsSB <- readRDS(file=paste(strDatDir,"/",strProcDataFileName,".rds",sep="" ))
+
+  ##Attach Video file name to Each Hunt Event
+  if (any(datHuntLabelledEventsSB$filename == "")){
+    ## Attach File Names - TrackerFiles Have same basename as video file - Use this to locate Vid
+    vAvailableVideoFiles <- list.files(path = strVideoFilePath, 
+                                       pattern = ".avi|.mp4" , all.files = FALSE,
+                                      full.names = TRUE, recursive = TRUE,
+                                      ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
+    
+    
+    for (i in 1:NROW(datHuntLabelledEventsSB) )
+    {
+      rec <- datHuntLabelledEventsSB[i,] 
+      ##Locate Via pattern of Exp/Group/Event Id In file name
+      strFpatt <- paste0(rec$expID,"_.*",as.character(rec$groupID),".*",as.character(rec$testCond) )
+
+      vMatchedFileNames <- vAvailableVideoFiles[which(grepl(strFpatt ,vAvailableVideoFiles))]
+      if (NROW(vMatchedFileNames) == 1)
+      {
+          datHuntLabelledEventsSB[i,"filename"] <- (vMatchedFileNames) #basename
+          #message(i,datHuntLabelledEventsSB[i,"filename"])
+      }else{
+          message(i,"**No unique filename found : ", strFpatt, "Retrying with filter event ID:",as.character(rec$eventID))
+          ##Retry with Event Number
+          strFpatt <- paste0(rec$expID,"_.*",as.character(rec$groupID),".*",as.character(rec$testCond),"_.*",as.character(rec$eventID) )
+          vMatchedFileNames <- vAvailableVideoFiles[which(grepl(strFpatt ,vAvailableVideoFiles))]
+          datHuntLabelledEventsSB[i,"filename"] <- (vMatchedFileNames) #xbasename 
+      }
+      ## Another Way is to search in Saved Records of tracked File Names
+      #rec$filename <- basename(groupsrcdatListPerDataSet[[1]][[rec$groupID]][[1]][rec$fileIdx])
+      ##Remove csv extention 
+      #rec$filename <- substr(rec$filename, 1, nchar(rec$filename)-4)
+      
+    }
+    ##Save Updated
+    message(" Added video file names to hunt-event records.")
+    saveRDS(datHuntLabelledEventsSB,file=paste0(strDatDir,"/LabelledSet/",strProcDataFileName))
+  }
+
+  
   ##These Are Double/2nd Trials on LL, or Simply LL unpaired to any LE (Was checking Rates)
   #AutoSet420fps_14-12-17_WTNotFed2RotiR_297_003.mp4
   # 4491 <- Is a lonely NL - No Match NE
-  vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411,4491)
-  vWeirdDataSetID <- c(11,17,18,19) ##These Dataset Have a total N  Experiments Less than 4(larvae)*2(cond)*3(groups)=24
+  #vxCludeExpID <- c(4421,4611,4541,4351,4481,4501,4411,4491)
+  #vWeirdDataSetID <- c(11,17,18,19) ##These Dataset Have a total N  Experiments Less than 4(larvae)*2(cond)*3(groups)=24
   
   ##We Can Choose To Exclude The Fish That Produced No Hunting Events
-  datHuntLabelledEventsSB <- datHuntLabelledEventsSB[  !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) 
-                                                       #& datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL")
-                                                          ,]
+  datHuntLabelledEventsSB <- datHuntLabelledEventsSB[ !(datHuntLabelledEventsSB$expID %in% vxCludeExpID) 
+                                                      #& datHuntLabelledEventsSB$groupID %in% c("LL","NL","DL")
+                                                      ,]
   
   ##Remove Dublicates - Choose Labels - Duration Needs To be > 5ms
   datHuntLabelledEventsSB_filtered <- datHuntLabelledEventsSB [
@@ -85,8 +136,8 @@ getLabelledHuntEventsSet <- function()
   #                                                                                !(datHuntLabelledEventsSBMerged_filtered$expID %in% vxCludeExpID),]
   
   ## Check Event Number in Strange List
-  for (dID in vWeirdDataSetID )
-    print(NROW(unique(datHuntLabelledEventsSB_filtered[datHuntLabelledEventsSB_filtered$dataSetID ==  dID ,]$expID)))
+  #for (dID in vWeirdDataSetID )
+  #  print(NROW(unique(datHuntLabelledEventsSB_filtered[datHuntLabelledEventsSB_filtered$dataSetID ==  dID ,]$expID)))
   
   
   
@@ -155,12 +206,12 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     }
     
     ##Get Respective Video  Filename / Path
-    strVideoFile <- list.files(path =strVideoFilePath, pattern = rec$filenames , all.files = FALSE,
+    strVideoFile <- list.files(path = strVideoFilePath, pattern = rec$filename , all.files = FALSE,
                                full.names = TRUE, recursive = TRUE,
                                ignore.case = FALSE, include.dirs = FALSE, no.. = FALSE)
     
-    if (NROW(strVideoFile) == 0)
-      stop(paste("Could not find video file matching,",rec$filenames, " ,in : ",strVideoFilePath ) )
+    if (NROW(strVideoFile) == 0 | NROW(strVideoFile) > 1 )
+      stop(paste("Could not find unique video file matching,",rec$filename, " ,in : ",strVideoFilePath ) )
     if (!file.exists(strVideoFile) )
       stop(paste("Video File ",strVideoFile, "does not exist" ) )
       
@@ -168,8 +219,13 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
     
     message(paste("\n", row.names(rec) ,". Examining Hunt Event -start:",max(0,rec$startFrame-1)," -End:",rec$endFrame, "ExpID:",rec$expID ) )
     ##--
-    strArgs = paste(" --HideDataSource=0 --MeasureMode=1 --ModelBG=0 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile," --outputdir=",strTrackOutputPath," --startframe=",max(0,rec$startFrame-1)," --stopframe=",rec$endFrame," --startpaused=1",sep="")
+    strArgs = paste0(" --HideDataSource=0 --MeasureMode=1 --ModelBG=1 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile,
+                    " --outputdir=",strTrackOutputPath," --DNNModelFile=","/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc",
+                    " --startframe=",max(0,rec$startFrame-1),
+                    " --stopframe=",rec$endFrame," --startpaused=1")
+    
     message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
+    
     if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
       stop(paste("Tracker software not found in :",strTrackerPath ))
     
@@ -193,7 +249,7 @@ labelHuntEvents <- function(datHuntEvent,strDataFileName,strVideoFilePath,strTra
       
       setLabel <- factor(x=rec$huntScore,levels=seq(0,NROW(vHuntEventLabels)-1),labels=vHuntEventLabels )
       message(paste("\n\n ### Event's ", row.names(rec) , " Current Label is :",setLabel," ####" ) )
-      message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filenames, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
+      message(paste("### Set Options Hunt Event of Larva:",rec$expID," Event:",rec$eventID, "Video:",rec$filename, " -s:",max(0,rec$startFrame-1)," -e:",rec$endFrame) )
       
       
       for (g in levels(huntLabels) )
@@ -560,3 +616,85 @@ findLabelledEvent <- function (EventRegisterRec)
   
   return(recs)
 }
+
+
+
+
+## This is the old method of validating individual Hunt Events 
+scoreIndividualEventsRandomly <- function(datHuntEventAllGroupToLabel,str_FilterLabel = "UnLabelled")
+{
+  ##Select Randomly From THe Already Labelled Set ##
+  ##Main Sample Loop
+  Keyc <- 'n'
+  while (Keyc != 'q')
+  {
+    Keyc <- readline(prompt="### Press q to exit, 'n' for next, or type event number you wish to label  :")
+    
+    if (Keyc == 'q')
+      break
+    
+    TargetLabel = which(vHuntEventLabels == str_FilterLabel)-1; ##Convert to Number Score
+    gc <- resample(groupsList,1)
+    idx <- NA
+    TargetLabels <- vHuntEventLabels
+    
+    #message(gc)
+    
+    if (Keyc == 'n')
+    {
+      ##Choose From THe Set Of Videos Already Labelled From Another User (Kostasl) So as to Verify The Label # Sample Only From THose ExpID that have not been already verified
+      #datHuntEventPool <- datHuntEventAllGroupToValidate[datHuntEventAllGroupToValidate$huntScore != "UnLabelled" & datHuntEventAllGroupToValidate$eventID != 0
+      #                                           & (datHuntEventAllGroupToValidate$expID %in% datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$huntScore == TargetLabel,]$expID ),]
+      
+      datHuntEventPool <- datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0 & datHuntEventAllGroupToLabel$groupID == gc,]
+      datHuntEventPool <- datHuntEventPool[ datHuntEventPool$huntScore == TargetLabel ,] #& is.na(datHuntEventPool$markTracked)
+      if (NROW(datHuntEventPool)  == 0)
+      {
+        message( paste("Finished with Hunt Events for group with label ",TargetLabels[TargetLabel+1], ". Try Again") )
+        groupsList <- groupsList[which(groupsList != gc)]
+        next
+      }
+      
+      expID <- resample(datHuntEventPool$expID,1)
+      datHuntEventPool <- datHuntEventPool[datHuntEventPool$expID == expID ,]
+      eventID <- resample(datHuntEventPool$eventID,1)
+      ###
+      TargetLabels <- vHuntEventLabels[vHuntEventLabels==str_FilterLabel] ##Convert to Text Label Score to Use for Filtering OUt
+    }
+    ##Extract If Any Numbers In Input/ Then User Picked a specific Row
+    if (!is.na(as.numeric(gsub("[^0-9]","",Keyc)) ) )
+    {
+      message(paste("Goto Event:",Keyc ) )
+      idx <- as.character(Keyc) ##Note It acts as key only as string, numeric would just bring out the respective order idx record
+      datHuntEventPool <- datHuntEventAllGroupToLabel[idx,]
+      expID <- datHuntEventPool$expID
+      eventID <- datHuntEventPool$eventID
+      TargetLabels <- vHuntEventLabels
+      
+      if (is.na(datHuntEventAllGroupToLabel[idx,]$expID))
+      {
+        message("Event Not Found")
+        next
+      }
+    }
+    ##ExPORT 
+    
+    
+    datHuntEventAllGroupToLabel <- labelHuntEvents(datHuntEventAllGroupToLabel,
+                                                   strProcDataFileName,strVideoFilePath,
+                                                   strTrackerPath,strTrackeroutPath,
+                                                   TargetLabels,expID,eventID,idx)
+    
+    ##Saving is done in labelHuntEvent on Every loop - But repeated nhere
+    save(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="" )) 
+    save(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,"-backup.RData",sep="" )) ##Save With Dataset Idx Identifier
+    saveRDS(datHuntEventAllGroupToLabel,file=paste(strDatDir,"/LabelledSet/",strProcDataFileName,".rds",sep="" ))
+    message(paste("Saved :",strDatDir,"/LabelledSet/",strProcDataFileName,".RData",sep="") )
+    
+  }
+  
+  tblRes <- table(convertToScoreLabel(datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0,]$huntScore),datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$eventID != 0,]$groupID)
+  write.csv(tblRes,file=paste(strDatDir,"/LabelledSet/","tbLabelHuntEventSummary.csv",sep="") )
+  
+  print(tblRes)
+} ## Old Method of Scoring Events Individually
