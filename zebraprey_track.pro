@@ -78,6 +78,7 @@ QMAKE_CFLAGS += -rdynamic
 ##QML_IMPORT_PATH =
 ##
 ##Assume Libs are copied with the package into
+# Using Gold linker to remove tensor flow warning on dynsym local symbol (enable it with -fuse-ld=gold)<- Tried and linking Fails Completely
 QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
 #QMAKE_LFLAGS += -Wl,--rpath=/home/kostasl/Qt/5.11.1/gcc_64/lib/ ##Office
 #QMAKE_LFLAGS += -Wl,--rpath=/media/extStore/opt/Qt3.0.1/5.9.2/gcc_64/lib/ #Home

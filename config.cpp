@@ -465,7 +465,7 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
 
 QTextStream& operator<<(QTextStream& out, const t_HuntEvent& h)
 {
-        out << h.rowID << "," << h.startFrame << "," << h.endFrame << "," << h.label << endl;
+        out << QString::fromStdString(h.rowID) << "," << h.startFrame << "," << h.endFrame << "," << h.label << endl;
 
         return(out);
 }
@@ -482,28 +482,33 @@ std::vector<t_HuntEvent> trackerState::loadHuntEvents(QString filename)
 
 
        while (!file.atEnd()) {
-           QByteArray line = file.readLine(); //Skip Header Line
-           line = file.readLine();
-           QList<QByteArray> lstData = line.split(',');
+           QByteArray line = file.readLine();
 
+           QList<QByteArray> lstData = line.split(',');
            if(lstData.size() < 4)
            {
-               qDebug() << "Hunt event csv file does not have sufficient columns";
-               break;
+               qDebug() << "csv row does not have sufficient columns:" << line ;
+               continue;
            }
-           huntEvent newHEvent(lstData.at(0).toUInt(), //start
-                               lstData.at(1).toUInt(), //end
+           bool numok      = true;
+           uint startFrame = lstData.at(1).toUInt(&numok);
+           if (!numok) //Likely NonNumeric Header Line-Skip
+               continue;
+           int huntScore = lstData.at(3).toInt(&numok);
+           if (!numok) //Likely NonNumeric Header Line-Skip
+               continue;
+
+            t_HuntEvent newHEvent(lstData.at(0).toStdString(), //start
+                               startFrame, //start
                                lstData.at(2).toUInt(),
-                               lstData.at(3).toInt()); //Label
-
-
-//           newHEvent.endFrame   = lstData.at(1).toUInt();
-//           newHEvent.label      =
+                               huntScore); //Label
 
            vHuntEvents.push_back(newHEvent);
+
+           qDebug() << line;
        }
 
-       qDebug() << line;
+
        return(vHuntEvents);
 }
 

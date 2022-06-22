@@ -103,7 +103,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->checkBoxNoiseFilter->setChecked(gTrackerState.bRemovePixelNoise);
 
     this->ui->checkBoxHistEqualizer->setChecked(gTrackerState.bUseHistEqualization);
-
+    this->ui->checkBoxEdgeDetectEllipsoid->setChecked(gTrackerState.bUseEllipseEdgeFittingMethod);
     createSpinBoxes();
     //Make Table Resize
      this->ui->tblHuntEvents->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -669,6 +669,17 @@ void MainWindow::handleSliderChange(QEvent* event)
         this->ui->horizontalSlider->setToolTip(QString::number(this->ui->horizontalSlider->value()));
     }
 }
+
+
+
+void MainWindow::on_horizontalSlider_sliderMoved(int position)
+{
+    gTrackerState.bStartFrameChanged = true;
+    gTrackerState.bPaused = false;
+    nFrame = this->ui->horizontalSlider->value();
+    this->ui->spinBoxFrame->setValue(nFrame);
+}
+
 
 void MainWindow::handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent)
 {
@@ -1412,7 +1423,7 @@ void MainWindow::on_tblHuntEvents_cellClicked(int row, int column)
     gTrackerState.bPaused = false;
     int eventIdx          = row;
     //Check if Cell is empty BUG: \todo find a better way
-    if (ui->tblHuntEvents->item(row,0)->text().length() < 1)
+    if (!ui->tblHuntEvents->item(row,0))
         return;
     // Go to Selected Hunt Event
     gTrackerState.uiStartFrame =  nFrame = ui->tblHuntEvents->item(row,0)->text().toUInt();
@@ -1444,7 +1455,8 @@ void MainWindow::on_btnAddHEvent_clicked()
 {
     btblUpdating = true;
     ui->tblHuntEvents->insertRow(ui->tblHuntEvents->currentRow()+1);
-    t_HuntEvent newEvent(ui->tblHuntEvents->currentRow()+1,nFrame,nFrame+100,0);
+    t_HuntEvent newEvent(("N"+QString::number(ui->tblHuntEvents->currentRow()+1)).toStdString()
+                         ,nFrame,nFrame+100,0);
     newEvent.rowID = ui->tblHuntEvents->currentRow()+1;
     gTrackerState.vHuntEvents.push_back(newEvent);
     btblUpdating = false;
@@ -1477,5 +1489,11 @@ void MainWindow::on_btnRemoveHEvent_released()
     gTrackerState.vHuntEvents.erase(gTrackerState.vHuntEvents.begin() + ui->tblHuntEvents->currentRow());
     ui->tblHuntEvents->removeRow(ui->tblHuntEvents->currentRow());
     btblUpdating = false;
+}
+
+
+void MainWindow::on_checkBoxEdgeDetectEllipsoid_toggled(bool checked)
+{
+    gTrackerState.bUseEllipseEdgeFittingMethod = checked;
 }
 

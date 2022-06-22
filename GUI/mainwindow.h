@@ -169,6 +169,10 @@ private slots:
 
     void on_btnRemoveHEvent_released();
 
+    void on_horizontalSlider_sliderMoved(int position);
+
+    void on_checkBoxEdgeDetectEllipsoid_toggled(bool checked);
+
 private:
     void reportUserMeasurement(cv::Point ptMouse);
 

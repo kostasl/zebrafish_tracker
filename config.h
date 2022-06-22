@@ -119,17 +119,17 @@ extern cv::Point gptHead,gptTail; //Candidate Fish Contour Position Of HEad - Us
 ///\brief Data Structure For Hunt Event Record //
 typedef struct huntEvent {
     huntEvent();
-    huntEvent(uint prowID,uint pstartFrame,uint pendFrame,int plabel) {
-        rowID = prowID;
+    huntEvent(string prowID,uint pstartFrame,uint pendFrame,int plabel) {
+        rowID      = prowID; //Used to Connect Updated RoWS With Original HUntEvent Table in R
         startFrame = pstartFrame;
-        endFrame = pendFrame;
-        label = plabel;
+        endFrame   = pendFrame;
+        label      = plabel;
     }
 public:
-    uint rowID = 0;
+    string rowID    = "N";
     uint startFrame = 0;
-    uint endFrame = 0;
-    int label = 0;
+    uint endFrame   = 0;
+    int label       = 0;
 
 } t_HuntEvent;
 
@@ -152,7 +152,7 @@ class trackerState
      /// \brief Load Q Resources
      static void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = cv::IMREAD_COLOR); //Load Resources
 
-      enum state {PAUSED,TRACKING,DIST_MEASURE,SAVING,EXITING};
+     enum state {PAUSED,TRACKING,DIST_MEASURE,SAVING,EXITING};
 
       /// VIDEO AND BACKGROUND PROCESSING //
       float gfVidfps                   = 1;
@@ -308,7 +308,8 @@ class trackerState
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
       int gi_maxEllipseMajor      = 32; /// thres  for Eye Ellipse Detection methods
       int gi_minEllipseMajor      = 21; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
-      int gi_minEllipseMinor      = 0; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
+      int gi_minEllipseMinor      = 1; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
+      int gi_maxEllipseMinor      = 25; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
       int thresEyeEdgeCanny_low             = -2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
