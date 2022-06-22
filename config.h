@@ -280,7 +280,7 @@ class trackerState
       bool bUseGPU                              = false;
       bool bUseOpenCL                           = true;
       bool bUseHistEqualization                 = true; //To enhance to contrast in Eye Ellipse detection
-      bool bUseEllipseEdgeFittingMethod         = true; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
+      bool bUseEllipseEdgeFittingMethod         = false; //Use the 2nd Efficient Method of Ellipsoid Fitting as standart after 1st method / False: Only used if the 1st one fails - Set to false to Make tracking Faster
       bool bAdaptEyeMaskVOffset                 = true; // Check in fishDetector.cpp
 
       /// \todo Make this path relative or embed resource
