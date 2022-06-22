@@ -228,7 +228,9 @@ class trackerState
      // Global Control Vars ///
      /// \brief bTracking
      ///// Option Flags //
-      bool bTrackedOneFishOnly = true;
+
+      bool bTrackedOneFishOnly      = true;
+
       bool bshowMask                = false; //Debug option True will show the BGSubstracted IMage/Processed Mask
       bool bshowDetectorDebugImg    = false; //Debug option  True will show the classifier scoring Masks and Extracted Fish Anterior Images
 
@@ -279,7 +281,7 @@ class trackerState
       bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
       bool bUseGPU                              = false;
       bool bUseOpenCL                           = true;
-      bool bUseHistEqualization                 = true; //To enhance to contrast in Eye Ellipse detection
+      bool bUseHistEqualization                 = false; //To enhance to contrast in Eye Ellipse detection
       bool bUseEllipseEdgeFittingMethod         = false; //Use the 2nd Efficient Method of Ellipsoid Fitting as standart after 1st method / False: Only used if the 1st one fails - Set to false to Make tracking Faster
       bool bAdaptEyeMaskVOffset                 = true; // Check in fishDetector.cpp
 
@@ -306,7 +308,7 @@ class trackerState
       /// Eye Tracking Params
       int gi_CannyThres           = 150;
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-      int gi_maxEllipseMajor      = 32; /// thres  for Eye Ellipse Detection methods
+      int gi_maxEllipseMajor      = 40; /// thres  for Eye Ellipse Detection methods
       int gi_minEllipseMajor      = 21; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
       int gi_minEllipseMinor      = 1; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
       int gi_maxEllipseMinor      = 25; /// ellipse detection WIDTH - When 0 it allows for detecting straight line

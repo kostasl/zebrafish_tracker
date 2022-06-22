@@ -1000,7 +1000,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         outframe = frame.clone();
 
 
-        //Pass Processed bgMask which Is then passed on to enhanceMask
+    // Pass Processed bgMask which Is then passed on to enhanceMask
     processFrame(window_main,frame,bgStaticMask,nFrame,outframe,outframeHeadEyeDetect,outframeHead);
 
         double alpha = 0.5;
