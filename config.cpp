@@ -458,6 +458,20 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
     assert(gTrackerState.dGaussContourKernelSize % 2 == 1); //M is an odd number
     getGaussianDerivs(dGaussContourKernelSigma,dGaussContourKernelSize,gGaussian,dgGaussian,d2gGaussian);
 
+    /// Initialize List Of Possible Hunt Outcome Labels - When Validating Hunt Events
+    const char* scoreLabels[18] = {"UnLabelled","NA","Success", "Fail","No_Target","Not_HuntMode/Delete",
+    "Escape", "Out_Of_Range","Duplicate/Overlapping","Fail-No Strike","Fail-With Strike", "Success-SpitBackOut",
+    "Debri-Triggered","Near-Hunt State","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Success-OnApproach-AfterStrike"};
+
+    QStringList lstscoreLabels( QStringList() << "UnLabelled" << "NA" << "Success" << "Fail" << "No_Target" << "Not_HuntMode/Delete" << "Escape"
+                                   <<"Out_Of_Range" << "Duplicate/Overlapping" << "Fail-No Strike" << "Fail-With Strike" << "Success-SpitBackOut"
+                                   << "Debri-Triggered" << "Near-Hunt State" << "Success-OnStrike" << "Success-OnStrike-SpitBackOut"
+                                   << "Success-OnApproach" << "Success-OnApproach-AfterStrike");
+
+    for (int i=0;i<18;i++)
+        maphuntOutcomeLabels.insert(std::pair<QString,int>(QString(scoreLabels[i]),i));
+
+
 }
 /// END OF INIT GLOBAL PARAMS //
 

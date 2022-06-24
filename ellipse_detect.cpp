@@ -859,11 +859,25 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size((int)pimgIn.cols*g_EyesUpScale,(int)pimgIn.rows*g_EyesUpScale));
 
     /// THRESHOLD - SEGMENT HEAD Image //
-    cv::Mat imgEyeDiscover,imgEyeDiscover_Mask;
+    cv::Mat imgEyeDiscover,imgEyeDiscover_secB,imgEyeDiscover_Mask;
     /// MASK HEAD IMAGE ///
-    cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgUpsampled_gray.cols/2)-1,gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
+    cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 50,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgUpsampled_gray.cols/3)-1,gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
     imgUpsampled_gray.copyTo(imgEyeDiscover,imgEyeDiscover_Mask);
+    cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 50,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,3,gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
+    imgUpsampled_gray.copyTo(imgEyeDiscover_secB,imgEyeDiscover_Mask);
+    imgEyeDiscover += imgEyeDiscover_secB;
+    cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 50,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,
+                          gTrackerState.thresEyeEdgeThresholdBlockSize,
+                          gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
+    imgUpsampled_gray.copyTo(imgEyeDiscover_secB,imgEyeDiscover_Mask);
+    imgEyeDiscover += imgEyeDiscover_secB;
+    cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 50,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,
+                          ceil(2*gTrackerState.thresEyeEdgeThresholdBlockSize-1),gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
+    imgUpsampled_gray.copyTo(imgEyeDiscover_secB,imgEyeDiscover_Mask);
+    imgEyeDiscover += imgEyeDiscover_secB;
 
+
+    cv::imshow("imgEyeDiscover",imgEyeDiscover);
 
     //MAKE FEATURE ISOLATION MASK //
     cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/3+7);
@@ -935,8 +949,9 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     /// then Do Multiple Thresholding Of Masked Image to Obtain Segmented Eyes //
     //std::vector<int> viThresEyeSeg = getEyeSegThreshold(imgEyeDiscover,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
-    cv::Canny(imgEyeDiscover,imgEdge_local,gTrackerState.thresEyeEdgeCanny_low,
-                                      gTrackerState.thresEyeEdgeCanny_high, 5, true);
+    bool L2Gradient = false;
+    cv::Canny(imgEyeDiscover,imgEdge_local, 1,
+              255, gTrackerState.edgeCanny_ApertureSize, L2Gradient);
     //cv::imshow("FishSeg",imgEyeDiscover);
     //cv::imshow("Canny",imgEdge_local);
 

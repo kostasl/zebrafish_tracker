@@ -12,8 +12,25 @@
 
 #include <tensorDNN/tf_image.hpp>
 
-typedef cv::KeyPoint zftblob;
+///\brief Custom Keypoint For FishBlobs so we can store Classification Scores
+class zftblob:public cv::KeyPoint
+{
+ //If compiler supports C++11 standard, there is a constructor inheritance using using
+public:
+      using cv::KeyPoint::KeyPoint; //Take All constructors
+
+   zftblob(cv::KeyPoint kp):KeyPoint(kp)
+   {
+        FishClassScore = kp.response;
+   }
+   float HuntModeClassScore = 0.0;
+   float FishClassScore = 0.0;
+};
+
+
+//typedef cv::KeyPoint zftblob;
 typedef std::vector<zftblob> zftblobs;
+
 
 /// /brief An Random Kernel - Mushroom body inspiried - recognition neural net implementation
 /// Matrices are learned offline in R script that uses Image Examples to set NN output layer weights
@@ -27,7 +44,7 @@ public:
     static cv::Mat getNormedBoundedImg(const cv::Mat& frame, cv::RotatedRect fishRotAnteriorBox,bool correctOrientation); //Normed Bounded region of Rotated Rect
     static cv::Mat getNormedTemplateImg(const cv::Mat& frame, cv::RotatedRect& fishRotAnteriorBox,bool correctOrientation); // Normed Rot Rect Image
     float netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
-    float netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
+    float netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,float & fHuntModeClass,float & fNonFishClass);
     float netDNNDetect_normedfish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass);
 
     float scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedRect boundEllipse,cv::Mat& outframeAnterior_Norm,cv::Mat& outmaskRegionScore,

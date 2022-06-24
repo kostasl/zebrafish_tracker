@@ -54,7 +54,7 @@
  ///                           --invideofile=/media/extStore/ExpData/zebrapreyCap/AnalysisSet/AutoSet450fps_18-01-18/AutoSet450fps_18-01-18_WTLiveFed4Roti_3591_009.mp4
  ///                           --outputdir=/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/
  ///
-  ///
+ ///
  /// \note Example: /zebraprey_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1 --invideolist=VidFilesToProcessSplit1.txt --outputdir=/media/kostasl/Maxtor/KOSTAS/Tracked/
  /// \todo * Add Learning to exclude large detected blobs that fail to be detected as fish - so as to stop fish detection failures
  ///        :added fishdetector class
@@ -476,7 +476,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
 
 
     //std::vector<cv::KeyPoint>  ptFoodblobs;
-    zftblobs ptFoodblobs;
+    zfdblobs ptFoodblobs;
 
     vfishblobs_pt.clear();
     //zftblobs ptFishblobs; //Now global
@@ -604,8 +604,8 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
                 assert(pfish);
                 zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, cv::FONT_HERSHEY_PLAIN, gTrackerState.trackFntScale+0.2 );
                 //Draw KFiltered Axis
-                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->leftEye,CV_RGB(200,0,0));
-                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->rightEye,CV_RGB(0,200,0));
+                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->lastLeftEyeMeasured,CV_RGB(150,20,20));
+                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->lastRightEyeMeasured,CV_RGB(20,60,150));
 
                 ++ft;
             }
@@ -1620,15 +1620,15 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 /// Process Optic Flow of defined food model positions
 /// Uses Lukas Kanard Method to get the estimated new position of Prey Particles
 ///
-int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels,unsigned int nFrame,zftblobs& vPreyKeypoints_next )
+int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels,unsigned int nFrame,zfdblobs& vPreyKeypoints_next )
 {
     int retCount = 0;
    std::vector<cv::Point2f> vptPrey_current;
    std::vector<cv::Point2f> vptPrey_next;
 
 
-   zftblobs vPreyKeypoints_current;
-   zftblobs vPreyKeypoints_ret;
+   zfdblobs vPreyKeypoints_current;
+   zfdblobs vPreyKeypoints_ret;
    std::vector<uchar> voutStatus;
    // L1 distance between patches around the original and a moved point, divided by number of pixels in a window, is used as a error measure.
    std::vector<float>    voutError;
@@ -1675,60 +1675,60 @@ return retCount;
 
 
 
-/// Process Optic Flow of defined food model positions
-/// Uses Lukas Kanard Method to get the estimated new position of Prey Particles
-///
-int processFishOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,fishModels& vfishmodels,zftblobs& vPreyKeypoints_next )
-{
-    int retCount = 0;
-   std::vector<cv::Point2f> vpts_current;
-   std::vector<cv::Point2f> vpts_next;
+///// Process Optic Flow of defined food model positions
+///// Uses Lukas Kanard Method to get the estimated new position of Prey Particles
+/////
+//int processFishOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,fishModels& vfishmodels,zftblobs& vPreyKeypoints_next )
+//{
+//    int retCount = 0;
+//   std::vector<cv::Point2f> vpts_current;
+//   std::vector<cv::Point2f> vpts_next;
 
 
-   zftblobs vPreyKeypoints_current;
-   zftblobs vPreyKeypoints_ret;
-   std::vector<uchar> voutStatus;
-   // L1 distance between patches around the original and a moved point, divided by number of pixels in a window, is used as a error measure.
-   std::vector<float>    voutError;
+//   zftblobs vPreyKeypoints_current;
+//   zftblobs vPreyKeypoints_ret;
+//   std::vector<uchar> voutStatus;
+//   // L1 distance between patches around the original and a moved point, divided by number of pixels in a window, is used as a error measure.
+//   std::vector<float>    voutError;
 
-   fishModel* pfish = NULL;
-   fishModels::iterator ft;
+//   fishModel* pfish = NULL;
+//   fishModels::iterator ft;
 
-    //Fill POint Vector From foodmodel vector
-   for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
-   {
-       pfish = ft->second;
-       cv::KeyPoint kptFish(pfish->zTrack.centroid,pfish->zfishBlob.size);
-       vPreyKeypoints_current.push_back(kptFish  );
-   }
+//    //Fill POint Vector From foodmodel vector
+//   for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+//   {
+//       pfish = ft->second;
+//       cv::KeyPoint kptFish(pfish->zTrack.centroid,pfish->zfishBlob.size);
+//       vPreyKeypoints_current.push_back(kptFish  );
+//   }
 
-    cv::KeyPoint::convert(vPreyKeypoints_current,vpts_current);
+//    cv::KeyPoint::convert(vPreyKeypoints_current,vpts_current);
 
-    //Calc Optic Flow for each food item
-    if (vpts_current.size() > 0 && !frame_grey_prev.empty())
-        cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vpts_current,vpts_next,voutStatus,voutError,cv::Size(31,31),2);
+//    //Calc Optic Flow for each food item
+//    if (vpts_current.size() > 0 && !frame_grey_prev.empty())
+//        cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vpts_current,vpts_next,voutStatus,voutError,cv::Size(31,31),2);
 
-    cv::KeyPoint::convert(vpts_next,vPreyKeypoints_next);
+//    cv::KeyPoint::convert(vpts_next,vPreyKeypoints_next);
 
-    //update food item Location
-        //Loop through points
-    for (int i=0;i<(int)vPreyKeypoints_ret.size();i++)
-    {
-        if (!voutStatus.at(i))
-            continue; //ignore bad point
-        vPreyKeypoints_next.push_back(vPreyKeypoints_ret.at(i)); //fwd the good ones
-//        // find respective food model, update state
-//        vfoodmodels[i]->zTrack.centroid = vPreyKeypoints_next.at(i);
-//        vfoodmodels[i]->zfoodblob.pt = vPreyKeypoints_next.at(i);
-//        vfoodmodels[i]->updateState(&vfoodmodels[i]->zfoodblob,0,
-//                                    vPreyKeypoints_next.at(i),
-//                                    nFrame,vfoodmodels[i]->blobMatchScore,
-//                                    vfoodmodels[i]->blobRadius);
-//        retCount++;
-    } //Check if Error
-//
-return retCount;
-}
+//    //update food item Location
+//        //Loop through points
+//    for (int i=0;i<(int)vPreyKeypoints_ret.size();i++)
+//    {
+//        if (!voutStatus.at(i))
+//            continue; //ignore bad point
+//        vPreyKeypoints_next.push_back(vPreyKeypoints_ret.at(i)); //fwd the good ones
+////        // find respective food model, update state
+////        vfoodmodels[i]->zTrack.centroid = vPreyKeypoints_next.at(i);
+////        vfoodmodels[i]->zfoodblob.pt = vPreyKeypoints_next.at(i);
+////        vfoodmodels[i]->updateState(&vfoodmodels[i]->zfoodblob,0,
+////                                    vPreyKeypoints_next.at(i),
+////                                    nFrame,vfoodmodels[i]->blobMatchScore,
+////                                    vfoodmodels[i]->blobRadius);
+////        retCount++;
+//    } //Check if Error
+////
+//return retCount;
+//}
 
 
 
@@ -2318,7 +2318,7 @@ bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,c
 /// \return
 /// \note Draws Blue circle around food blob, with relative size
 ///
-int processPreyBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFoodblobs)
+int processPreyBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& frameOut,zfdblobs& ptFoodblobs)
 {
 
     cv::Mat frameMasked;
@@ -3135,17 +3135,19 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 
               {
                   ss.str(""); //Empty String
-                  ss << "L:" << fish->leftEyeTheta;
+                  ss << "L:" << fish->lastLeftEyeMeasured.getEyeAngle();
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45,pasteRegion.br().y+10),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str(""); //Empty String
-                  ss << "R:"  << fish->rightEyeTheta;
+                  ss << "R:"  << fish->lastRightEyeMeasured.getEyeAngle();
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+25),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str(""); //Empty String
                   ss << "V:"  << ((int)((fish->leftEyeTheta - fish->rightEyeTheta)*10)) /10.0;
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+40),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str("");
-                  ss << "nR:"  << ((int)((fR*1000.0)) /1000.0);
+                  ss << "D:"  << ((int)((fR*1000.0)) /1000.0); //Classifier score
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+55),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
+                  drawExtendedMajorAxis(imgFishHeadProcessed,fish->lastLeftEyeMeasured,CV_RGB(255,0,0));
+                  drawExtendedMajorAxis(imgFishHeadProcessed,fish->lastLeftEyeMeasured,CV_RGB(0,0,255));
               }
 
               //Check If Too Many Eye Detection Failures - Then Switch Template

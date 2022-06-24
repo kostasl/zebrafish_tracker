@@ -138,8 +138,8 @@ public:
   int inactiveFrames; //Count Of Number Of Frames That this model Has not Been Matched To Any Fish
   int idxTemplateRow; //The Location Of the Matching Template In The Template Cache
   int idxTemplateCol;
-  tDetectedEllipsoid    leftEye;
-  tDetectedEllipsoid    rightEye;
+  tDetectedEllipsoid    lastLeftEyeMeasured;
+  tDetectedEllipsoid    lastRightEyeMeasured;
   int nFailedEyeDetectionCount;
   cv::RotatedRect       bodyRotBound;
 

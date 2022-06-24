@@ -20,7 +20,7 @@ library("MASS");
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 
-#setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
@@ -144,8 +144,10 @@ if (!dir.exists(out_Hdir))
           warning("Will not overwrite existing : ", filename_csv," Table may have been validated by user. ")
       }else
       {
+        filename_csv <- paste0("HB",expID,"_",testCod,"_",eventID,"_huntevents.csv")  
+        write.table(datEventsForTracker,paste0(out_Hdir,filename_csv),sep=",",row.names=F )
         warning("No hunt events for expID:",expID," cond:",testCod)
-        break ##No Events for this one
+        #break ##No Events for this one
       }
       
        ## Run Tracker passing tbl of Hunt Events

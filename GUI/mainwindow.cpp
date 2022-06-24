@@ -15,6 +15,7 @@
 #include <QTimeLine>
 #include <QMessageBox>
 #include <QTableWidgetItem>
+#include <QComboBox>
 
 extern QFile outfishdatafile;
 extern QFile outfooddatafile;
@@ -122,7 +123,7 @@ void MainWindow::createSpinBoxes()
     //this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
     //this->ui->spinBoxEyeThres->setRange(-100,100); //-Set On GUI form -Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setValue(gTrackerState.thresEyeEdgeCanny_low);
-    this->ui->spinBoxEyeThres_H->setValue(gTrackerState.thresEyeEdgeCanny_high);
+    this->ui->spinBoxEyeThres_H->setValue(gTrackerState.thresEyeEdgeThresholdBlockSize);
 
     this->ui->spinBoxFoodThresMax->setValue(gTrackerState.g_SegFoodThesMax);
     this->ui->spinBoxFoodThresMin->setValue(gTrackerState.g_SegFoodThesMin);
@@ -201,17 +202,45 @@ void MainWindow::createSpinBoxes()
 void MainWindow::updateHuntEventTable(std::vector<t_HuntEvent> vHuntEvents)
 {
 
+
+
     btblUpdating = true;
     this->ui->tblHuntEvents->clearContents();
+
+    //Make Hunt Score Combo Options
+    QComboBox* combo = new QComboBox();
+          for (std::map<QString,int>::const_iterator scoreIter = gTrackerState.maphuntOutcomeLabels.begin();
+               scoreIter != gTrackerState.maphuntOutcomeLabels.end(); ++scoreIter) {
+            combo->addItem(scoreIter->first,scoreIter->second);
+          }
+
     /// Load huntevents table //
     for (int i=0;i< vHuntEvents.size();i++)
     {
         this->ui->tblHuntEvents->insertRow(i);
         this->ui->tblHuntEvents->setItem(i, 0, new QTableWidgetItem(QString::number(vHuntEvents[i].startFrame) ));
         this->ui->tblHuntEvents->setItem(i, 1, new QTableWidgetItem(QString::number(vHuntEvents[i].endFrame) ));
-        this->ui->tblHuntEvents->setItem(i, 2, new QTableWidgetItem(QString::number(vHuntEvents[i].label) ));
+
+
+        //levelCombo->addItems(QStringList() << "Guest" << "User" << "Admin");
+        //Make Hunt Score Combo Options
+        QComboBox* combo = new QComboBox();
+              for (std::map<QString,int>::const_iterator scoreIter = gTrackerState.maphuntOutcomeLabels.begin();
+                   scoreIter != gTrackerState.maphuntOutcomeLabels.end(); ++scoreIter) {
+                combo->addItem(scoreIter->first,scoreIter->second);
+              }
+        combo->setCurrentIndex(vHuntEvents[i].label);
+        ui->tblHuntEvents->setCellWidget(i, 2, combo);
+//        this->ui->tblHuntEvents->setItem(i, 2, new QTableWidgetItem(QString::number(vHuntEvents[i].label) ));
     }
     btblUpdating = false;
+
+
+
+
+
+
+
 
 }
 void MainWindow::showVideoFrame(cv::Mat& img,unsigned int nFrame)
@@ -1396,7 +1425,8 @@ void MainWindow::on_spinBoxEyeThres_H_valueChanged(int arg1)
     if (bSceneMouseLButtonDown)
         LogEvent(QString("Changed higher Canny Eye Seg Threshold:") + QString::number(arg1));
 
-    gTrackerState.thresEyeEdgeCanny_high = arg1;
+    gTrackerState.thresEyeEdgeThresholdBlockSize = arg1;
+    gTrackerState.thresEyeEdgeCanny_low = min(arg1,gTrackerState.thresEyeEdgeCanny_low);
 }
 
 
@@ -1407,6 +1437,7 @@ void MainWindow::on_spinBoxEyeThres_valueChanged(int arg1)
         LogEvent(QString("Changed lower Canny Eye Seg Threshold:") + QString::number(arg1));
 
     gTrackerState.thresEyeEdgeCanny_low = arg1;
+    gTrackerState.thresEyeEdgeThresholdBlockSize = max(arg1,gTrackerState.thresEyeEdgeThresholdBlockSize );
 }
 
 void MainWindow::on_tblHuntEvents_cellDoubleClicked(int row, int column)

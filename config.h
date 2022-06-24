@@ -312,21 +312,23 @@ class trackerState
       int gi_maxEllipseMinor      = 25; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int thresEyeEdgeCanny_low             = -2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
-      int thresEyeEdgeCanny_high            = 2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int thresEyeEdgeCanny_low             = -8; // Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int thresEyeEdgeThresholdBlockSize    = 65; // Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int edgeCanny_ApertureSize            = 5;
 
       int gEyeMaskErrosionIterations      = 1;
       int gFishTailSpineSegmentLength     = 16;
       // Eye Masks //
       int iEyeHMaskSepRadius              = 36; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
-      int iEyeVMaskSepWidth               = 15; //5 px width vertical line separates the eyes for segmentation
+      int iEyeVMaskSepWidth               = 4; //5 px width vertical line separates the eyes for segmentation
       int iEyeVMaskSepHeight              = 46; //Radius for rectMidEllipse : The Ellipsoid Mask Of Body In little Upsampled EyeDiscovery Image
       int eyeMaskVLineThickness           = 15; //Width Vertical Midline Separating The eyes
 
       /// Fishnet Classifier params //
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_classifier_thres  = 0.99f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_classifier_thres  = 0.96f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_classifierHuntMode_thres = 0.4;
       float fishnet_inputSparseness = 0.1f; //Ratio of Active Pixels in Binarized input Image
 
       // BackProp YAML model - DEpecrated
@@ -390,6 +392,9 @@ class trackerState
       cv::Mat mfgFishMask;
       cv::Mat mfgFishFrame;
       cv::Mat mfgPreyMask;
+
+      std::map<QString,int> maphuntOutcomeLabels;
+
     /// overload size operator / return full state object size
      size_t size() const _GLIBCXX_NOEXCEPT
     { return 1; //mStateValue.size()*mStateValue[1].size()*mStateValue[1][1].size();
@@ -416,7 +421,8 @@ class trackerState
             CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(thresEyeEdgeCanny_low),CEREAL_NVP(gEyeMaskErrosionIterations),
             CEREAL_NVP(gi_MaxEllipseSamples),CEREAL_NVP(gi_VotesEllipseThres),CEREAL_NVP(gi_minEllipseMinor),CEREAL_NVP(gi_minEllipseMajor),CEREAL_NVP(gi_maxEllipseMajor),
             CEREAL_NVP(gi_CannyThresSmall),CEREAL_NVP(gi_CannyThres),CEREAL_NVP(gdMOGBGRatio),
-            CEREAL_NVP(MOGhistory),CEREAL_NVP(thresh_minfishblobarea),CEREAL_NVP(thresh_maxfishblobarea),CEREAL_NVP(iEyeHMaskSepRadius),CEREAL_NVP(iEyeVMaskSepWidth)
+            CEREAL_NVP(MOGhistory),CEREAL_NVP(thresh_minfishblobarea),CEREAL_NVP(thresh_maxfishblobarea),CEREAL_NVP(iEyeHMaskSepRadius),
+            CEREAL_NVP(iEyeVMaskSepWidth)//,CEREAL_NVP(maphuntOutcomeLabels)
             ); // serialize things by passing them to the archive
      //archive();
      //archive(CEREAL_NVP(userROI));

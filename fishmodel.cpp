@@ -526,17 +526,17 @@ int fishModel::updateEyeMeasurement(tEllipsoids& vLeftEll,tEllipsoids& vRightEll
     else
     {
         mMeasurement.at<float>(7)  = fleftEyeTheta;//this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
-        this->leftEye              = mleftEye; // Copied Here to update axis Position, But Angle is corrected via Kalman Filtering
-        this->leftEye.rectEllipse.angle = this->leftEyeTheta;
+        this->lastLeftEyeMeasured              = mleftEye; // Copied Here to update axis Position, But Angle is corrected via Kalman Filtering
+        this->lastLeftEyeMeasured.rectEllipse.angle = this->leftEyeTheta;
     }
 
     if (std::isnan(frightEyeTheta) )
         this->nFailedEyeDetectionCount++;
     else{
         //this->rightEyeTheta = this->rightEyeTheta + stepUpdate*(frightEyeTheta - this->rightEyeTheta );
-        mMeasurement.at<float>(8)   = frightEyeTheta;//this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
-        this->rightEye              = mrightEye; // Copied Here to update axis Position, But Angle is corrected via Kalman Filtering
-        this->rightEye.rectEllipse.angle = this->rightEyeTheta;
+        mMeasurement.at<float>(8)               = frightEyeTheta;//this->leftEyeTheta + stepUpdate*(fleftEyeTheta - this->leftEyeTheta );
+        this->lastRightEyeMeasured              = mrightEye; // Copied Here to update axis Position, But Angle is corrected via Kalman Filtering
+        this->lastRightEyeMeasured.rectEllipse.angle = this->rightEyeTheta;
     }
 
 
@@ -544,7 +544,7 @@ int fishModel::updateEyeMeasurement(tEllipsoids& vLeftEll,tEllipsoids& vRightEll
     if (mleftEye.fitscore > 0 && mrightEye.fitscore > 0)
     {
        this->nFailedEyeDetectionCount = 0; // Reset Error Count
-       retPerfScore = this->leftEye.fitscore + this->rightEye.fitscore;
+       retPerfScore = this->lastLeftEyeMeasured.fitscore,this->lastRightEyeMeasured.fitscore;
     }else //penalize
     {
        retPerfScore =  (mleftEye.fitscore + mrightEye.fitscore)- 400;
@@ -823,8 +823,8 @@ bool fishModel::updateState(zftblob* fblob, cv::Point2f bcentre,unsigned int nFr
     this->rightEyeTheta   = mCorrected.at<float>(8); // Eye Angle Right;
 
     //Update The Eye Ellipsoids
-    this->leftEye.rectEllipse.angle  = this->leftEyeTheta;
-    this->rightEye.rectEllipse.angle = this->rightEyeTheta;
+    this->lastLeftEyeMeasured.rectEllipse.angle  = this->leftEyeTheta;
+    this->lastRightEyeMeasured.rectEllipse.angle = this->rightEyeTheta;
 
     //this->leftEye = tDetectedEllipsoid(this->leftEye.rectEllipse,this->leftEye.fitscore);
     //this->rightEye = tDetectedEllipsoid(this->rightEye.rectEllipse,this->rightEye.fitscore);
@@ -1282,8 +1282,8 @@ std::ostream& operator<<(std::ostream& out, const fishModel& h)
         << "\t" << h.rightEyeTheta
         << "\t" << h.matchScore
         << "\t" << h.lastTailFitError
-        << "\t" << h.leftEye.fitscore
-        << "\t" << h.rightEye.fitscore
+        << "\t" << h.lastLeftEyeMeasured.fitscore
+        << "\t" << h.lastRightEyeMeasured.fitscore
         << "\t" << h.nFailedEyeDetectionCount;
 
     return out;
@@ -1314,18 +1314,17 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
     //Output Spine Point Angular Deviations from the previous spine/tail Segment in Degrees
     for (int i=1;i<h.c_spinePoints;i++)
     {
-
        out << "\t" << Rad2Deg*( h.spline[i-1].angleRad - h.spline[i].angleRad);
-
     }
      out << "\t" << h.c_spineSegL;
      out << "\t" << h.matchScore;
      out << "\t" << h.lastTailFitError;
      //if (h.leftEye)
-     out << "\t" << h.leftEye.fitscore;
+     out << "\t" << h.lastLeftEyeMeasured.fitscore;
      //if (h.rightEye)
-        out << "\t" << h.rightEye.fitscore;
+        out << "\t" << h.lastRightEyeMeasured.fitscore;
      out << "\t" << h.nFailedEyeDetectionCount;
+     out << "\t" << h.zfishBlob.HuntModeClassScore;
 
     return out;
 }
