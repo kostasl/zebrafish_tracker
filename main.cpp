@@ -2468,6 +2468,7 @@ void writeFishDataCSVHeader(QFile& data)
     output << "\t lEyeFitScore";
     output << "\t rEyeFitScore";
     output << "\t nFailedEyeDetectionCount";
+    output << "\t HuntModeScore";
     output << "\t RotiferCount \n";
 
 }
