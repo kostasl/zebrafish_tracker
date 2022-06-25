@@ -723,20 +723,23 @@
            <property name="toolTip">
             <string>Eye Segmentation Threshold Tuner</string>
            </property>
+           <property name="statusTip">
+            <string>px Thickness of vertical Line Mask between eyes</string>
+           </property>
            <property name="buttonSymbols">
             <enum>QAbstractSpinBox::PlusMinus</enum>
            </property>
            <property name="minimum">
-            <number>1</number>
+            <number>2</number>
            </property>
            <property name="maximum">
-            <number>40</number>
+            <number>30</number>
            </property>
            <property name="singleStep">
             <number>1</number>
            </property>
            <property name="value">
-            <number>25</number>
+            <number>6</number>
            </property>
           </widget>
           <widget class="QLabel" name="label_MaskWidth">

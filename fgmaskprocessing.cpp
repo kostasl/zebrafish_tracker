@@ -1008,7 +1008,7 @@ int findMatchingContour(std::vector<std::vector<cv::Point> >& contours,
     assert((level > 0) &&  hierarchy.size() ==contours.size() || level ==-1  );
 
 
-    /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
+   /// Render Only Countours that contain fish Blob centroid (Only Fish Countour)
    ///Search Through Contours - Draw contours + hull results
 
    ///Find Contour with Min Distance in shape and space -attach to closest contour

@@ -3056,8 +3056,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 //              ///Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
                 cv::Point2f ptRotCenter = fishRotAnteriorBox.center - (cv::Point2f)rectfishAnteriorBound.tl();
 
-              float fR = fish->zfishBlob.response; //The FishNet Recognition Score
-
+              float fR = fish->zfishBlob.FishClassScore; //The FishNet Recognition Score
+              float fH = fish->zfishBlob.HuntModeClassScore; //The FishNet Recognition Score
 
               //Allow For Sub Optimal Matches To be processed Up to Here //
               //if (fish->templateScore < gTemplateMatchThreshold)
@@ -3133,7 +3133,6 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                   colTxt = CV_RGB(100,100,100);
               else
                   colTxt = CV_RGB(200,50,0);
-
               {
                   ss.str(""); //Empty String
                   ss << "L:" << fish->lastLeftEyeMeasured.getEyeAngle();
@@ -3144,9 +3143,11 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                   ss.str(""); //Empty String
                   ss << "V:"  << ((int)((fish->leftEyeTheta - fish->rightEyeTheta)*10)) /10.0;
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+40),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
-                  ss.str("");
-                  ss << "D:"  << ((int)((fR*1000.0)) /1000.0); //Classifier score
+                  ss.str(""); //Display Hunt And Fish Classifier Scores
+                  ss << "F:"  << ((int)((fR*1000.0)) /1000.0);
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+55),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
+                  ss.str(""); ss << "H:" << ((int)((fH*1000.0)) /1000.0); //Classifier score
+                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+70),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
                   drawExtendedMajorAxis(imgFishHeadProcessed,fish->lastLeftEyeMeasured,CV_RGB(255,0,0));
                   drawExtendedMajorAxis(imgFishHeadProcessed,fish->lastLeftEyeMeasured,CV_RGB(0,0,255));
               }

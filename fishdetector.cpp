@@ -392,7 +392,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
           cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate, gTrackerState.gszTemplateImg );
           //CROP Extract a Template sized subregion of Orthonormal Fish
           imgFishAnterior_bin(rectFishTemplateBound).copyTo(imgFishAnterior_Norm_tmplcrop);
-
+          //dscore combines fish Score + huntMode score
           dscore = this->netDNNDetect_fish(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreHuntMode,scoreNonFish);
           // Overide with Fish Score Only - As frequently Fish is missed
           dscore = scoreFish+scoreHuntMode;
@@ -415,8 +415,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
           if (bstopAtFirstMatch && max_dscore > gTrackerState.fishnet_classifier_thres)
           {
-              if (mxLocHuntScore > gTrackerState.fishnet_classifierHuntMode_thres)
-                  qDebug("Hunt Mode On");
+              //if (mxLocHuntScore > gTrackerState.fishnet_classifierHuntMode_thres)
+                  //qDebug("Hunt Mode On");
                break;
           }
           //qDebug() << "(" << i+sztemplate.width/2 << "," <<j+sztemplate.height/2<<") = " << round(sc1*100)/100.0;
@@ -435,7 +435,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(iSlidePx_H_step*2+1,iSlidePx_V_step*2+1),iSlidePx_H_step,iSlidePx_V_step);
     cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, max_dscore, 0, cv::NORM_MINMAX);
     cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
-    max_dscore = maxL1;
+    //max_dscore = maxL1;
     // Rotate Max Point Back to Original Orientation
     //cv::Mat MrotInv = cv::getRotationMatrix2D( ptRotCenter, -fishblob.angle,1.0); //Rotate Upwarte Upwards
     //cv::warpAffine(maskRegionScore,outmaskRegionScore,MrotInv,szFishAnteriorNorm);
@@ -444,21 +444,21 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     // End Of FishNet Detection //
 
 
-    //Update Blob Location And add Classifier Score
+    //Update Blob Location And add Classifier Score if Higher than existing
      //Save Recognition Score - Don t use the Gaussian Blurred one -Too low
     if (max_dscore > fishblob.response)
     {
         fishblob.response = max_dscore;
+        fishblob.FishClassScore = mxLocFishScore;
+        fishblob.HuntModeClassScore = mxLocHuntScore;
         fishblob.pt = ptmax+fishRotAnteriorBox_Bound.tl(); //Shift Blob Position To Max  To Max Recognition Point
         //cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(max_dscore,max_dscore,max_dscore),1);
     }else
     {
         //cv::circle(imgFishAnterior,ptmax,3,CV_RGB(250,250,250),1); //Indicate Max Score position By Grey Circle
         //cv::imshow("imgFishAnterior scoreBlobRegion "  + regTag, imgFishAnterior);
-
         //cv::imshow(("FishNet ScoreRegion (Norm) ") + regTag, maskRegionScore_Norm);
-
-        qDebug() << "scoreBlobRegion :" << max_dscore << " - Blob had higher class. score :" << fishblob.response ;
+        //qDebug() << "scoreBlobRegion :" << max_dscore << " - Blob had higher class. score :" << fishblob.response ;
     }
 
 

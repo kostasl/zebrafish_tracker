@@ -234,7 +234,7 @@ void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint);
 void getEdgePoints(std::vector<cv::Point>& contour,tEllipsoidEdges& vedgepoint);/// Fills A list with  point coords where pixels (edges image) are above a threshold (non-zero)
 void getPointsAlongEdge(cv::Mat imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint);
 void getConnectedEdgePoints(cv::Mat& imgEdgeIn,cv::Point2f startpt,tEllipsoidEdges& vedgepoint);
-void getBestEllipsoidFits(cv::Mat& imgRegion,tRankQueueEllipsoids& qEllipsoids,cv::Point ptLoc);
+void getBestEllipsoidFits(cv::Mat& imgRegion,tRankQueueEllipsoids& qEllipsoids,cv::Point ptLoc,cv::Point ptLocBottom);
 
 void show_histogram(std::string const& name, cv::Mat1b const& image);
 /// Draws LInes On Upsampled Head Image showing the major axis of ellipses
