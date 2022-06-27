@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
         "{ModelBG b | 1  | Initiate BG modelling by running over scattered video frames to obtain Foreground mask}"
         "{UseTemplateMatching T | 1  | After DNN Classifier, also use template matching to Detect orientation and position of larva (speed up if false)}" //bUseTemplateMatching
         "{BGThreshold bgthres | 2  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
-        "{HeadMaskVW hmw | 16  | Head Vertical mask width that separates eyes}"
+        "{HeadMaskVW hmw | 4  | Head Vertical mask width that separates eyes}"
         "{HeadMaskHR hmh | 36  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"

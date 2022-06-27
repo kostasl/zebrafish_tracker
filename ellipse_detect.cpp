@@ -890,7 +890,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     imgEyeDiscover += imgEyeDiscover_secB;
     //cv::GaussianBlur(imgEyeDiscover,imgEyeDiscover,cv::Size(9,9),5,5);
      cv::floodFill(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-1),0,0,1,20);
-     cv::imshow("imgEyeDiscover",imgEyeDiscover);
+     //cv::imshow("imgEyeDiscover",imgEyeDiscover);
 
     //MAKE FEATURE ISOLATION MASK //
     cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/3+7);

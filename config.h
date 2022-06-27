@@ -314,7 +314,7 @@ class trackerState
       int gi_maxEllipseMinor      = 25; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int thresEyeEdgeCanny_low             = -16; // Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int thresEyeEdgeCanny_low             = -18; // Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
       int thresEyeEdgeThresholdBlockSize    = 31; // Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
       int edgeCanny_ApertureSize            = 7;
 
@@ -347,8 +347,8 @@ class trackerState
       int gFishTemplateAngleSteps     = 1;
       int gEyeTemplateAngleSteps      = 5;
 
-      double eyeStepIncrement         = 0.8; //Eye Angles Can be Slowly Updated on each Frame- Change with Step Size eyeStepIncrement
-      double gTemplateMatchThreshold  = 0.81; //Template Matching is tested After Fish Net Classifier Has passed-
+      double eyeStepIncrement         = 0.8; //DEPRECATED by Kalman F: Eye Angles Can be Slowly Updated on each Frame- Change with Step Size eyeStepIncrement
+      double gTemplateMatchThreshold  = 0.91; //Template Matching is tested After Fish Net Classifier Has passed-
       double gTemplateMatchThreshold_LowLimit = 0.65;
       double gTemplateMatchThreshold_UpLimit = 0.95;
 
