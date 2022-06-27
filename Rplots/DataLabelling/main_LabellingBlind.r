@@ -120,17 +120,20 @@ if (!dir.exists(out_Hdir))
 } ## If validation CSV subfolder does not Exist - make dir and export CSV with hunt events for each video
   for (expID in unique(datHuntEventAllGroupToLabel$expID) )
   {
-    for (eventID in unique(datHuntEventAllGroupToLabel$eventID) )
-    {
       for (testCod in unique(datHuntEventAllGroupToLabel$testCond))
       {
         if (Keyc == 'q')
           break
-        
         datHuntEvents_exp <- datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$expID == expID &
-                                                         datHuntEventAllGroupToLabel$eventID == eventID &
                                                          datHuntEventAllGroupToLabel$testCond == testCod,]
-      datEventsForTracker <- cbind.data.frame(rowID=(rownames(datHuntEvents_exp)),
+        
+        for (eventID in unique(datHuntEvents_exp$eventID) )
+        {
+          ##if (eventID == 0) ## Skip Default event 0 which records rotifers
+          #  next
+          datHuntEvents_exp <-  datHuntEvents_exp[datHuntEvents_exp$eventID == eventID,]
+          
+          datEventsForTracker <- cbind.data.frame(rowID=(rownames(datHuntEvents_exp)),
                                               startFrame=datHuntEvents_exp$startFrame,
                                               endFrame=datHuntEvents_exp$endFrame,
                                               label=datHuntEvents_exp$huntScore)
@@ -151,7 +154,7 @@ if (!dir.exists(out_Hdir))
       }
       
        ## Run Tracker passing tbl of Hunt Events
-       message(paste("\n Validating video  ExpID:",expID ) )
+       message(paste("\n Validating video  ExpID:",expID,"event :",eventID," ",testCod ) )
        strVideoFile <- head(datHuntEvents_exp$filename,1)
        strArgs = paste0(" --HideDataSource=0 --MeasureMode=1 --ModelBG=1 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile,
                        " --outputdir=",strTrackeroutPath," --DNNModelFile=","/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc",
