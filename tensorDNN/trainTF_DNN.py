@@ -346,8 +346,8 @@ def testModel(strTImg):
 
 class_names = ["fish", "nonfish"]
 
-#
-# # #
+
+# # # #
 model_dir_invar = None
 model_directional = None
 ## LOAD MODEL ##

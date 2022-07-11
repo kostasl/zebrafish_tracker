@@ -432,8 +432,12 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     //Need to Rotate Score Image Back to Original Orientiation to return Coordinates oF Best Match
     //- Removed  - Scores scaled too low Find Max Match Position In Non-Norm pic (original orientation)
     double minL1, maxL1;
-    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(iSlidePx_H_step*2+1,iSlidePx_V_step*2+1),iSlidePx_H_step,iSlidePx_V_step);
+    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,
+                     cv::Size(max(2*(iSlidePx_H_step),2)+1,max(2*(iSlidePx_V_step),20)+1),
+                     max(iSlidePx_H_step/2,30),max(iSlidePx_V_step/2,30),BORDER_ISOLATED);
+
     cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, max_dscore, 0, cv::NORM_MINMAX);
+    //ptmax = mxLocFishScore;
     cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
     //max_dscore = maxL1;
     // Rotate Max Point Back to Original Orientation
