@@ -277,7 +277,7 @@ class trackerState
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
       bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
       bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked FG Fish Image and not the full frame- (Masks can lose fine features)
-      bool bTemplateSearchThroughRows           = true; /// Stops TemplateFind to Scan Through All Rows (diff template images)- speeding up search + fail - Rows still Randomly Switch between attempts
+      bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (different template images)- speeding up search + fail - Rows still Randomly Switch between attempts
       bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
       bool bUseGPU                              = false;
       bool bUseOpenCL                           = true;
@@ -329,7 +329,7 @@ class trackerState
 
       /// Fishnet Classifier params //
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_classifier_thres  = 0.96f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_classifier_thres  = 0.98f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
       float fishnet_classifierHuntMode_thres = 0.4;
       float fishnet_inputSparseness = 0.1f; //Ratio of Active Pixels in Binarized input Image
 
@@ -347,16 +347,16 @@ class trackerState
       int gFishTemplateAngleSteps     = 1;
       int gEyeTemplateAngleSteps      = 5;
 
-      double eyeStepIncrement         = 0.8; //DEPRECATED by Kalman F: Eye Angles Can be Slowly Updated on each Frame- Change with Step Size eyeStepIncrement
-      double gTemplateMatchThreshold  = 0.91; //Template Matching is tested After Fish Net Classifier Has passed-
+      double eyeStepIncrement               = 0.8; //DEPRECATED by Kalman F: Eye Angles Can be Slowly Updated on each Frame- Change with Step Size eyeStepIncrement
+      double gTemplateMatchThreshold        = 0.69; //Template Matching is tested After Fish Net Classifier Has passed-
       double gTemplateMatchThreshold_LowLimit = 0.65;
-      double gTemplateMatchThreshold_UpLimit = 0.95;
+      double gTemplateMatchThreshold_UpLimit  = 0.95;
 
       int gFishBoundBoxSize               = 100; ///100 For HRes Top CamB 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
-      int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*4; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
-      int  gAngleChangeLimitPerFrame    = 90; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
+      int  gDisplacementLimitPerFrame     = gFishBoundBoxSize*4; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
+      int  gAngleChangeLimitPerFrame      = 90; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
 
       int iLastKnownGoodTemplateRow   = 0;
       int iFishAngleOffset            = 0;

@@ -2176,7 +2176,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         gTrackerState.iLastKnownGoodTemplateRow = 0;
     }
 
-    if ((char)keyboard == 'z')
+    if ((char)keyboard == 'z') //Reset To Random Template
     {
         gTrackerState.bStoreThisTemplate = false;
         std::stringstream ss;

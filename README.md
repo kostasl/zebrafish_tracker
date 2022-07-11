@@ -127,6 +127,7 @@ Some important shortcut keys:
  *  q Exit Quit application.
  *  T save detected region as template image.
  *  d Offline Tracking mode - Do not update display on each frame to improve tracking speed.
+ *  z Reset to a random template for detection
  
 ## Output
 

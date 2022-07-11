@@ -928,7 +928,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     //ptLEyeTop   = ptMax;
     ptLEyeTop.x = rectMidEllipse.boundingRect2f().tl().x; //Use the Middle Ellipsoid mask to fix where eyes should be positioned (Given Accurated Template position)
     ptLEyeTop.y = rectMidEllipse.boundingRect2f().tl().y;
-    ptLEyeBottom = ptLEyeTop + cv::Point2f(-15,gTrackerState.gi_minEllipseMajor);
+    ptLEyeBottom = ptLEyeTop + cv::Point2f(-23,gTrackerState.gi_minEllipseMajor);
 
     //cv::imshow("pyrUP",imgUpsampled_gray);
     //cv::imshow("LEye Discover",imgEyeCover);
@@ -940,7 +940,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     //cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax); //Find Centre of RIght Eye
     ptREyeTop.x = rectMidEllipse.boundingRect2f().br().x; //Use the Middle Ellipsoid mask to fix where eyes should be positioned (Given Accurated Template position)
     ptREyeTop.y = rectMidEllipse.boundingRect2f().tl().y;
-    ptREyeBottom = ptREyeTop + cv::Point2f(+15,gTrackerState.gi_minEllipseMajor);
+    ptREyeBottom = ptREyeTop + cv::Point2f(+23,gTrackerState.gi_minEllipseMajor);
 
     //cv::imshow("REye Discover",imgEyeCover);
 
