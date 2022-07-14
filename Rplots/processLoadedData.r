@@ -74,6 +74,7 @@ datTrackletStat = data.frame(do.call(rbind,lTrackletStat))
 #datHuntStat <- rbindlist(lHuntStat)
 #datMotionStat <-rbindlist(lMotionStat)
 #Data Exported In One Dir -> strDataExportDir, and read from another - so as to Avoid accidental Overwrites
+dir.create(strDataExportDir,recursive=TRUE)
 saveRDS(datAllHuntEvents,file=paste(strDataExportDir,"/HB_allHuntEvents.rds",sep="" )) ##So It can be loaded into a custom Named Structure
 
 save(datTrackletStat,lTrackletStat,file =paste(strDataExportDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep="")) 

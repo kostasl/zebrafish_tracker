@@ -18,7 +18,7 @@ for ( idxDataSet in firstDataSet:lastDataSet )
     vFileList <- list((getFileSet(paste0(groupID,"/"),d,strCondR= "tracks_[0-9].csv")),groupID)
     if (NROW(vFileList[[1]]) > 0){
       groupsrcdatList[[groupID]] <- vFileList
-      message("New GroupID: ",groupID, " Loaded with ",NROW(vFileList), " tracking files")
+      message("New GroupID: ",groupID, " Loaded with ",NROW(vFileList[[1]]), " tracking files")
     }
      ##groupsrcdatList[["LR"]] <- list((getFileSet("LR/",d,strCondR= "*tracks_[0-9].csv")),"-TestPrey")
   }

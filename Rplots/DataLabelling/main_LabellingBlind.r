@@ -25,7 +25,7 @@ setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
 DIM_MMPERPX <- 35/DIM_PXRADIUS ##35mm Opening of The viewport Assumed
-G_APPROXFPS              <- 410
+G_APPROXFPS              <- 60#410
 G_THRESHUNTANGLE         <- 19 #Define Min Angle Both Eyes need for a hunting event to be assumed
 G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
 G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
@@ -34,29 +34,29 @@ G_MINEPISODEDURATION     <- 100
 G_MIN_BOUTSPEED          <- 0.05 ##px/frame - Need to be above to be considered A Motion Bout
 PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Stats at Beginning And End Of Experiments
 nFrWidth                 <- 20 ## Sliding Window Filter Width - Reduced From 50 to 20 to improve Meanf sliding window speed estimation lags
-
-
-strDataSetDirectories <- paste(strTrackInputPath, list(
-                              "/Tracked12-10-17/", ##Dataset 1
-                              "/Tracked26-10-17/",
-                              "/Tracked02-11-17/",##MDataset 3 -NOTE: Does not Larva ID on File Name 
-                              "Tracked08-11-17/", #4 350fps - Missing a condition WTDryFed3Roti - So removed One Set Larva of Data from other conditions to balance the dataset
-                              "/Tracked16-11-17/",#5 400fps - Strict Timer Dataset
-                              "/Tracked30-11-17/",#6 420fps
-                              "/Tracked07-12-17/",#7
-                              "/Tracked14-12-17/",#8
-                              "Tracked21-12-17/",
-                              "/Tracked11-01-18/",
-                              "/Tracked18-01-18/",
-                              "/Tracked25-01-18/",
-                              "/Tracked01-02-18/",
-                              "/Tracked08-02-18/",
-                              "/Tracked15-02-18/",
-                              "/Tracked22-02-18/",
-                              "/Tracked_07-06-18/",##Dataset 17 
-                              "/Tracked14-06-18/",##Dataset 18
-                              "/Tracked_21-08-18/"##Dataset n ##Dataset n 
-                              ),sep="/")
+# 
+# 
+# strDataSetDirectories <- paste(strTrackInputPath, list(
+#                               "/Tracked12-10-17/", ##Dataset 1
+#                               "/Tracked26-10-17/",
+#                               "/Tracked02-11-17/",##MDataset 3 -NOTE: Does not Larva ID on File Name 
+#                               "Tracked08-11-17/", #4 350fps - Missing a condition WTDryFed3Roti - So removed One Set Larva of Data from other conditions to balance the dataset
+#                               "/Tracked16-11-17/",#5 400fps - Strict Timer Dataset
+#                               "/Tracked30-11-17/",#6 420fps
+#                               "/Tracked07-12-17/",#7
+#                               "/Tracked14-12-17/",#8
+#                               "Tracked21-12-17/",
+#                               "/Tracked11-01-18/",
+#                               "/Tracked18-01-18/",
+#                               "/Tracked25-01-18/",
+#                               "/Tracked01-02-18/",
+#                               "/Tracked08-02-18/",
+#                               "/Tracked15-02-18/",
+#                               "/Tracked22-02-18/",
+#                               "/Tracked_07-06-18/",##Dataset 17 
+#                               "/Tracked14-06-18/",##Dataset 18
+#                               "/Tracked_21-08-18/"##Dataset n ##Dataset n 
+#                               ),sep="/")
 
 strDataSetDirectories <- paste(strTrackInputPath, list(
   "DS_7dpf/" ##Dataset 2
