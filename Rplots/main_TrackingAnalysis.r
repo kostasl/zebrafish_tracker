@@ -40,7 +40,7 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 #setwd(here())
 source("config_lib.R")
 
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
 
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
@@ -104,7 +104,9 @@ strCondR  <- "*.csv";
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   strCondTags <- names(groupsrcdatList)
   source("processLoadedData.r") ##Detects HuntEvents
-
+ 
+  ##Once Processed you can Check and Validate Hunt Events Using main_LabellingBlind.r
+  
   
     ### Make Eye Phase Space Density Plots ##########
   strCondTags <- unique(datAllFrames$groupID)

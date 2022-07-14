@@ -98,6 +98,23 @@ Command line options:
     - CircleROIRadius cr | 512 | pixel radius for the default circular ROI - positioned in the centre of the image
 
 
+### Video Processing 
+The tracker program can accept a list of videos to process as a parameter to invideolist pointing to a txt file with a file name on each line.
+If you run into problems with broken videos, such as the number of frames not being correctly recognized, try fixing it with :
+```
+ffmpeg -v error -i source_broken_video.mp4 -c copy fixed_video.mp4
+```
+to account for subdirectory use:
+```
+for file in HungerExp/**/**/**/**/*mpeg.avi; do ffmpeg -v error -i "$file" -c copy "${file/mpeg/mpeg_fixed}"; done;
+```
+
+The tracker allows saving of image sequences after pressing the s key. To convert the sequence of iumages to a video use :
+```
+ffmpeg -pattern_type glob -i '*.png'  -start_number 15200 -crf 20  -c:v libx264 -preset slow  -vf format=yuv420p,fps=50 -c:a aac -movflags +faststart out.mp4
+```
+
+
 ### Control keys for tracker during Run time :
 
 Some important shortcut keys: 
@@ -110,6 +127,7 @@ Some important shortcut keys:
  *  q Exit Quit application.
  *  T save detected region as template image.
  *  d Offline Tracking mode - Do not update display on each frame to improve tracking speed.
+ *  z Reset to a random template for detection
  
 ## Output
 
@@ -135,6 +153,8 @@ ffm
 mogrify -format jpg *.pgm && rm *.pgm
 </code>
 
+*Note* location of DNN model file needs to be set as a command line option _DNNModelFile_ otherwise tracker will fail to detect larvae (red outline).
+
 For the template matching, the tracker uses small set  (<10) images included in the executables resources as default, but also loads the templates found in the templates subdirectory of the tracking output folder. 
 This allows to the user to save a few templates that are specific to the video being tracked.
 All templates need to be of the same size - (rows,columns) and the the size of the 1st loaded template defines the 
@@ -152,19 +172,14 @@ video scaling spatial (field of view/resolution)  and time (fps). I have added c
 
 The tracker also uses Kalman filtering for larva motion, rotation and eye angles.
 
-### Video Processing 
 
-The program can accept a list of videos to process as a parameter to invideolist pointing to a txt file with a file name on each line.
-If you run into problems with broken videos, such as the number of frames not being correctly recognized, try fixing it with :
-```
-ffmpeg -v error -i source_broken_video.mp4 -c copy fixed_video.mp4
-```
+## Validating Hunt events
 
+After processing eye vergences to detect start-End frames of hunt events you may wish to manually validate and correct detected hunt events certain videos.
+The tracker GUI has a tab on the right side containg a list of hunt events that can be populated by providing a cvs data file (exported from R on detected hunt events for this experiment)
+The command line option is _HuntEventsFile_ and expects a csv with 4 columns with the first line being the  header : rowID, startFrame, endFrame, label (hunt score)
+After validating or changing hunt-event frames click save to update this data file, and then import it back to central huntevents records.
 
-The tracker allows saving of image sequences after pressing the s key. To convert the sequence of iumages to a video use :
-```
-ffmpeg -pattern_type glob -i '*.png'  -start_number 15200 -crf 20  -c:v libx264 -preset slow  -vf format=yuv420p,fps=50 -c:a aac -movflags +faststart out.mp4
-```
 
 
 ### Contribution guidelines ###

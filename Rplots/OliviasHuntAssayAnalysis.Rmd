@@ -28,8 +28,8 @@ colourH <- list(HET= mypalette[2], #rgb(0.9,0.01,0.01,0.2),
                 ROT="black") #rgb(0.01,0.7,0.01,0.2),
                 
 pchH <- list(HET= 1,
-                HOM = 16, #rgb(0.01,0.01,0.9,0.2))
-                WT=22) #rgb(0.01,0.7,0.01,0.2),
+             HOM = 16, #rgb(0.01,0.01,0.9,0.2))
+             WT=22) #rgb(0.01,0.7,0.01,0.2),
 
 ##Load Hunt event data
 strHuntEventFile <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/FeedingAssay/HB_allHuntEvents.rds"

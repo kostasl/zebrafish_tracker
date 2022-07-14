@@ -268,7 +268,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size templSz, double& matchScore,
                             cv::Point& ptBestMatchlocation,int& startRow,int& startCol,bool findFirstMatch)
 {
-  const int iIdxAngleMargin = 3; //Offset Of Angle To begin Before LastKnownGood Angle
+  const int iIdxAngleMargin = 5; //Offset Of Angle To begin Before LastKnownGood Angle
   int matchColIdx = 0;
   int Colidx = 0; //Current Angle Index Being tested in the loop
 

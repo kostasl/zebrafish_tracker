@@ -64,6 +64,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
 
+#include "opencv2/hfs.hpp"
+
 //extern MainWindow window_main;
 extern MainWindow* pwindow_main;
 
@@ -724,57 +726,71 @@ std::vector<int> getEyeSegThreshold(cv::Mat& pimgIn,cv::Point2f ptcenter,std::ve
 
 /// \TODO Finish THis code Clean Up
 /// \brief Detect All likely Eye ellipsoids in the Image region and return List with N best matches
-void getBestEllipsoidFits(cv::Mat& imgRegion,tRankQueueEllipsoids& qEllipsoids)
+/// Trick for eye detection is to join the contours of the segmented Upper And Lower Part of the Eyes
+/// \param ptLoc: Identify contour that contains this point(Eye Location)
+void getBestEllipsoidFits(cv::Mat& imgRegion,tRankQueueEllipsoids& qEllipsoids,cv::Point ptLoc,cv::Point ptLowerEye)
 {
     tEllipsoidEdges vedgePoints_all; //All edge points from Image Of EDge detection
     vedgePoints_all.clear();
 
     tDetectedEllipsoid ellipseDetected;
-
     std::vector<std::vector<cv::Point> > contours_canny;
     std::vector<cv::Vec4i> hierarchy_canny; //Contour Relationships  [Next, Previous, First_Child, Parent]
 
+    /// 1st Use Standard Opencv Ellipsoid Detection
+    //Find Eye On Left Side / as brightest spot
+    //double minVal,maxVal;
+    //cv::Point ptMax,ptMin;
+    //cv::minMaxLoc(imgRegion,&minVal,&maxVal,&ptMin,&ptMax);
 
-    if (gTrackerState.bUseEllipseEdgeFittingMethod)
+    /// Use OpencV COnvex Hull method and overlay a fitted ellipsoid onto eyes-Add Eliptical edges
+    /// Trick for eye detection is to join the contours of the segmented Upper And Lower Part of the Eyes
+    cv::findContours(imgRegion, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+
+    int iEyeTop = findMatchingContour(contours_canny,hierarchy_canny,ptLoc,-1);
+    int iEyeBottom = findMatchingContour(contours_canny,hierarchy_canny,ptLowerEye,-1);
+    if (iEyeTop != -1)
     {
-        /// \TODO This Crashes //
-        //assert(!imgRegion.empty());
-        getEdgePoints(imgRegion,vedgePoints_all);
-        detectEllipse(imgRegion,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
+        std::vector<cv::Point> vEyeHull; //Eye Hull Shape
+
+        std::vector<std::vector<cv::Point>> vEyes;
+        cv::RotatedRect rcLEye,rcREye;
+        if (iEyeBottom != -1)
+        { //Concatenate Vectors -
+            contours_canny[iEyeTop].insert(contours_canny[iEyeTop].end(),contours_canny[iEyeBottom].begin(),contours_canny[iEyeBottom].end());
+        }
+
+
+        cv::convexHull( cv::Mat(contours_canny[iEyeTop]), vEyeHull, false );
+        if (vEyeHull.size() > 4)
+        {
+            vEyes.push_back(vEyeHull);
+            rcLEye =  cv::fitEllipse(vEyeHull);
+            //Check If Ellipse Axis Within Range
+            if (rcLEye.boundingRect2f().height > gTrackerState.gi_minEllipseMajor &
+                rcLEye.boundingRect2f().width > gTrackerState.gi_minEllipseMinor &
+                rcLEye.boundingRect2f().height <= gTrackerState.gi_maxEllipseMajor &
+                rcLEye.boundingRect2f().width <= gTrackerState.gi_maxEllipseMinor)
+            {
+                tDetectedEllipsoid dEll(rcLEye,100);
+                //ellipseDetected.fitscore       = dEll.fitscore;
+                //ellipseDetected.rectEllipse    = dEll.rectEllipse;
+                qEllipsoids.push(dEll); //Add As last resort candidate
+                // Show Ellipse Made from Combined Contours
+                cv::ellipse(img_colour, rcLEye ,CV_RGB(255,255,255),1); //Draw detected Ellipse
+
+            }
+
+        }
     }
 
-    ///If The STD method Failed Or is inactivated then Use CVs contour and Ellipsoid method
-    if (qEllipsoids.size() == 0 )
+    ///If The STD method Failed Or is inactivated then use Custom Fast Ellipsoid Detection
+    if (gTrackerState.bUseEllipseEdgeFittingMethod || qEllipsoids.size() == 0 )
     {   //qDebug() << " L Eye Ellipse Detection Failed";
-        //Find Eye On Left Side / as brightest spot
-        double minVal,maxVal;
-        cv::Point ptMax,ptMin;
-        cv::minMaxLoc(imgRegion,&minVal,&maxVal,&ptMin,&ptMax);
 
-        /// Use OpencV COnvex Hull method and overlay a fitted ellipsoid onto eyes-Add Eliptical edges
-        cv::findContours(imgRegion, contours_canny,hierarchy_canny, cv::RETR_CCOMP,cv::CHAIN_APPROX_SIMPLE , cv::Point(0, 0) ); //cv::CHAIN_APPROX_SIMPLE
+        getEdgePoints(imgRegion,vedgePoints_all);
+        detectEllipse(imgRegion,vedgePoints_all,qEllipsoids); //Run Ellipsoid fitting Algorithm
 
-        int iEye = findMatchingContour(contours_canny,hierarchy_canny,ptMax,2);
-        if (iEye != -1)
-        {
-
-            std::vector<cv::Point> vEyeHull; //Eye Hull Shape
-
-            std::vector<std::vector<cv::Point>> vEyes;
-            cv::RotatedRect rcLEye,rcREye;
-
-            cv::convexHull( cv::Mat(contours_canny[iEye]), vEyeHull, false );
-            if (vEyeHull.size() > 4)
-            {
-                vEyes.push_back(vEyeHull);
-                rcLEye =  cv::fitEllipse(vEyeHull);
-                tDetectedEllipsoid dEll(rcLEye,10);
-//                ellipseDetected.fitscore       = dEll.fitscore;
-//                ellipseDetected.rectEllipse    = dEll.rectEllipse;
-                qEllipsoids.push(dEll); //Add As last resort candidate
-                //cv::ellipse(imgEdge_local, lEll.rectEllipse ,CV_RGB(255,255,255),1); //Draw detected Ellipse
-            }
-        }
     }
     //    qDebug() << " L Eye Backup Ellipse Detection found score: " << qEllipsoids.top().fitscore;
 
@@ -847,18 +863,34 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     std::vector<cv::Point> vLEyeHull; //Left Eye
     std::vector<cv::Point> vREyeHull; //Left Eye
 
-    cv::Point2f ptLEyeMid,ptREyeMid;
+    cv::Point2f ptLEyeTop,ptREyeTop;
+    cv::Point2f ptLEyeBottom,ptREyeBottom;
     assert(!pimgIn.empty());
     //Upsamples an image which causes blur/interpolation it.
     const float g_EyesUpScale = 2.0;
     cv::pyrUp(pimgIn, imgUpsampled_gray, cv::Size((int)pimgIn.cols*g_EyesUpScale,(int)pimgIn.rows*g_EyesUpScale));
 
-    /// THRESHOLD - SEGMENT HEAD Image //
-    cv::Mat imgEyeDiscover,imgEyeDiscover_Mask;
-    /// MASK HEAD IMAGE ///
-    cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgUpsampled_gray.cols/2)-1,gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
-    imgUpsampled_gray.copyTo(imgEyeDiscover,imgEyeDiscover_Mask);
 
+    /// THRESHOLD - SEGMENT HEAD Image //
+    cv::Mat imgEyeDiscover,imgEyeDiscover_col,imgEyeDiscover_secB,imgEyeDiscover_Mask;
+    /// MASK HEAD IMAGE ///
+    cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 50,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,2*(imgUpsampled_gray.cols/3)-1,gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
+    imgUpsampled_gray.copyTo(imgEyeDiscover,imgEyeDiscover_Mask);
+    cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 50,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,3,gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
+    imgUpsampled_gray.copyTo(imgEyeDiscover_secB,imgEyeDiscover_Mask);
+    imgEyeDiscover += imgEyeDiscover_secB;
+    cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 50,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,
+                          gTrackerState.thresEyeEdgeThresholdBlockSize,
+                          gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
+    imgUpsampled_gray.copyTo(imgEyeDiscover_secB,imgEyeDiscover_Mask);
+    imgEyeDiscover += imgEyeDiscover_secB;
+    cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 50,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,
+                          ceil(2*gTrackerState.thresEyeEdgeThresholdBlockSize-1),gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
+    imgUpsampled_gray.copyTo(imgEyeDiscover_secB,imgEyeDiscover_Mask);
+    imgEyeDiscover += imgEyeDiscover_secB;
+    //cv::GaussianBlur(imgEyeDiscover,imgEyeDiscover,cv::Size(9,9),5,5);
+     cv::floodFill(imgEyeDiscover,cv::Point(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows-1),0,0,1,20);
+     //cv::imshow("imgEyeDiscover",imgEyeDiscover);
 
     //MAKE FEATURE ISOLATION MASK //
     cv::Point2f ptcentre(imgUpsampled_gray.cols/2,imgUpsampled_gray.rows/3+7);
@@ -893,10 +925,10 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     double minVal,maxVal;
     cv::Point ptMax,ptMin;
     //cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax);
-    ptLEyeMid   = ptMax;
-    ptLEyeMid.x = rectMidEllipse.boundingRect2f().tl().x; //Use the Middle Ellipsoid mask to fix where eyes should be positioned (Given Accurated Template position)
-    ptLEyeMid.y = rectMidEllipse.boundingRect2f().tl().y;
-
+    //ptLEyeTop   = ptMax;
+    ptLEyeTop.x = rectMidEllipse.boundingRect2f().tl().x; //Use the Middle Ellipsoid mask to fix where eyes should be positioned (Given Accurated Template position)
+    ptLEyeTop.y = rectMidEllipse.boundingRect2f().tl().y;
+    ptLEyeBottom = ptLEyeTop + cv::Point2f(-23,gTrackerState.gi_minEllipseMajor);
 
     //cv::imshow("pyrUP",imgUpsampled_gray);
     //cv::imshow("LEye Discover",imgEyeCover);
@@ -906,17 +938,14 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::Rect rLeftMask(0,0,imgEyeDiscover.cols/2,imgEyeDiscover.rows);
     cv::rectangle(imgEyeCover,rLeftMask,cv::Scalar(0),-1);
     //cv::minMaxLoc(imgEyeCover,&minVal,&maxVal,&ptMin,&ptMax); //Find Centre of RIght Eye
-    ptREyeMid.x = rectMidEllipse.boundingRect2f().br().x; //Use the Middle Ellipsoid mask to fix where eyes should be positioned (Given Accurated Template position)
-    ptREyeMid.y = rectMidEllipse.boundingRect2f().tl().y;
+    ptREyeTop.x = rectMidEllipse.boundingRect2f().br().x; //Use the Middle Ellipsoid mask to fix where eyes should be positioned (Given Accurated Template position)
+    ptREyeTop.y = rectMidEllipse.boundingRect2f().tl().y;
+    ptREyeBottom = ptREyeTop + cv::Point2f(+23,gTrackerState.gi_minEllipseMajor);
+
     //cv::imshow("REye Discover",imgEyeCover);
 
-    /// Make Arc from Which to get Sample Points For Eye Segmentation
-    int ilFloodRange,iuFloodRange;
-    //Fill BG //
-//    cv::floodFill(imgUpsampled_gray, cv::Point(0,0), cv::Scalar(0),0,cv::Scalar(3),cv::Scalar(5));
 
-    //equalize the histogram
-     //cv::Mat hist_equalized_image;
+
 
     /// Equalize Histogram to Enhance Contrast
     if (gTrackerState.bUseHistEqualization)
@@ -930,8 +959,10 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     /// then Do Multiple Thresholding Of Masked Image to Obtain Segmented Eyes //
     //std::vector<int> viThresEyeSeg = getEyeSegThreshold(imgEyeDiscover,ptcentre,vEyeSegSamplePoints,ilFloodRange,iuFloodRange);
 
-    cv::Canny(imgEyeDiscover,imgEdge_local,gTrackerState.thresEyeEdgeCanny_low,
-                                      gTrackerState.thresEyeEdgeCanny_high, 5, true);
+    /// DO EDGE DETECTION //
+    bool L2Gradient = true;
+    cv::Canny(imgEyeDiscover,imgEdge_local, 1,
+              155, gTrackerState.edgeCanny_ApertureSize, L2Gradient);
     //cv::imshow("FishSeg",imgEyeDiscover);
     //cv::imshow("Canny",imgEdge_local);
 
@@ -967,7 +998,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::rectangle(imgEdge_local,r,cv::Scalar(0),cv::FILLED);
     //cv::imshow("LEftEye",imgEdge_local_LEye);
     // Get a ranked list of detected ellipsoids in the image
-    getBestEllipsoidFits(imgEdge_local,qEllipsoids);
+    getBestEllipsoidFits(imgEdge_local,qEllipsoids,ptLEyeTop,ptLEyeBottom);
     imgEdge_local_Orig.copyTo(imgEdge_local);
     assert(!imgEdge_local.empty());
     ///Store Left Eye (Optional :Draw Detected Ellipsoid)
@@ -1003,7 +1034,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     cv::rectangle(imgEdge_local,rl,cv::Scalar(0),-1);
 
     // Get a ranked list of detected ellipsoids in the image
-    getBestEllipsoidFits(imgEdge_local,qEllipsoids);
+    getBestEllipsoidFits(imgEdge_local,qEllipsoids,ptREyeTop,ptREyeBottom);
     imgEdge_local_Orig.copyTo(imgEdge_local); //Restore
     //Initialize One Ellipse That is the mean of all detected ellipsoids
     tDetectedEllipsoid rEllMean(qEllipsoids,gTrackerState.gi_MaxEllipseSamples);
@@ -1025,8 +1056,8 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
 
 
    /// Show Eye Anchor Points
-    cv::circle(img_colour,ptREyeMid,2,CV_RGB(0,0,255),1);
-    cv::circle(img_colour,ptLEyeMid,2,CV_RGB(0,0,255),1);
+    cv::circle(img_colour,ptREyeTop,2,CV_RGB(0,0,255),1);
+    cv::circle(img_colour,ptLEyeTop,2,CV_RGB(0,0,255),1);
 
 //    // Show Eye Segmentation Arc Sample points
 //    for (int i=0;i<vEyeSegSamplePoints.size();i++)

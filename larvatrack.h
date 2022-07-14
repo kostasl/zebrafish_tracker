@@ -51,7 +51,6 @@ class fishModel;
 class vfish;
 
 
-typedef cv::KeyPoint zftblob;
 typedef std::vector<zftblob> zftblobs;
 
 
@@ -92,8 +91,8 @@ void detectZfishFeatures(MainWindow& window_main,const cv::Mat& fullImgIn,cv::Ma
 ///Updated Version With Blobs
 void UpdateFishModels(const cv::Mat& fullImgIn,fishModels& vfishmodels,zftblobs& fishtracks,unsigned int nFrame,cv::Mat& frameOut);
 void UpdateFoodModels(const cv::Mat& maskedImg_gray,foodModels& vfoodmodels,zfdblobs& foodblobs,unsigned int nFrame,bool bAllowNew); //,cv::Mat& frameOut
-int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels,unsigned int nFrame,zftblobs& vPreyKeypoints_next  );
-int processFishOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,fishModels& vfishmodels,zftblobs& vPreyKeypoints_next );
+int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels,unsigned int nFrame,zfdblobs& vPreyKeypoints_next  );
+//int processFishOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,fishModels& vfishmodels,zftblobs& vPreyKeypoints_next );
 
 bool checkKeypointExistsAndRemove(zfdblobs& vfoodblobs_spare,zfdblob& FoodBlob); //Matches Keypoints/Blobs based on position and removes match from vector
 
@@ -105,7 +104,7 @@ int countObjectsviaContours(cv::Mat& srcimg );
 
 /// Updated Blobs Detector- Fish Specific
 int processFishBlobs(cv::Mat& frame,cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFishblobs);
-int processPreyBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFoodblobs);
+int processPreyBlobs(const cv::Mat& frame,const cv::Mat& maskimg,cv::Mat& frameOut,zfdblobs& ptFoodblobs);
 
 int saveTracks(fishModels& vfish,foodModels& vfood, QFile& data, QString frameNumber);
 int saveFoodTracks(fishModels& vfish,foodModels& vfood, QFile& fooddata,QString frameNumber);

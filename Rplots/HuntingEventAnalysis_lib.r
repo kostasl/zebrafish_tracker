@@ -184,7 +184,7 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
         
         nTotalHuntFrames <- nTotalHuntFrames + NROW(datHuntFrames$frameN)
         
-        ##On 1st Event Save THe Initial mean Prey Count
+        ##On 1st Event Save The Initial mean Prey Count
         if (k==1 & NROW(datEventFrames) > 0)
         {
           nInitialPrey <- mean(datEventFrames$PreyCount[1:min(NROW(datEventFrames),PREY_COUNT_FRAMEWINDOW)],na.rm = TRUE)
@@ -224,12 +224,12 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
         ##Consider Only if there are at a min of Hunting frames in this Event  - Surragate to proper Hunt Length Filter frames Durations Minimum Duration  / Here MisUsing The Name EpisodeDuration
         if  (NROW(datHuntFrames$frameN) > G_MINEPISODEDURATION)
         {
-          ##Add (Imaginary) Edge Frame  Numbers  (preceding hunting and after last hunting Frame)
+          ## Add (Imaginary) Edge Frame  Numbers  (preceding hunting and after last hunting Frame)
           vsHuntDeltaFrames[1] <- datHuntFrames$frameN[1]-G_MINGAPBETWEENEPISODES
           vsHuntDeltaFrames[NROW(vsHuntDeltaFrames)] <- datHuntFrames$frameN[NROW(datHuntFrames$frameN)]+G_MINGAPBETWEENEPISODES
-          ##Copy into Shifted right (lagged) Position
+          ## Copy into Shifted right (lagged) Position
           vsHuntDeltaFrames[2:(NROW(datHuntFrames$frameN)+1)] <- datHuntFrames$frameN
-          ##Do Rev Diff - ie Nabla taking s_n = x_n-x_{n-1} # Detect Start Events as +ve diff
+          ## Do Rev Diff - ie Nabla taking s_n = x_n-x_{n-1} # Detect Start Events as +ve diff
           vsHuntDeltaFrames[1:NROW(datHuntFrames$frameN)] <- datHuntFrames$frameN - vsHuntDeltaFrames[1:(NROW(datHuntFrames$frameN))]
           ##\TODO:  Perhaps Throw away Hunts That Began Before Recording Started or End After It Ends - remove Edge Points ##
           ##Find Hunt Event STARTs ## Needs A gap of At least #MINGAP Between Events To Be a new Episode

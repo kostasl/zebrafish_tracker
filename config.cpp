@@ -437,9 +437,16 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
     if (parser.has("MeasureMode"))
          bMeasure2pDistance = (parser.get<int>("MeasureMode") == 1)?true:false;
 
-
+     //Usually provided to validate specific hunt event
      uiStartFrame = parser.get<uint>("startframe");
      uiStopFrame = parser.get<uint>("stopframe");
+
+    // Check if list of hunt events provided
+     strHuntEventsDataFile =  QString::fromStdString( parser.get<string>("HuntEventsFile"));
+     if (QFileInfo::exists((strHuntEventsDataFile))){
+         std::cout << "Loading Hunt events from " << strHuntEventsDataFile.toStdString()  << "\n " <<std::endl;
+         vHuntEvents = loadHuntEvents(strHuntEventsDataFile);
+     }
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen          = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));
@@ -451,8 +458,98 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
     assert(gTrackerState.dGaussContourKernelSize % 2 == 1); //M is an odd number
     getGaussianDerivs(dGaussContourKernelSigma,dGaussContourKernelSize,gGaussian,dgGaussian,d2gGaussian);
 
+    /// Initialize List Of Possible Hunt Outcome Labels - When Validating Hunt Events
+    const char* scoreLabels[18] = {"UnLabelled","NA","Success", "Fail","No_Target","Not_HuntMode/Delete",
+    "Escape", "Out_Of_Range","Duplicate/Overlapping","Fail-No Strike","Fail-With Strike", "Success-SpitBackOut",
+    "Debri-Triggered","Near-Hunt State","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Success-OnApproach-AfterStrike"};
+
+    QStringList lstscoreLabels( QStringList() << "UnLabelled" << "NA" << "Success" << "Fail" << "No_Target" << "Not_HuntMode/Delete" << "Escape"
+                                   <<"Out_Of_Range" << "Duplicate/Overlapping" << "Fail-No Strike" << "Fail-With Strike" << "Success-SpitBackOut"
+                                   << "Debri-Triggered" << "Near-Hunt State" << "Success-OnStrike" << "Success-OnStrike-SpitBackOut"
+                                   << "Success-OnApproach" << "Success-OnApproach-AfterStrike");
+
+    for (int i=0;i<18;i++)
+        maphuntOutcomeLabels.insert(std::pair<QString,int>(QString(scoreLabels[i]),i));
+
+
 }
 /// END OF INIT GLOBAL PARAMS //
+
+/// HuntEvent Data Handling
+
+QTextStream& operator<<(QTextStream& out, const t_HuntEvent& h)
+{
+        out << QString::fromStdString(h.rowID) << "," << h.startFrame << "," << h.endFrame << "," << h.label << endl;
+
+        return(out);
+}
+
+std::vector<t_HuntEvent> trackerState::loadHuntEvents(QString filename)
+{
+       std::vector<t_HuntEvent> vHuntEvents;
+
+       QFile file(filename);
+       if (!file.open(QIODevice::ReadOnly)) {
+           qDebug() << file.errorString();
+           return(vHuntEvents);
+       }
+
+
+       while (!file.atEnd()) {
+           QByteArray line = file.readLine();
+
+           QList<QByteArray> lstData = line.split(',');
+           if(lstData.size() < 4)
+           {
+               qDebug() << "csv row does not have sufficient columns:" << line ;
+               continue;
+           }
+           bool numok      = true;
+           uint startFrame = lstData.at(1).toUInt(&numok);
+           if (!numok) //Likely NonNumeric Header Line-Skip
+               continue;
+           int huntScore = lstData.at(3).toInt(&numok);
+           if (!numok) //Likely NonNumeric Header Line-Skip
+               continue;
+
+            t_HuntEvent newHEvent(lstData.at(0).toStdString(), //start
+                               startFrame, //start
+                               lstData.at(2).toUInt(),
+                               huntScore); //Label
+
+           vHuntEvents.push_back(newHEvent);
+
+           qDebug() << line;
+       }
+
+
+       return(vHuntEvents);
+}
+
+bool trackerState::saveHuntEventsToFile(QString filename,std::vector<t_HuntEvent> vHuntEvents)
+{
+
+       QFile fileHEvents(filename);
+       if (!fileHEvents.open(QIODevice::WriteOnly)) {
+           qDebug() << fileHEvents.errorString();
+           return(false);
+       }
+        QTextStream output(&fileHEvents);
+
+       output << "rowID,startFrame,endFrame,label" << endl;
+
+       std::vector<t_HuntEvent>::iterator vHit;
+       for ( vHit  = vHuntEvents.begin(); vHit!=vHuntEvents.end(); ++vHit)
+       {
+           t_HuntEvent* pHE = vHit.base();
+           output << *pHE;
+       }
+
+
+
+       return(true);
+}
+
 
 /// \brief Initializes ROI at start of tracking depending on user params / either large circle or user defined/configurable polygon
 void  trackerState::initROI(uint framewidth,uint frameheight)

@@ -27,7 +27,7 @@
  ///    * E Manually Set Eye Angles
  ///    * F Manually set prey position (which is then tracked)
  ///    * q Exit Quit application
- ///*Ε
+ ///*
  ///*
 
 ///
@@ -54,7 +54,7 @@
  ///                           --invideofile=/media/extStore/ExpData/zebrapreyCap/AnalysisSet/AutoSet450fps_18-01-18/AutoSet450fps_18-01-18_WTLiveFed4Roti_3591_009.mp4
  ///                           --outputdir=/media/extStore/kostasl/Dropbox/Calculations/zebrafishtrackerData/TrackerOnHuntEvents_UpTo22Feb/
  ///
-  ///
+ ///
  /// \note Example: /zebraprey_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1 --invideolist=VidFilesToProcessSplit1.txt --outputdir=/media/kostasl/Maxtor/KOSTAS/Tracked/
  /// \todo * Add Learning to exclude large detected blobs that fail to be detected as fish - so as to stop fish detection failures
  ///        :added fishdetector class
@@ -88,6 +88,7 @@
 #include <cereal/archives/xml.hpp> //Data Serialize of EyeDetector
 #include <fstream>
 
+#include <QFile>
 #include <QDirIterator>
 #include <QDir>
 #include <QDebug>
@@ -157,7 +158,6 @@ int main(int argc, char *argv[])
     MainWindow window_main;
     pwindow_main = &window_main;
 
-
     /// Handle Command Line Parameters //
     const cv::String keys =
         "{help h usage ? |    | print this help  message}"
@@ -172,8 +172,8 @@ int main(int argc, char *argv[])
         "{ModelBG b | 1  | Initiate BG modelling by running over scattered video frames to obtain Foreground mask}"
         "{UseTemplateMatching T | 1  | After DNN Classifier, also use template matching to Detect orientation and position of larva (speed up if false)}" //bUseTemplateMatching
         "{BGThreshold bgthres | 2  | Absolute grey value used to segment Fish from BG (combined with BGModel) (g_FGSegthresh)}"
-        "{HeadMaskVW hmw | 25  | Head Vertical mask width that separates eyes}"
-        "{HeadMaskHR hmh | 48  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
+        "{HeadMaskVW hmw | 4  | Head Vertical mask width that separates eyes}"
+        "{HeadMaskHR hmh | 36  | Head horizontal posterior mask radius (eye threshold sampling arc)}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{PolygonROI r | 0  | Use pointArray for Custom ROI Region}"
         "{CircleROIRadius cr | 512  | px radius for default centred ROI}"
@@ -186,6 +186,7 @@ int main(int argc, char *argv[])
         "{TrackFish ft | 1  | Track Fish not just the moving prey }"
         "{MeasureMode M | 0 | Click 2 points to measure distance to prey}"
         "{DNNModelFile T | /home/meyerlab/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/ | Location of Tensorflow model file used for classification}"
+        "{HuntEventsFile H |  | csv data file with detected hunt events}"
         ;
 
     ///Parse Command line Args
@@ -215,7 +216,7 @@ int main(int argc, char *argv[])
     window_main.show();
 
     gTrackerState.initGlobalParams(parser,gTrackerState.inVidFileNames);
-
+    pwindow_main->updateHuntEventTable(gTrackerState.vHuntEvents); //Update Hunt Events Table
     //If No video Files have been loaded then Give GUI to User //
     if (gTrackerState.inVidFileNames.empty())
             gTrackerState.inVidFileNames =QFileDialog::getOpenFileNames(nullptr, "Select videos to Process",gTrackerState.gstrinDirVid.c_str(),
@@ -475,7 +476,7 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
 
 
     //std::vector<cv::KeyPoint>  ptFoodblobs;
-    zftblobs ptFoodblobs;
+    zfdblobs ptFoodblobs;
 
     vfishblobs_pt.clear();
     //zftblobs ptFishblobs; //Now global
@@ -603,8 +604,8 @@ void processFrame(MainWindow& window_main, const cv::Mat& frame, cv::Mat& bgStat
                 assert(pfish);
                 zftRenderTrack(pfish->zTrack, frame, outframe,CV_TRACK_RENDER_PATH, cv::FONT_HERSHEY_PLAIN, gTrackerState.trackFntScale+0.2 );
                 //Draw KFiltered Axis
-                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->leftEye,CV_RGB(200,0,0));
-                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->rightEye,CV_RGB(0,200,0));
+                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->lastLeftEyeMeasured,CV_RGB(150,20,20));
+                drawExtendedMajorAxis(outframeHeadEyeDetected,pfish->lastRightEyeMeasured,CV_RGB(20,60,150));
 
                 ++ft;
             }
@@ -903,23 +904,23 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
                 else //Not Stuck On 1st Frame / Maybe Vid Is Over?>
                 {
                    std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << "# *Unable to read next frame." << std::endl;
-                   std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << "# frame of " << gTrackerState.uiTotalFrames <<  " of Video. Moving to next video." <<std::endl;
+                   std::clog << gTimer.elapsed()/60000.0 << " Reached " << nFrame << "# frame of " << gTrackerState.uiTotalFrames <<  " of Video. Moving to next video." << std::endl;
                    //assert(outframe.cols > 1);
 
                    double dVidRelativePosition = capture.get(cv::CAP_PROP_POS_AVI_RATIO);
-                   cout << " Relative Vid.Position : " << dVidRelativePosition << std::endl;
+                   std::cerr << gTimer.elapsed()/60000.0 << " [INFO] Relative Vid.Position : " << dVidRelativePosition << std::endl;
                    if (nFrame < gTrackerState.uiTotalFrames -1 || nFrame < stopFrame || dVidRelativePosition < 0.99)
                    {
-                       std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " [Error] Cannot read next frame! Skipping " << std::endl;
+                       std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " [Error] Cannot read next frame! Skipping to " << nFrame+nErrorFrames << std::endl;
                        nErrorFrames++;
-                       capture.set(cv::CAP_PROP_POS_FRAMES,nFrame+nErrorFrames); //Skip Frame
+                       capture.set(cv::CAP_PROP_POS_FRAMES, nFrame+nErrorFrames); //Skip Frame
                        //removeDataFile(outdatafile); //Delete The Output File
                        //continue; //Skip Frame
                        /// Too Many Errors On Reading Frame
                        if (nErrorFrames > gTrackerState.c_MaxFrameErrors) //Avoid Getting Stuck Here
                        {
                            // Too Many Errors / Fail On Tracking
-                           std::cerr << gTimer.elapsed()/60000.0 << " [Error]  Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
+                           std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nErrorFrames << "  Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
                            gTrackerState.saveState("TrackerConfig.xml");
                            removeDataFile(outdatafile);
                            break;
@@ -999,7 +1000,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
         outframe = frame.clone();
 
 
-        //Pass Processed bgMask which Is then passed on to enhanceMask
+    // Pass Processed bgMask which Is then passed on to enhanceMask
     processFrame(window_main,frame,bgStaticMask,nFrame,outframe,outframeHeadEyeDetect,outframeHead);
 
         double alpha = 0.5;
@@ -1334,7 +1335,7 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
             //Check Ranking Is OK, as long off course that a fishTemplate Has Been Found On This Round -
 
             //If We found one then Delete the other instances waiting for a match - Single Fish Tracker
-            if ( ( gTrackerState.bAllowOnlyOneTrackedItem
+            if ( ( gTrackerState.bTrackedOneFishOnly
                  || pfish->inactiveFrames > gTrackerState.gcMaxFishModelInactiveFrames) &&
                     !pfish->binFocus &&
                  maxTemplateScore > pfish->matchScore ) //Check If it Timed Out / or If Better fish has been found and Only One fish is allowed - Then Delete
@@ -1619,15 +1620,15 @@ void UpdateFishModels(const cv::Mat& maskedImg_gray,fishModels& vfishmodels,zftb
 /// Process Optic Flow of defined food model positions
 /// Uses Lukas Kanard Method to get the estimated new position of Prey Particles
 ///
-int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels,unsigned int nFrame,zftblobs& vPreyKeypoints_next )
+int processFoodOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,foodModels& vfoodmodels,unsigned int nFrame,zfdblobs& vPreyKeypoints_next )
 {
     int retCount = 0;
    std::vector<cv::Point2f> vptPrey_current;
    std::vector<cv::Point2f> vptPrey_next;
 
 
-   zftblobs vPreyKeypoints_current;
-   zftblobs vPreyKeypoints_ret;
+   zfdblobs vPreyKeypoints_current;
+   zfdblobs vPreyKeypoints_ret;
    std::vector<uchar> voutStatus;
    // L1 distance between patches around the original and a moved point, divided by number of pixels in a window, is used as a error measure.
    std::vector<float>    voutError;
@@ -1674,60 +1675,60 @@ return retCount;
 
 
 
-/// Process Optic Flow of defined food model positions
-/// Uses Lukas Kanard Method to get the estimated new position of Prey Particles
-///
-int processFishOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,fishModels& vfishmodels,zftblobs& vPreyKeypoints_next )
-{
-    int retCount = 0;
-   std::vector<cv::Point2f> vpts_current;
-   std::vector<cv::Point2f> vpts_next;
+///// Process Optic Flow of defined food model positions
+///// Uses Lukas Kanard Method to get the estimated new position of Prey Particles
+/////
+//int processFishOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,fishModels& vfishmodels,zftblobs& vPreyKeypoints_next )
+//{
+//    int retCount = 0;
+//   std::vector<cv::Point2f> vpts_current;
+//   std::vector<cv::Point2f> vpts_next;
 
 
-   zftblobs vPreyKeypoints_current;
-   zftblobs vPreyKeypoints_ret;
-   std::vector<uchar> voutStatus;
-   // L1 distance between patches around the original and a moved point, divided by number of pixels in a window, is used as a error measure.
-   std::vector<float>    voutError;
+//   zftblobs vPreyKeypoints_current;
+//   zftblobs vPreyKeypoints_ret;
+//   std::vector<uchar> voutStatus;
+//   // L1 distance between patches around the original and a moved point, divided by number of pixels in a window, is used as a error measure.
+//   std::vector<float>    voutError;
 
-   fishModel* pfish = NULL;
-   fishModels::iterator ft;
+//   fishModel* pfish = NULL;
+//   fishModels::iterator ft;
 
-    //Fill POint Vector From foodmodel vector
-   for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
-   {
-       pfish = ft->second;
-       cv::KeyPoint kptFish(pfish->zTrack.centroid,pfish->zfishBlob.size);
-       vPreyKeypoints_current.push_back(kptFish  );
-   }
+//    //Fill POint Vector From foodmodel vector
+//   for ( ft  = vfishmodels.begin(); ft!=vfishmodels.end(); ++ft)
+//   {
+//       pfish = ft->second;
+//       cv::KeyPoint kptFish(pfish->zTrack.centroid,pfish->zfishBlob.size);
+//       vPreyKeypoints_current.push_back(kptFish  );
+//   }
 
-    cv::KeyPoint::convert(vPreyKeypoints_current,vpts_current);
+//    cv::KeyPoint::convert(vPreyKeypoints_current,vpts_current);
 
-    //Calc Optic Flow for each food item
-    if (vpts_current.size() > 0 && !frame_grey_prev.empty())
-        cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vpts_current,vpts_next,voutStatus,voutError,cv::Size(31,31),2);
+//    //Calc Optic Flow for each food item
+//    if (vpts_current.size() > 0 && !frame_grey_prev.empty())
+//        cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vpts_current,vpts_next,voutStatus,voutError,cv::Size(31,31),2);
 
-    cv::KeyPoint::convert(vpts_next,vPreyKeypoints_next);
+//    cv::KeyPoint::convert(vpts_next,vPreyKeypoints_next);
 
-    //update food item Location
-        //Loop through points
-    for (int i=0;i<(int)vPreyKeypoints_ret.size();i++)
-    {
-        if (!voutStatus.at(i))
-            continue; //ignore bad point
-        vPreyKeypoints_next.push_back(vPreyKeypoints_ret.at(i)); //fwd the good ones
-//        // find respective food model, update state
-//        vfoodmodels[i]->zTrack.centroid = vPreyKeypoints_next.at(i);
-//        vfoodmodels[i]->zfoodblob.pt = vPreyKeypoints_next.at(i);
-//        vfoodmodels[i]->updateState(&vfoodmodels[i]->zfoodblob,0,
-//                                    vPreyKeypoints_next.at(i),
-//                                    nFrame,vfoodmodels[i]->blobMatchScore,
-//                                    vfoodmodels[i]->blobRadius);
-//        retCount++;
-    } //Check if Error
-//
-return retCount;
-}
+//    //update food item Location
+//        //Loop through points
+//    for (int i=0;i<(int)vPreyKeypoints_ret.size();i++)
+//    {
+//        if (!voutStatus.at(i))
+//            continue; //ignore bad point
+//        vPreyKeypoints_next.push_back(vPreyKeypoints_ret.at(i)); //fwd the good ones
+////        // find respective food model, update state
+////        vfoodmodels[i]->zTrack.centroid = vPreyKeypoints_next.at(i);
+////        vfoodmodels[i]->zfoodblob.pt = vPreyKeypoints_next.at(i);
+////        vfoodmodels[i]->updateState(&vfoodmodels[i]->zfoodblob,0,
+////                                    vPreyKeypoints_next.at(i),
+////                                    nFrame,vfoodmodels[i]->blobMatchScore,
+////                                    vfoodmodels[i]->blobRadius);
+////        retCount++;
+//    } //Check if Error
+////
+//return retCount;
+//}
 
 
 
@@ -2175,7 +2176,7 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
         gTrackerState.iLastKnownGoodTemplateRow = 0;
     }
 
-    if ((char)keyboard == 'z')
+    if ((char)keyboard == 'z') //Reset To Random Template
     {
         gTrackerState.bStoreThisTemplate = false;
         std::stringstream ss;
@@ -2317,7 +2318,7 @@ bool saveImage(QString frameNumberString,QString dirToSave,QString filenameVid,c
 /// \return
 /// \note Draws Blue circle around food blob, with relative size
 ///
-int processPreyBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& frameOut,zftblobs& ptFoodblobs)
+int processPreyBlobs(const cv::Mat& frame_grey,const cv::Mat& maskimg,cv::Mat& frameOut,zfdblobs& ptFoodblobs)
 {
 
     cv::Mat frameMasked;
@@ -2467,6 +2468,7 @@ void writeFishDataCSVHeader(QFile& data)
     output << "\t lEyeFitScore";
     output << "\t rEyeFitScore";
     output << "\t nFailedEyeDetectionCount";
+    output << "\t HuntModeScore";
     output << "\t RotiferCount \n";
 
 }
@@ -3054,8 +3056,8 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
 //              ///Make Rotation MAtrix cv::Point(imgFishAnterior.cols/2,imgFishAnterior.rows/2)
                 cv::Point2f ptRotCenter = fishRotAnteriorBox.center - (cv::Point2f)rectfishAnteriorBound.tl();
 
-              float fR = fish->zfishBlob.response; //The FishNet Recognition Score
-
+              float fR = fish->zfishBlob.FishClassScore; //The FishNet Recognition Score
+              float fH = fish->zfishBlob.HuntModeClassScore; //The FishNet Recognition Score
 
               //Allow For Sub Optimal Matches To be processed Up to Here //
               //if (fish->templateScore < gTemplateMatchThreshold)
@@ -3131,20 +3133,23 @@ void detectZfishFeatures(MainWindow& window_main, const cv::Mat& fullImgIn, cv::
                   colTxt = CV_RGB(100,100,100);
               else
                   colTxt = CV_RGB(200,50,0);
-
               {
                   ss.str(""); //Empty String
-                  ss << "L:" << fish->leftEyeTheta;
+                  ss << "L:" << fish->lastLeftEyeMeasured.getEyeAngle();
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45,pasteRegion.br().y+10),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str(""); //Empty String
-                  ss << "R:"  << fish->rightEyeTheta;
+                  ss << "R:"  << fish->lastRightEyeMeasured.getEyeAngle();
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+25),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
                   ss.str(""); //Empty String
                   ss << "V:"  << ((int)((fish->leftEyeTheta - fish->rightEyeTheta)*10)) /10.0;
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+40),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
-                  ss.str("");
-                  ss << "nR:"  << ((int)((fR*1000.0)) /1000.0);
+                  ss.str(""); //Display Hunt And Fish Classifier Scores
+                  ss << "F:"  << ((int)((fR*1000.0)) /1000.0);
                   cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+55),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
+                  ss.str(""); ss << "H:" << ((int)((fH*1000.0)) /1000.0); //Classifier score
+                  cv::putText(fullImgOut,ss.str(),cv::Point(pasteRegion.br().x-45, pasteRegion.br().y+70),cv::QT_FONT_NORMAL,0.4,colTxt,1 );
+                  drawExtendedMajorAxis(imgFishHeadProcessed,fish->lastLeftEyeMeasured,CV_RGB(255,0,0));
+                  drawExtendedMajorAxis(imgFishHeadProcessed,fish->lastLeftEyeMeasured,CV_RGB(0,0,255));
               }
 
               //Check If Too Many Eye Detection Failures - Then Switch Template

@@ -116,6 +116,24 @@ extern cv::Point gptHead,gptTail; //Candidate Fish Contour Position Of HEad - Us
 //extern cv::Point ptROI3 ;
 //extern cv::Point ptROI4 ;
 
+///\brief Data Structure For Hunt Event Record //
+typedef struct huntEvent {
+    huntEvent();
+    huntEvent(string prowID,uint pstartFrame,uint pendFrame,int plabel) {
+        rowID      = prowID; //Used to Connect Updated RoWS With Original HUntEvent Table in R
+        startFrame = pstartFrame;
+        endFrame   = pendFrame;
+        label      = plabel;
+    }
+public:
+    string rowID    = "N";
+    uint startFrame = 0;
+    uint endFrame   = 0;
+    int label       = 0;
+
+} t_HuntEvent;
+
+
 
 class trackerState
 {
@@ -128,11 +146,13 @@ class trackerState
      void initGlobalParams(cv::CommandLineParser& parser,QStringList& inVidFileNames); //Read Command Line/Config Options
      /// \brief Initializes ROI at start of tracking depending on user params / either large circle or user defined/configurable polygon
      void  initROI(uint framewidth,uint frameheight);
+     std::vector<t_HuntEvent> loadHuntEvents(QString filename); //Load List Of HuntEvent Frames to Validate
+     bool saveHuntEventsToFile(QString filename,std::vector<t_HuntEvent> vHuntEvents); //Save Updated Hunt Event List TO File
 
      /// \brief Load Q Resources
      static void loadFromQrc(QString qrc,cv::Mat& imRes,int flag = cv::IMREAD_COLOR); //Load Resources
 
-      enum state {PAUSED,TRACKING,DIST_MEASURE,SAVING,EXITING};
+     enum state {PAUSED,TRACKING,DIST_MEASURE,SAVING,EXITING};
 
       /// VIDEO AND BACKGROUND PROCESSING //
       float gfVidfps                   = 1;
@@ -155,7 +175,7 @@ class trackerState
       const double dMeanBlobArea                  = 100; //Initial Value that will get updated
       const double dVarBlobArea                   = 20;
       const unsigned int gc_fishLength            = 100; //px Length Of Fish
-      const unsigned int thresh_minfishblobarea     = 400; //Min area above which to Filter The fish blobs
+      const unsigned int thresh_minfishblobarea     = 800; //Min area above which to Filter The fish blobs
       const unsigned int thresh_maxfishblobarea     = 4850; //max area for fish blob
       const unsigned int gthres_maxfoodblobarea     = thresh_minfishblobarea/3;
 
@@ -171,9 +191,9 @@ class trackerState
       const int thActive                            = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
       const int gc_FishTailSpineSegmentLength_init  = 16;
       int gFoodReportInterval                       = (int)gfVidfps;
-      const int nTemplatesToLoad                    = 11; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+      const int nTemplatesToLoad                    = 13; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
       const int gi_FoodModelNumberLimit             = 250; // Maximum Number of Food Objects /Prey To track
-      const int c_MaxFrameErrors                    = 20; //Limit of frame read errors before quiting tracking
+      const int c_MaxFrameErrors                    = 200; //Limit of frame read errors before quiting tracking
 
       int keyboard; //input from keyboard
       int screenx,screeny;
@@ -208,7 +228,9 @@ class trackerState
      // Global Control Vars ///
      /// \brief bTracking
      ///// Option Flags //
-      bool bAllowOnlyOneTrackedItem = false;
+
+      bool bTrackedOneFishOnly      = true;
+
       bool bshowMask                = false; //Debug option True will show the BGSubstracted IMage/Processed Mask
       bool bshowDetectorDebugImg    = false; //Debug option  True will show the classifier scoring Masks and Extracted Fish Anterior Images
 
@@ -255,12 +277,12 @@ class trackerState
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
       bool bMakeCustomROIRegion                 = false; /// Uses Point array to construct
       bool bUseMaskedFishForSpineDetect         = true; /// When True, The Spine Is fit to the Masked FG Fish Image and not the full frame- (Masks can lose fine features)
-      bool bTemplateSearchThroughRows           = true; /// Stops TemplateFind to Scan Through All Rows (diff template images)- speeding up search + fail - Rows still Randomly Switch between attempts
+      bool bTemplateSearchThroughRows           = false; /// Stops TemplateFind to Scan Through All Rows (different template images)- speeding up search + fail - Rows still Randomly Switch between attempts
       bool bRemovePixelNoise                    = false; //Run Gaussian Filter Noise Reduction During Tracking
       bool bUseGPU                              = false;
       bool bUseOpenCL                           = true;
-      bool bUseHistEqualization                 = true; //To enhance to contrast in Eye Ellipse detection
-      bool bUseEllipseEdgeFittingMethod         = true; //Allow to Use the 2nd Efficient Method of Ellipsoid Fitting if the 1st one fails - Set to false to Make trakcing Faster
+      bool bUseHistEqualization                 = false; //To enhance to contrast in Eye Ellipse detection
+      bool bUseEllipseEdgeFittingMethod         = false; //Use the 2nd Efficient Method of Ellipsoid Fitting as standart after 1st method / False: Only used if the 1st one fails - Set to false to Make tracking Faster
       bool bAdaptEyeMaskVOffset                 = true; // Check in fishDetector.cpp
 
       /// \todo Make this path relative or embed resource
@@ -286,26 +308,29 @@ class trackerState
       /// Eye Tracking Params
       int gi_CannyThres           = 150;
       int gi_CannyThresSmall      = 50; //Aperture size should be odd between 3 and 7 in function Canny
-      int gi_maxEllipseMajor      = 32; /// thres  for Eye Ellipse Detection methods
+      int gi_maxEllipseMajor      = 40; /// thres  for Eye Ellipse Detection methods
       int gi_minEllipseMajor      = 21; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
-      int gi_minEllipseMinor      = 0; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
+      int gi_minEllipseMinor      = 1; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
+      int gi_maxEllipseMinor      = 25; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
-      int thresEyeEdgeCanny_low             = -2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
-      int thresEyeEdgeCanny_high            = 2; //-23 Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int thresEyeEdgeCanny_low             = -18; // Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int thresEyeEdgeThresholdBlockSize    = 31; // Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int edgeCanny_ApertureSize            = 7;
 
       int gEyeMaskErrosionIterations      = 1;
       int gFishTailSpineSegmentLength     = 16;
       // Eye Masks //
-      int iEyeHMaskSepRadius              = 39; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
+      int iEyeHMaskSepRadius              = 36; //Radius of Mask centred at bottom of head, also used as Threshold Sampling Arc in Fish Head Mask
       //int giEyeIsolationMaskRadius       = 17; Not Used //Mask circle between eyes
-      int iEyeVMaskSepWidth               = 15; //5 px width vertical line separates the eyes for segmentation
+      int iEyeVMaskSepWidth               = 4; //5 px width vertical line separates the eyes for segmentation
       int iEyeVMaskSepHeight              = 46; //Radius for rectMidEllipse : The Ellipsoid Mask Of Body In little Upsampled EyeDiscovery Image
       int eyeMaskVLineThickness           = 15; //Width Vertical Midline Separating The eyes
 
       /// Fishnet Classifier params //
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_classifier_thres  = 0.99f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_classifier_thres  = 0.98f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_classifierHuntMode_thres = 0.4;
       float fishnet_inputSparseness = 0.1f; //Ratio of Active Pixels in Binarized input Image
 
       // BackProp YAML model - DEpecrated
@@ -314,20 +339,24 @@ class trackerState
       string strDNNTensorFlowModelFile              = "~/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc/"; /// Updated DNN model file location - Where TensorDNN.py script output is saved.
       string strDNNTensorFlowVerticalModelFile      = "~/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir/"; ///\deprecated \remarks Load  Directional model to correct up-right image of fish in image region - used for direction detection
 
+      /// Hunt Event Data
+      QString  strHuntEventsDataFile;
+      std::vector<t_HuntEvent> vHuntEvents;
+
       ///Fish Features Detection Params
       int gFishTemplateAngleSteps     = 1;
       int gEyeTemplateAngleSteps      = 5;
 
-      double eyeStepIncrement         = 0.8; //Eye Angles Can be Slowly Updated on each Frame- Change with Step Size eyeStepIncrement
-      double gTemplateMatchThreshold  = 0.81; //Template Matching is tested After Fish Net Classifier Has passed-
+      double eyeStepIncrement               = 0.8; //DEPRECATED by Kalman F: Eye Angles Can be Slowly Updated on each Frame- Change with Step Size eyeStepIncrement
+      double gTemplateMatchThreshold        = 0.69; //Template Matching is tested After Fish Net Classifier Has passed-
       double gTemplateMatchThreshold_LowLimit = 0.65;
-      double gTemplateMatchThreshold_UpLimit = 0.95;
+      double gTemplateMatchThreshold_UpLimit  = 0.95;
 
       int gFishBoundBoxSize               = 100; ///100 For HRes Top CamB 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
       float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
-      int  gDisplacementLimitPerFrame    = gFishBoundBoxSize*4; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
-      int  gAngleChangeLimitPerFrame    = 90; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
+      int  gDisplacementLimitPerFrame     = gFishBoundBoxSize*4; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
+      int  gAngleChangeLimitPerFrame      = 90; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
 
       int iLastKnownGoodTemplateRow   = 0;
       int iFishAngleOffset            = 0;
@@ -365,6 +394,9 @@ class trackerState
       cv::Mat mfgFishMask;
       cv::Mat mfgFishFrame;
       cv::Mat mfgPreyMask;
+
+      std::map<QString,int> maphuntOutcomeLabels;
+
     /// overload size operator / return full state object size
      size_t size() const _GLIBCXX_NOEXCEPT
     { return 1; //mStateValue.size()*mStateValue[1].size()*mStateValue[1][1].size();
@@ -391,7 +423,8 @@ class trackerState
             CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(thresEyeEdgeCanny_low),CEREAL_NVP(gEyeMaskErrosionIterations),
             CEREAL_NVP(gi_MaxEllipseSamples),CEREAL_NVP(gi_VotesEllipseThres),CEREAL_NVP(gi_minEllipseMinor),CEREAL_NVP(gi_minEllipseMajor),CEREAL_NVP(gi_maxEllipseMajor),
             CEREAL_NVP(gi_CannyThresSmall),CEREAL_NVP(gi_CannyThres),CEREAL_NVP(gdMOGBGRatio),
-            CEREAL_NVP(MOGhistory),CEREAL_NVP(thresh_minfishblobarea),CEREAL_NVP(thresh_maxfishblobarea),CEREAL_NVP(iEyeHMaskSepRadius),CEREAL_NVP(iEyeVMaskSepWidth)
+            CEREAL_NVP(MOGhistory),CEREAL_NVP(thresh_minfishblobarea),CEREAL_NVP(thresh_maxfishblobarea),CEREAL_NVP(iEyeHMaskSepRadius),
+            CEREAL_NVP(iEyeVMaskSepWidth)//,CEREAL_NVP(maphuntOutcomeLabels)
             ); // serialize things by passing them to the archive
      //archive();
      //archive(CEREAL_NVP(userROI));

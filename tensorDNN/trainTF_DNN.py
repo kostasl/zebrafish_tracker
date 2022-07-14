@@ -46,7 +46,7 @@ batch_size = 32
 img_height = 38
 img_width = 28
 epochs = 150
-
+num_classes = 4
 
 ## Had To run x3 times with a validation split 0.3 - 0.5 before I got good filtering of entire scene - as tested by testModel
 def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
@@ -79,7 +79,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
         color_mode='grayscale',
         batch_size=batch_size,
         class_mode='binary',
-        classes=['fish', 'nonfish'])
+        classes=['fish','hunting', 'nonfish'])
 
     test_datagen = tf.keras.preprocessing.image.ImageDataGenerator()
     validation_generator = test_datagen.flow_from_directory(
@@ -88,7 +88,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
         color_mode='grayscale',
         batch_size=batch_size,
         class_mode='binary',
-        classes=['fish', 'nonfish'])
+        classes=['fish','hunting', 'nonfish'])
 
     y_labels = np.concatenate([y for x, y in train_ds], axis=0)
     x_images = np.concatenate([x for x, y in train_ds], axis=0)
@@ -146,7 +146,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
     normalization_layer = tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255)
 
     ## Create the model ##
-    num_classes = 3
+
     if model is None:
         model = Sequential([
             data_augmentation,
@@ -346,8 +346,8 @@ def testModel(strTImg):
 
 class_names = ["fish", "nonfish"]
 
-#
-# # #
+
+# # # #
 model_dir_invar = None
 model_directional = None
 ## LOAD MODEL ##

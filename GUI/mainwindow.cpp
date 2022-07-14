@@ -12,6 +12,10 @@
 #include "QtOpencvCore.hpp"
 #include <QStringListModel>
 #include <qlineedit.h>
+#include <QTimeLine>
+#include <QMessageBox>
+#include <QTableWidgetItem>
+#include <QComboBox>
 
 extern QFile outfishdatafile;
 extern QFile outfooddatafile;
@@ -92,8 +96,6 @@ MainWindow::MainWindow(QWidget *parent) :
     // Glue model and view together
     this->ui->listView->setModel(mModelMessageList);
 
-
-
     this->ui->horizontalSlider->installEventFilter(this);
 
     this->ui->actionTrack_Fish->setChecked(gTrackerState.bTracking);
@@ -102,8 +104,11 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->checkBoxNoiseFilter->setChecked(gTrackerState.bRemovePixelNoise);
 
     this->ui->checkBoxHistEqualizer->setChecked(gTrackerState.bUseHistEqualization);
-
+    this->ui->checkBoxEdgeDetectEllipsoid->setChecked(gTrackerState.bUseEllipseEdgeFittingMethod);
     createSpinBoxes();
+    //Make Table Resize
+     this->ui->tblHuntEvents->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
     nFrame = 0;
     //Reset Point Pair
     userPointPair.first.x = userPointPair.first.y = -10;
@@ -118,7 +123,7 @@ void MainWindow::createSpinBoxes()
     //this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
     //this->ui->spinBoxEyeThres->setRange(-100,100); //-Set On GUI form -Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setValue(gTrackerState.thresEyeEdgeCanny_low);
-    this->ui->spinBoxEyeThres_H->setValue(gTrackerState.thresEyeEdgeCanny_high);
+    this->ui->spinBoxEyeThres_H->setValue(gTrackerState.thresEyeEdgeThresholdBlockSize);
 
     this->ui->spinBoxFoodThresMax->setValue(gTrackerState.g_SegFoodThesMax);
     this->ui->spinBoxFoodThresMin->setValue(gTrackerState.g_SegFoodThesMin);
@@ -194,6 +199,50 @@ void MainWindow::createSpinBoxes()
 
 }
 
+void MainWindow::updateHuntEventTable(std::vector<t_HuntEvent> vHuntEvents)
+{
+
+
+
+    btblUpdating = true;
+    this->ui->tblHuntEvents->clearContents();
+
+    //Make Hunt Score Combo Options
+    QComboBox* combo = new QComboBox();
+          for (std::map<QString,int>::const_iterator scoreIter = gTrackerState.maphuntOutcomeLabels.begin();
+               scoreIter != gTrackerState.maphuntOutcomeLabels.end(); ++scoreIter) {
+            combo->addItem(scoreIter->first,scoreIter->second);
+          }
+
+    /// Load huntevents table //
+    for (int i=0;i< vHuntEvents.size();i++)
+    {
+        this->ui->tblHuntEvents->insertRow(i);
+        this->ui->tblHuntEvents->setItem(i, 0, new QTableWidgetItem(QString::number(vHuntEvents[i].startFrame) ));
+        this->ui->tblHuntEvents->setItem(i, 1, new QTableWidgetItem(QString::number(vHuntEvents[i].endFrame) ));
+
+
+        //levelCombo->addItems(QStringList() << "Guest" << "User" << "Admin");
+        //Make Hunt Score Combo Options
+        QComboBox* combo = new QComboBox();
+              for (std::map<QString,int>::const_iterator scoreIter = gTrackerState.maphuntOutcomeLabels.begin();
+                   scoreIter != gTrackerState.maphuntOutcomeLabels.end(); ++scoreIter) {
+                combo->addItem(scoreIter->first,scoreIter->second);
+              }
+        combo->setCurrentIndex(vHuntEvents[i].label);
+        ui->tblHuntEvents->setCellWidget(i, 2, combo);
+//        this->ui->tblHuntEvents->setItem(i, 2, new QTableWidgetItem(QString::number(vHuntEvents[i].label) ));
+    }
+    btblUpdating = false;
+
+
+
+
+
+
+
+
+}
 void MainWindow::showVideoFrame(cv::Mat& img,unsigned int nFrame)
 {
     //this->ui->horizontalSlider->setValue(nFrame);
@@ -649,6 +698,17 @@ void MainWindow::handleSliderChange(QEvent* event)
         this->ui->horizontalSlider->setToolTip(QString::number(this->ui->horizontalSlider->value()));
     }
 }
+
+
+
+void MainWindow::on_horizontalSlider_sliderMoved(int position)
+{
+    gTrackerState.bStartFrameChanged = true;
+    gTrackerState.bPaused = false;
+    nFrame = this->ui->horizontalSlider->value();
+    this->ui->spinBoxFrame->setValue(nFrame);
+}
+
 
 void MainWindow::handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent)
 {
@@ -1365,7 +1425,8 @@ void MainWindow::on_spinBoxEyeThres_H_valueChanged(int arg1)
     if (bSceneMouseLButtonDown)
         LogEvent(QString("Changed higher Canny Eye Seg Threshold:") + QString::number(arg1));
 
-    gTrackerState.thresEyeEdgeCanny_high = arg1;
+    gTrackerState.thresEyeEdgeThresholdBlockSize = arg1;
+    gTrackerState.thresEyeEdgeCanny_low = min(arg1,gTrackerState.thresEyeEdgeCanny_low);
 }
 
 
@@ -1376,4 +1437,94 @@ void MainWindow::on_spinBoxEyeThres_valueChanged(int arg1)
         LogEvent(QString("Changed lower Canny Eye Seg Threshold:") + QString::number(arg1));
 
     gTrackerState.thresEyeEdgeCanny_low = arg1;
+    gTrackerState.thresEyeEdgeThresholdBlockSize = max(arg1,gTrackerState.thresEyeEdgeThresholdBlockSize );
 }
+
+void MainWindow::on_tblHuntEvents_cellDoubleClicked(int row, int column)
+{
+    //QMessageBox::information(this, "Info","Cell at row " + QString::number(row) + " column "+ QString::number(column) + " was double clicked.");
+
+
+}
+
+/// \brief take user to begining of selected hunt event
+void MainWindow::on_tblHuntEvents_cellClicked(int row, int column)
+{
+
+    gTrackerState.bPaused = false;
+    int eventIdx          = row;
+    //Check if Cell is empty BUG: \todo find a better way
+    if (!ui->tblHuntEvents->item(row,0))
+        return;
+    // Go to Selected Hunt Event
+    gTrackerState.uiStartFrame =  nFrame = ui->tblHuntEvents->item(row,0)->text().toUInt();
+    gTrackerState.uiStopFrame  =  ui->tblHuntEvents->item(row,1)->text().toUInt();
+    this->ui->spinBoxFrame->setValue(nFrame);
+    gTrackerState.bStartFrameChanged = true;
+
+    LogEvent("Moving to Hunt Event Idx :" + QString::number(eventIdx) );
+}
+
+// Update Hunt Event Data - But Ignore Unless User Instigated
+void MainWindow::on_tblHuntEvents_itemChanged(QTableWidgetItem *item)
+{
+    if (btblUpdating)
+        return; //Avoid Recursive Updating
+
+    if (item->column() == 0)
+        gTrackerState.vHuntEvents[item->row()].startFrame = item->text().toUInt();
+    if (item->column() == 1)
+        gTrackerState.vHuntEvents[item->row()].endFrame = item->text().toUInt();
+    if (item->column() == 2)
+        gTrackerState.vHuntEvents[item->row()].label= item->text().toInt();
+
+    this->updateHuntEventTable(gTrackerState.vHuntEvents);
+}
+
+
+void MainWindow::on_btnAddHEvent_clicked()
+{
+    btblUpdating = true;
+    ui->tblHuntEvents->insertRow(ui->tblHuntEvents->currentRow()+1);
+    t_HuntEvent newEvent(("N"+QString::number(ui->tblHuntEvents->currentRow()+1)).toStdString()
+                         ,nFrame,nFrame+100,0);
+    newEvent.rowID = ui->tblHuntEvents->currentRow()+1;
+    gTrackerState.vHuntEvents.push_back(newEvent);
+    btblUpdating = false;
+}
+
+
+void MainWindow::on_btnAddHEvent_triggered(QAction *arg1)
+{
+}
+
+
+void MainWindow::on_btnRemoveHEvent_triggered(QAction *arg1)
+{
+}
+
+
+void MainWindow::on_btnSaveHEvents_released()
+{
+    bool ret = gTrackerState.saveHuntEventsToFile(gTrackerState.strHuntEventsDataFile,
+                                       gTrackerState.vHuntEvents);
+    if (!ret)
+        QMessageBox::warning(this, "Saving hunt event table","Failed to save updated hunt events to file :"+gTrackerState.strHuntEventsDataFile);
+}
+
+
+void MainWindow::on_btnRemoveHEvent_released()
+{
+
+    btblUpdating = true;
+    gTrackerState.vHuntEvents.erase(gTrackerState.vHuntEvents.begin() + ui->tblHuntEvents->currentRow());
+    ui->tblHuntEvents->removeRow(ui->tblHuntEvents->currentRow());
+    btblUpdating = false;
+}
+
+
+void MainWindow::on_checkBoxEdgeDetectEllipsoid_toggled(bool checked)
+{
+    gTrackerState.bUseEllipseEdgeFittingMethod = checked;
+}
+

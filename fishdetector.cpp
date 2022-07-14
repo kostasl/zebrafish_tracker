@@ -379,7 +379,8 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
   int iSlidePx_V_lim = min(imgFishAnterior_bin.rows-gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + iSlidepxLim);//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
 
-  float scoreFish,scoreNonFish,dscore,max_dscore = 0.0f; //Recognition Score tested in both Vertical Directions
+  float scoreFish,scoreNonFish,scoreHuntMode,dscore,max_dscore = 0.0f; //Recognition Score tested in both Vertical Directions
+  float mxLocFishScore,mxLocHuntScore = 0.0f; // Classification Scores for mode at point of best FishClass Match
   // Do netDetect using a Sliding window
   cv::Mat imgFishAnterior_Norm_tmplcrop_vflip;
   for (int i=iSlidePx_H_begin;i <= iSlidePx_H_lim;i+=iSlidePx_H_step)
@@ -391,10 +392,10 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
           cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate, gTrackerState.gszTemplateImg );
           //CROP Extract a Template sized subregion of Orthonormal Fish
           imgFishAnterior_bin(rectFishTemplateBound).copyTo(imgFishAnterior_Norm_tmplcrop);
-
-          dscore = this->netDNNDetect_fish(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreNonFish);
+          //dscore combines fish Score + huntMode score
+          dscore = this->netDNNDetect_fish(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreHuntMode,scoreNonFish);
           // Overide with Fish Score Only - As frequently Fish is missed
-          dscore = scoreFish;
+          dscore = scoreFish+scoreHuntMode;
           ///Do Not Test Orientation - Blob Should Have the correct Angle
           //Check Both Vertical Orientations
           //cv::flip(imgFishAnterior_Norm_tmplcrop, imgFishAnterior_Norm_tmplcrop_vflip, 0);
@@ -406,12 +407,18 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
           if (dscore > max_dscore)
           {
               max_dscore = dscore;
+              mxLocFishScore = scoreFish;
+              mxLocHuntScore = scoreHuntMode;
               ptmax.y = j + gTrackerState.gszTemplateImg.height/2;
               ptmax.x = i + gTrackerState.gszTemplateImg.width/2;
           }
 
           if (bstopAtFirstMatch && max_dscore > gTrackerState.fishnet_classifier_thres)
+          {
+              //if (mxLocHuntScore > gTrackerState.fishnet_classifierHuntMode_thres)
+                  //qDebug("Hunt Mode On");
                break;
+          }
           //qDebug() << "(" << i+sztemplate.width/2 << "," <<j+sztemplate.height/2<<") = " << round(sc1*100)/100.0;
             //qDebug() << maskRegionScore_Norm.at<float>(j+gTrackerState.gszTemplateImg.height/2,
             //                                           i+gTrackerState.gszTemplateImg.width/2);
@@ -425,10 +432,14 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     //Need to Rotate Score Image Back to Original Orientiation to return Coordinates oF Best Match
     //- Removed  - Scores scaled too low Find Max Match Position In Non-Norm pic (original orientation)
     double minL1, maxL1;
-    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,cv::Size(iSlidePx_H_step*2+1,iSlidePx_V_step*2+1),iSlidePx_H_step,iSlidePx_V_step);
+    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,
+                     cv::Size(max(2*(iSlidePx_H_step),2)+1,max(2*(iSlidePx_V_step),20)+1),
+                     max(iSlidePx_H_step/2,30),max(iSlidePx_V_step/2,30),BORDER_ISOLATED);
+
     cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, max_dscore, 0, cv::NORM_MINMAX);
+    //ptmax = mxLocFishScore;
     cv::minMaxLoc(maskRegionScore_Norm,&minL1,&maxL1,&ptmin,&ptmax);
-    max_dscore = maxL1;
+    //max_dscore = maxL1;
     // Rotate Max Point Back to Original Orientation
     //cv::Mat MrotInv = cv::getRotationMatrix2D( ptRotCenter, -fishblob.angle,1.0); //Rotate Upwarte Upwards
     //cv::warpAffine(maskRegionScore,outmaskRegionScore,MrotInv,szFishAnteriorNorm);
@@ -437,21 +448,21 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     // End Of FishNet Detection //
 
 
-    //Update Blob Location And add Classifier Score
+    //Update Blob Location And add Classifier Score if Higher than existing
      //Save Recognition Score - Don t use the Gaussian Blurred one -Too low
     if (max_dscore > fishblob.response)
     {
         fishblob.response = max_dscore;
+        fishblob.FishClassScore = mxLocFishScore;
+        fishblob.HuntModeClassScore = mxLocHuntScore;
         fishblob.pt = ptmax+fishRotAnteriorBox_Bound.tl(); //Shift Blob Position To Max  To Max Recognition Point
         //cv::circle(maskRegionScore_Norm,ptmax,3,CV_RGB(max_dscore,max_dscore,max_dscore),1);
     }else
     {
         //cv::circle(imgFishAnterior,ptmax,3,CV_RGB(250,250,250),1); //Indicate Max Score position By Grey Circle
         //cv::imshow("imgFishAnterior scoreBlobRegion "  + regTag, imgFishAnterior);
-
         //cv::imshow(("FishNet ScoreRegion (Norm) ") + regTag, maskRegionScore_Norm);
-
-        qDebug() << "scoreBlobRegion :" << max_dscore << " - Blob had higher class. score :" << fishblob.response ;
+        //qDebug() << "scoreBlobRegion :" << max_dscore << " - Blob had higher class. score :" << fishblob.response ;
     }
 
 
@@ -696,7 +707,7 @@ float fishdetector::netDetect(cv::Mat imgRegion_bin,float &fFishClass,float & fN
     return(fFishClass-fNonFishClass);
 }
 
-float fishdetector::netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,float & fNonFishClass)
+float fishdetector::netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,float & fHuntModeClass,float & fNonFishClass)
 {
     //std::cout << ".  run prediction..." << std::endl;
     cv::resize(imgRegion_bin,imgRegion_bin,{28,38});
@@ -716,12 +727,13 @@ float fishdetector::netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,fl
       }
        /// \TODO Exclude Small Fish From Here
        fFishClass = results[0][0]; //+results[0][2]; //Add Small and Large Fish Class Togetherresults[0][1] //Shifted
-       fNonFishClass = results[0][1];//1.0f - fFishClass;//results[0][2];
+       fHuntModeClass = results[0][1];
+       fNonFishClass = results[0][2];//1.0f - fFishClass;//results[0][2];
     }
     //std::cout << std::endl;
  //##Invert so Max Output predicts Fish
  //#return(1.0f-fFishClass);
-   return(fFishClass-fNonFishClass);
+   return((fFishClass+fHuntModeClass)-fNonFishClass);
 }
 
 
@@ -767,12 +779,12 @@ void fishdetector::test()
     float fCorrectNF_class = 0.0;
 
     qDebug() << "~~~Test Fish templates~~~";
-    float fishClassScore,nonfishScore,dscore;
+    float fishClassScore,nonfishScore,huntModeScore,dscore;
     for (int i=0;i<vfish_mat.size();i++)
     {
         cv::Mat imgTempl = vfish_mat[i];
 
-        dscore = gTrackerState.fishnet.netDNNDetect_fish(imgTempl,fishClassScore,nonfishScore);
+        dscore = gTrackerState.fishnet.netDNNDetect_fish(imgTempl,fishClassScore,huntModeScore,nonfishScore);
         if (fishClassScore > -1)
             fsumErrF += pow((1-fishClassScore) + (0-nonfishScore),2);
         if (fishClassScore > nonfishScore) //Count Classification Errors
@@ -795,7 +807,7 @@ void fishdetector::test()
     {
         cv::Mat imgTempl = vnonfish_mat[i];
 
-        dscore = gTrackerState.fishnet.netDNNDetect_fish(imgTempl,fishClassScore,nonfishScore);
+        dscore = gTrackerState.fishnet.netDNNDetect_fish(imgTempl,fishClassScore,huntModeScore,nonfishScore);
         qDebug() << "Non-Fish img gave F:" << fishClassScore << " NF:" << nonfishScore;
         if (fishClassScore > -1)
             fsumErrNF += pow((0-fishClassScore) + (1-nonfishScore),2);

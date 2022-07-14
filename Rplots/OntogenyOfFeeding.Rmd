@@ -116,7 +116,7 @@ source("TrajectoryAnalysis.r")
 source("HuntingEventAnalysis_lib.r")
 
 
-setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 
 ## To compile to different destination run:
