@@ -39,11 +39,11 @@ DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from 
 DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
 G_APPROXFPS              <- 60
 G_THRESHUNTANGLE         <- 20 #Define Min Angle Both Eyes need for a hunting event to be assumed
-G_THRESHUNTVERGENCEANGLE <- 43 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
-G_HUNTSCORETHRES         <- 0.9 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
+G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_HUNTSCORETHRES         <- 0.95 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
 G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
-G_MINGAPBETWEENEPISODES  <- G_APPROXFPS
-G_MINEPISODEDURATION     <- G_APPROXFPS/2
+G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/3
+G_MINEPISODEDURATION     <- G_APPROXFPS/3
 G_MIN_BOUTSPEED          <- 0.2 ##mm/frame - Need to be above to be considered A Motion Bout
 G_THRES_CAPTURE_SPEED    <-  16 ###15##mm/sec ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
 G_THRES_MOTION_BOUT_SPEED <- 2.9 ##Got from Clustering #4 ##mm/sec
@@ -184,6 +184,20 @@ setEnvFileLocations <- function(strSetName)
     strDataExportDir  <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/out/"
     strDataStore      <<-  "/mnt/data//Nextcloud/Dropbox_overflow/Calculations/zebrafishtrackerData/out/HungerExp" ##Where Large Data Is stored because Dropbox-Overflows
     strPlotExportPath <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/plots"
+  }  
+  
+  if (strSetName == "LAB")
+  {
+    ## Laptop ##
+    setwd("~/workspace/zebrafishtrack/Rplots")
+    strVideoFilePath  <<- "/mnt/Datastore/Olivia/Appetitesamples"
+    strTrackerPath    <<-  "/home/meyerlab/workspace/build-zebraprey_track-Desktop_Qt_5_14_2_GCC_64bit-Release"
+    strTrackeroutPath <<- "/mnt/Datastore/Olivia/Tracked"
+    strTrackInputPath <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org"##Where to source the Tracker csv files from 
+    strDatDir         <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/dat" ##Where Are the Imported RData Stored
+    strDataExportDir  <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/dat"
+    strDataStore      <<-  "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows
+    strPlotExportPath <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/plots"
   }  
 }
   

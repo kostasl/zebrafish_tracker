@@ -40,7 +40,7 @@ setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 #setwd(here())
 source("config_lib.R")
 
-setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LAB") #HOME,OFFICE,#LAPTOP
 
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
@@ -57,7 +57,10 @@ source("DataLabelling/labelHuntEvents_lib.r")
 #                               ),sep="/")
 ## Hunger Exp
 strDataSetDirectories <- paste(strTrackInputPath, list(
-                                 "DS_7dpf/" ##Dataset 2
+                                 "B1/",
+                                 "B2/",
+                                 "B3/",
+                                 "B4/"##Dataset 2
                                  ),sep="/")
 
 
@@ -75,7 +78,8 @@ strCondR  <- "*.csv";
 ## These need to be grouped in folders per GroupID
   lastDataSet   = NROW(strDataSetDirectories)
   firstDataSet  = 1 
-  strFileNameFn = "extractFileNameParams_FOntogeny"
+  #strFileNameFn = "extractFileNameParams_FOntogeny"
+  strFileNameFn = "extractFileNameParams_OliviaAssay"
   source("runimportTrackerDataFiles.r") 
 
 ###### END OF IMPORT TRACKER DATA ############
@@ -93,9 +97,9 @@ strCondR  <- "*.csv";
   #load(paste(strDatDir,"datAllFramesFix1_Ds-5-19.RData",sep="/"))
   #load(paste(strDatDir,"groupsrcdatListPerDataSet_Ds-5-19.RData",sep="/"))
   
-  load(paste0(strDatDir,"/datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
+  #load(paste0(strDatDir,"/datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep=""))
   #datAllFrames = readRDS(paste0(strDatDir,"/setn1_Dataset_DS_7dpf.rds"))
-  load(paste0(strDatDir,"/groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData"))
+  #load(paste0(strDatDir,"/groupsrcdatListPerDataSet_Ds-",firstDataSet,"-",lastDataSet,".RData"))
   ## Load Tracklet Stat
   #load(file = paste(strDatDir,"/setn",NROW(dataSetsToProcess),"D",firstDataSet,"-",lastDataSet,"datTrackletStat.RData",sep=""))
   
@@ -107,30 +111,30 @@ strCondR  <- "*.csv";
   source("processLoadedData.r") ##Detects HuntEvents
  
   ##Once Processed you can Check and Validate Hunt Events Using main_LabellingBlind.r
-  
-  
-    ### Make Eye Phase Space Density Plots ##########
-  strCondTags <- unique(datAllFrames$groupID)
-  for (i in strCondTags)
-  {
-    message(paste("#### Eye ProcessGroup ",i," ###############"))
-    subsetDat = groupsrcdatList[[i]]
-    strCond   <- paste(strCondR,subsetDat[2],collapse=NULL);
-    
-    ##Take All larva IDs recorded - Regardless of Data Produced - No Tracks Is Also Data
-    #vexpID = unique(filtereddatAllFrames$expID)
-    ##Select Larvaof this Group
-    
-    datAllGroupFrames <- datAllFrames[which(datAllFrames$groupID == i),]
-    #Note:A Larva ID Corresponds to A specific Condition ex. NF1E (Same Fish Is tested in 2 conditions tho ex. NF1E, NF1L)
-    vexpID = unique(datAllGroupFrames$expID)
-    #plotGroupMotion(datAllGroupFrames,lHuntStat[[i]],vexpID)
-    #######################################################################
-    ###  EYE - PLOT Scatter and Eye Densities #####
-    strCond = i;
-    source("EyeScatterAndDensities.r")
-    #####
-  }
+  # 
+  # 
+  #   ### Make Eye Phase Space Density Plots ##########
+  # strCondTags <- unique(datAllFrames$groupID)
+  # for (i in strCondTags)
+  # {
+  #   message(paste("#### Eye ProcessGroup ",i," ###############"))
+  #   subsetDat = groupsrcdatList[[i]]
+  #   strCond   <- paste(strCondR,subsetDat[2],collapse=NULL);
+  #   
+  #   ##Take All larva IDs recorded - Regardless of Data Produced - No Tracks Is Also Data
+  #   #vexpID = unique(filtereddatAllFrames$expID)
+  #   ##Select Larvaof this Group
+  #   
+  #   datAllGroupFrames <- datAllFrames[which(datAllFrames$groupID == i),]
+  #   #Note:A Larva ID Corresponds to A specific Condition ex. NF1E (Same Fish Is tested in 2 conditions tho ex. NF1E, NF1L)
+  #   vexpID = unique(datAllGroupFrames$expID)
+  #   #plotGroupMotion(datAllGroupFrames,lHuntStat[[i]],vexpID)
+  #   #######################################################################
+  #   ###  EYE - PLOT Scatter and Eye Densities #####
+  #   strCond = i;
+  #   source("EyeScatterAndDensities.r")
+  #   #####
+  # }
 
 
 ######## Plot Hunt Statistics using datHuntStat###

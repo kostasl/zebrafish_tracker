@@ -181,8 +181,9 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
         datHuntFrames    <- datLarvaFrames[which(datLarvaFrames$eventID == k &
                                           (datLarvaFrames$REyeAngle < -G_THRESHUNTANGLE |
                                            datLarvaFrames$LEyeAngle > G_THRESHUNTANGLE) &
-                                        abs(datLarvaFrames$LEyeAngle-datLarvaFrames$REyeAngle) >= G_THRESHUNTVERGENCEANGLE) | 
-                                          datLarvaFrames$huntScore > G_HUNTSCORETHRES,]
+                                        (abs(datLarvaFrames$LEyeAngle-datLarvaFrames$REyeAngle) >= G_THRESHUNTVERGENCEANGLE | 
+                                          datLarvaFrames$huntScore > G_HUNTSCORETHRES) )  
+                                          ,]
         
         nTotalHuntFrames <- nTotalHuntFrames + NROW(datHuntFrames$frameN)
         
@@ -305,11 +306,12 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
                                                      huntScore          = 0,
                                                      markTracked        = NA, ## Flags that this event has been been closelly Retracked for Analysis
                                                      stringsAsFactors = FALSE) ##0 To Be used for Manual Labelling Of Hunting Success
-          
-          if( lHuntingDuration[[k]] < 0) 
-          {
-            stop(paste("Negative Hunt Duration detected expID:",i," eventID:",k," Possible Duplicate tracker file" ) ) ##Catch Error / Can be caused by Duplicate Tracked Video - Check )
-          }
+          if(length(lHuntingDuration[[k]]) == 1 ){
+            if( lHuntingDuration[[k]] < 0) 
+            {
+              stop(paste("Negative Hunt Duration detected expID:",i," eventID:",k," Possible Duplicate tracker file" ) ) ##Catch Error / Can be caused by Duplicate Tracked Video - Check )
+            }
+        }
           
           minHuntDuration  <- min(lHuntingDuration[[k]])
           
