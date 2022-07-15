@@ -143,7 +143,7 @@ if (!dir.exists(out_Hdir))
       if (NROW(datEventsForTracker) > 0 )
       {
         filename_csv <- paste0(strsplit(head(basename(datHuntEvents_exp$filename),1),split = ".",fixed=T)[[1]][1],"_huntevents.csv")  
-        if (!file.exists(filename_csv)) ##Do not Overwrite Existing - In case user has updated it 
+        if (!file.exists(paste0(out_Hdir,filename_csv))) ##Do not Overwrite Existing - In case user has updated it 
           write.table(datEventsForTracker,paste0(out_Hdir,filename_csv),sep=",",row.names=F )
         else
           warning("Will not overwrite existing : ", filename_csv," Table may have been validated by user. ")

@@ -40,6 +40,7 @@ DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
 G_APPROXFPS              <- 60
 G_THRESHUNTANGLE         <- 20 #Define Min Angle Both Eyes need for a hunting event to be assumed
 G_THRESHUNTVERGENCEANGLE <- 43 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_HUNTSCORETHRES         <- 0.9 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
 G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
 G_MINGAPBETWEENEPISODES  <- G_APPROXFPS
 G_MINEPISODEDURATION     <- G_APPROXFPS/2
