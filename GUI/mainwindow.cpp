@@ -197,7 +197,44 @@ void MainWindow::createSpinBoxes()
                      SLOT(maxEllipseSizevalueChanged(int)));
 
 
+
+
 }
+
+//Hunt Score Labels
+void MainWindow::combo_currentIndexChanged(int comboindex,int selidx)
+{
+    //Search Through Score Map - Just to make sure Label - and Score Number match
+    for (std::map<QString,int>::const_iterator scoreIter = gTrackerState.maphuntOutcomeLabels.begin();
+         scoreIter != gTrackerState.maphuntOutcomeLabels.end(); ++scoreIter)
+    {
+        if (scoreIter->second == selidx)
+        {
+            gTrackerState.vHuntEvents[comboindex].label =  selidx;
+            cout << "HuntEvent :" << comboindex << " score changed to " << selidx << " " <<  scoreIter->first.toStdString() << std::endl;
+            break;
+        }
+    }
+
+}
+
+void MainWindow::combo_currentLabelChanged(int comboindex,QString label)
+{
+    //Search Through Score Map - Just to make sure Label - and Score Number match
+    for (std::map<QString,int>::const_iterator scoreIter = gTrackerState.maphuntOutcomeLabels.begin();
+         scoreIter != gTrackerState.maphuntOutcomeLabels.end(); ++scoreIter)
+    {
+        if (scoreIter->first == label) //Find Matching label
+        {
+            gTrackerState.vHuntEvents[comboindex].label =  scoreIter->second;
+            cout << "HuntEvent :" << comboindex << " score changed to " << scoreIter->second << " " <<  scoreIter->first.toStdString() << std::endl;
+            break;
+        }
+    }
+
+}
+
+
 
 void MainWindow::updateHuntEventTable(std::vector<t_HuntEvent> vHuntEvents)
 {
@@ -206,13 +243,6 @@ void MainWindow::updateHuntEventTable(std::vector<t_HuntEvent> vHuntEvents)
 
     btblUpdating = true;
     this->ui->tblHuntEvents->clearContents();
-
-    //Make Hunt Score Combo Options
-    QComboBox* combo = new QComboBox();
-          for (std::map<QString,int>::const_iterator scoreIter = gTrackerState.maphuntOutcomeLabels.begin();
-               scoreIter != gTrackerState.maphuntOutcomeLabels.end(); ++scoreIter) {
-            combo->addItem(scoreIter->first,scoreIter->second);
-          }
 
     /// Load huntevents table //
     for (int i=0;i< vHuntEvents.size();i++)
@@ -223,16 +253,35 @@ void MainWindow::updateHuntEventTable(std::vector<t_HuntEvent> vHuntEvents)
 
 
         //levelCombo->addItems(QStringList() << "Guest" << "User" << "Admin");
-        //Make Hunt Score Combo Options
+
         QComboBox* combo = new QComboBox();
-              for (std::map<QString,int>::const_iterator scoreIter = gTrackerState.maphuntOutcomeLabels.begin();
-                   scoreIter != gTrackerState.maphuntOutcomeLabels.end(); ++scoreIter) {
-                combo->addItem(scoreIter->first,scoreIter->second);
-              }
-        combo->setCurrentIndex(vHuntEvents[i].label);
+        combo->setObjectName("comboHuntScore");
+        int j =0;
+        //Make Hunt Score Combo Options - Reverse Iterate TO list in correct order - IDX - to match Score Label
+          for (std::map<QString,int>::const_iterator scoreIter = gTrackerState.maphuntOutcomeLabels.begin();
+               scoreIter != gTrackerState.maphuntOutcomeLabels.end(); ++scoreIter) {
+            combo->insertItem(j,scoreIter->first,scoreIter->second);
+            combo->setItemData(j,scoreIter->second,Qt::ToolTipRole);
+            if (vHuntEvents[i].label == scoreIter->second)//Set Selected Index -1st Verify HuntSCore Match (combo adds items in diff idx to orig list
+                   combo->setCurrentIndex(j);
+            j++;
+          }
+          //QObject::connect(combo, SIGNAL(QComboBox::currentIndexChanged(int)), [this, i] {combo_currentIndexChanged(i,int);  });
+          //Use Lambda and map combo index to signal
+          //QObject::connect(combo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int idx){ combo_currentIndexChanged(i,idx); });
+          QObject::connect(combo, static_cast<void(QComboBox::*)(const QString& label)>(&QComboBox::currentTextChanged),[=](const QString& label){ combo_currentLabelChanged(i,label); });
+
+        //combo->installEventFilter(this);
+
+
         ui->tblHuntEvents->setCellWidget(i, 2, combo);
+
 //        this->ui->tblHuntEvents->setItem(i, 2, new QTableWidgetItem(QString::number(vHuntEvents[i].label) ));
     }
+
+    //Add Empty Row at end to fill space
+    ui->tblHuntEvents->insertRow(ui->tblHuntEvents->rowCount() +1);
+
     btblUpdating = false;
 
 
@@ -535,6 +584,12 @@ void MainWindow::changeEvent(QEvent *e)
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     char key = 0;
+
+    if (obj->objectName() == "comboHuntScore")
+    {
+         QComboBox* comboHLabel = dynamic_cast<QComboBox*>(obj);
+         cout << "Combo " << comboHLabel->currentIndex() << endl;
+    }
 
     if (obj->objectName() == "horizontalSlider")
     {
@@ -1486,9 +1541,8 @@ void MainWindow::on_btnAddHEvent_clicked()
 {
     btblUpdating = true;
     ui->tblHuntEvents->insertRow(ui->tblHuntEvents->currentRow()+1);
-    t_HuntEvent newEvent(("N"+QString::number(ui->tblHuntEvents->currentRow()+1)).toStdString()
-                         ,nFrame,nFrame+100,0);
-    newEvent.rowID = ui->tblHuntEvents->currentRow()+1;
+    t_HuntEvent newEvent(("N"+std::to_string(ui->tblHuntEvents->currentRow()+1)),nFrame,nFrame+100,0);
+    //newEvent.rowID = to_string(ui->tblHuntEvents->currentRow()+1);
     gTrackerState.vHuntEvents.push_back(newEvent);
     btblUpdating = false;
 }

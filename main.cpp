@@ -788,7 +788,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
 
     gTrackerState.setVidFps( capture.get(cv::CAP_PROP_FPS) );
-
+    gTrackerState.uiStopFrame = stopFrame;
     gTrackerState.uiTotalFrames = capture.get(cv::CAP_PROP_FRAME_COUNT);
     if (gTrackerState.uiTotalFrames  < stopFrame)//Sometimes FRAME-COunt is reported wrong so user needs to supply actuall number of frames in video
     {
@@ -909,7 +909,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
                    double dVidRelativePosition = capture.get(cv::CAP_PROP_POS_AVI_RATIO);
                    std::cerr << gTimer.elapsed()/60000.0 << " [INFO] Relative Vid.Position : " << dVidRelativePosition << std::endl;
-                   if (nFrame < gTrackerState.uiTotalFrames -1 || nFrame < stopFrame || dVidRelativePosition < 0.99)
+                   if (nFrame < gTrackerState.uiTotalFrames -1 || nFrame < gTrackerState.uiStopFrame || dVidRelativePosition < 0.99)
                    {
                        std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nFrame << " [Error] Cannot read next frame! Skipping to " << nFrame+nErrorFrames << std::endl;
                        nErrorFrames++;
@@ -932,7 +932,10 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
                        std::clog << gTimer.elapsed()/60000.0 << " [info] processVideo loop done on frame: " << nFrame << std::endl;
                          ::saveImage(frameNumberString,QString::fromStdString( gTrackerState.gstroutDirCSV),videoFilename,outframe);
                          gTrackerState.saveState("TrackerConfig.xml");
-                         break;
+                         if (gTrackerState.bTracking) //If in Tracking MOde then Exit Loop - Processing done
+                            break;
+                         else //In Playback mode - just pause on last frame
+                             gTrackerState.bPaused = true;
                    }
                    //continue;
                 }
@@ -972,7 +975,7 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
     }
 
     //Check If StopFrame Reached And Pause
-    if (nFrame == stopFrame && stopFrame > 0 && !gTrackerState.bPaused)
+    if (nFrame == gTrackerState.uiStopFrame && gTrackerState.uiStopFrame > 0 && !gTrackerState.bPaused)
     {
          gTrackerState.bPaused = true; //Stop Here
          std::cout << nFrame << " Stop Frame Reached - Video Paused" <<std::endl;

@@ -463,13 +463,17 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
     "Escape", "Out_Of_Range","Duplicate/Overlapping","Fail-No Strike","Fail-With Strike", "Success-SpitBackOut",
     "Debri-Triggered","Near-Hunt State","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Success-OnApproach-AfterStrike"};
 
-    QStringList lstscoreLabels( QStringList() << "UnLabelled" << "NA" << "Success" << "Fail" << "No_Target" << "Not_HuntMode/Delete" << "Escape"
-                                   <<"Out_Of_Range" << "Duplicate/Overlapping" << "Fail-No Strike" << "Fail-With Strike" << "Success-SpitBackOut"
-                                   << "Debri-Triggered" << "Near-Hunt State" << "Success-OnStrike" << "Success-OnStrike-SpitBackOut"
-                                   << "Success-OnApproach" << "Success-OnApproach-AfterStrike");
+//    lstscoreLabels << "UnLabelled" << "NA" << "Success" << "Fail" << "No_Target" << "Not_HuntMode/Delete" << "Escape"
+//                                   <<"Out_Of_Range" << "Duplicate/Overlapping" << "Fail-No Strike" << "Fail-With Strike" << "Success-SpitBackOut"
+//                                   << "Debri-Triggered" << "Near-Hunt State" << "Success-OnStrike" << "Success-OnStrike-SpitBackOut"
+//                                   << "Success-OnApproach" << "Success-OnApproach-AfterStrike";
 
-    for (int i=0;i<18;i++)
-        maphuntOutcomeLabels.insert(std::pair<QString,int>(QString(scoreLabels[i]),i));
+    for (int i=0;i<sizeof(scoreLabels)/sizeof(char*);i++)
+    {
+        lstscoreLabels << scoreLabels[i];
+        maphuntOutcomeLabels.insert(std::pair<QString,int>((scoreLabels[i]),i));
+    }
+
 
 
 }

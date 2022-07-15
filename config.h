@@ -396,6 +396,7 @@ class trackerState
       cv::Mat mfgPreyMask;
 
       std::map<QString,int> maphuntOutcomeLabels;
+      QStringList lstscoreLabels;
 
     /// overload size operator / return full state object size
      size_t size() const _GLIBCXX_NOEXCEPT

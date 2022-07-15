@@ -64,7 +64,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/video/background_segm.hpp>
 
-#include "opencv2/hfs.hpp"
+//#include "opencv2/hfs.hpp"
 
 //extern MainWindow window_main;
 extern MainWindow* pwindow_main;

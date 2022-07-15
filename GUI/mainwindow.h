@@ -35,6 +35,7 @@ public:
     void showInsetTemplateimg(cv::Mat& img); //For Showing The template Image
     void showVideoFrame(cv::Mat& img,unsigned int nFrame);
     void updateHuntEventTable(std::vector<t_HuntEvent> vHuntEvents);
+
     void saveScreenShot();
     void saveTemplateImage(cv::Mat& templ);
     void tickProgress();
@@ -66,6 +67,7 @@ public slots:
     void minEllipseSizevalueChanged(int i);
     void UpdateSpinBoxToValue();
 
+
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
     void handleWheelOnGraphicsScene(QGraphicsSceneWheelEvent* scrollevent);
@@ -83,7 +85,10 @@ protected:
     QImage qimgHead; //SCene Image Updated in ShowCV Image
     cv::Mat frameScene; //CvMat Last Frame Drawn
     bool btblUpdating = false;
+
 private slots:
+    void combo_currentIndexChanged(int comboindex,int selidx);
+    void combo_currentLabelChanged(int comboindex,QString label);
 
     void on_spinBoxTemplateThres_valueChanged(int arg1);
 
