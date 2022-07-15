@@ -158,7 +158,7 @@ if (!dir.exists(out_Hdir))
        ## Run Tracker passing tbl of Hunt Events
        message(paste("\n Validating video  ExpID:",expID,"event :",eventID," ",testCod ) )
        strVideoFile <- head(datHuntEvents_exp$filename,1)
-       strArgs = paste0(" --HideDataSource=0 --MeasureMode=1 --ModelBG=1 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile,
+       strArgs = paste0(" --HideDataSource=1 --MeasureMode=1 --ModelBG=1 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile,
                        " --outputdir=",strTrackeroutPath," --DNNModelFile=","/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc",
                        " --HuntEventsFile=",paste0(out_Hdir,filename_csv)," --startpaused=1")
       
