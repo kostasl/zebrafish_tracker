@@ -1533,17 +1533,22 @@ void MainWindow::on_tblHuntEvents_itemChanged(QTableWidgetItem *item)
     if (item->column() == 2)
         gTrackerState.vHuntEvents[item->row()].label= item->text().toInt();
 
-    this->updateHuntEventTable(gTrackerState.vHuntEvents);
+
 }
 
 
 void MainWindow::on_btnAddHEvent_clicked()
 {
+    if (btblUpdating)
+       return; //Avoid simultaneous updates
     btblUpdating = true;
-    ui->tblHuntEvents->insertRow(ui->tblHuntEvents->currentRow()+1);
-    t_HuntEvent newEvent(("N"+std::to_string(ui->tblHuntEvents->currentRow()+1)),nFrame,nFrame+100,0);
+    ui->tblHuntEvents->insertRow(ui->tblHuntEvents->rowCount());
+    t_HuntEvent newEvent(("N"+std::to_string(ui->tblHuntEvents->rowCount()+1)),nFrame,nFrame+100,0);
     //newEvent.rowID = to_string(ui->tblHuntEvents->currentRow()+1);
     gTrackerState.vHuntEvents.push_back(newEvent);
+
+    this->updateHuntEventTable(gTrackerState.vHuntEvents);
+    ui->tblHuntEvents->selectRow(ui->tblHuntEvents->rowCount());
     btblUpdating = false;
 }
 
@@ -1560,16 +1565,18 @@ void MainWindow::on_btnRemoveHEvent_triggered(QAction *arg1)
 
 void MainWindow::on_btnSaveHEvents_released()
 {
-    bool ret = gTrackerState.saveHuntEventsToFile(gTrackerState.strHuntEventsDataFile,
+    bool ret = gTrackerState.saveHuntEventsToFile(QString::fromStdString(gTrackerState.strHuntEventsDataFile),
                                        gTrackerState.vHuntEvents);
     if (!ret)
-        QMessageBox::warning(this, "Saving hunt event table","Failed to save updated hunt events to file :"+gTrackerState.strHuntEventsDataFile);
+        QMessageBox::warning(this, "Saving hunt event table","Failed to save updated hunt events to file :"+QString::fromStdString(gTrackerState.strHuntEventsDataFile) );
 }
 
 
 void MainWindow::on_btnRemoveHEvent_released()
 {
 
+    if (btblUpdating )
+        return;
     btblUpdating = true;
     gTrackerState.vHuntEvents.erase(gTrackerState.vHuntEvents.begin() + ui->tblHuntEvents->currentRow());
     ui->tblHuntEvents->removeRow(ui->tblHuntEvents->currentRow());

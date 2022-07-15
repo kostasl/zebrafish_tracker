@@ -320,8 +320,10 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
  /// otherwise save directory and open dialogue to choose a file from there
     if (parser.has("invideofile"))
     {   QString fvidFileName = QString::fromStdString( parser.get<std::string>("invideofile") );
-        QFileInfo ovidfile(fvidFileName ) ;
 
+
+        QFileInfo ovidfile(fvidFileName ) ;
+        gstrvidFilename = fvidFileName.toStdString();
         if ( ovidfile.absoluteDir().exists()) //Check if vid file exists before appending to list
             gstrinDirVid = ovidfile.absoluteDir().absolutePath().toStdString();
         else
@@ -442,11 +444,15 @@ void trackerState::initGlobalParams(cv::CommandLineParser& parser,QStringList& i
      uiStopFrame = parser.get<uint>("stopframe");
 
     // Check if list of hunt events provided
-     strHuntEventsDataFile =  QString::fromStdString( parser.get<string>("HuntEventsFile"));
-     if (QFileInfo::exists((strHuntEventsDataFile))){
-         std::cout << "Loading Hunt events from " << strHuntEventsDataFile.toStdString()  << "\n " <<std::endl;
-         vHuntEvents = loadHuntEvents(strHuntEventsDataFile);
+     strHuntEventsDataFile =  ( parser.get<string>("HuntEventsFile"));
+     if (QFileInfo::exists(QString::fromStdString(strHuntEventsDataFile)) ){
+         std::cout << "Loading Hunt events from " << strHuntEventsDataFile << "\n " <<std::endl;
+         vHuntEvents = loadHuntEvents(QString::fromStdString(strHuntEventsDataFile) );
+     }else{
+         QFileInfo vidFile(QString::fromStdString(gstrvidFilename) );
+         strHuntEventsDataFile = gstroutDirCSV + "/" + vidFile.baseName().toStdString() + "_huntEvents.csv"; //Make Default file to export manually indicated hunt events
      }
+
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen          = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(3,3),cv::Point(-1,-1));

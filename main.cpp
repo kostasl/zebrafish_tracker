@@ -393,6 +393,9 @@ unsigned int trackVideofiles(MainWindow& window_main,QString outputFileName,QStr
 
        nextvideoname = invideonames.at(std::min(invideonames.size()-1,i+1));
        gTrackerState.gstrvidFilename = invideoname.toStdString(); //Global
+       QFileInfo vidFile(QString::fromStdString(gTrackerState.gstrvidFilename) );
+       gTrackerState.strHuntEventsDataFile =  gTrackerState.gstroutDirCSV + "/" + vidFile.baseName().toStdString() + "_huntEvents.csv"; //Make Default file to export manually indicated hunt events
+
 
        std::clog << gTimer.elapsed()/60000.0 << " Now Processing : "<< invideoname.toStdString() << " StartFrame: " << istartFrame << std::endl;
        //cv::displayOverlay(gstrwinName,"file:" + invideoname.toStdString(), 10000 );
@@ -854,6 +857,14 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
 
         /// Flow Control Code  - For When Looking at Specific Frame Region ///
         // 1st Check If user changed Frame - and go to that frame
+        if (gTrackerState.cFrameDelayms < 0)
+        {
+            //gTrackerState.bStartFrameChanged = true;
+            window_main.nFrame += -gTrackerState.cFrameDelayms;
+            nFrame = window_main.nFrame;
+            capture.set(cv::CAP_PROP_POS_FRAMES,window_main.nFrame);
+        }
+
         if (gTrackerState.bStartFrameChanged)
         {
             nFrame = window_main.nFrame;
@@ -1994,10 +2005,16 @@ void keyCommandFlag(MainWindow* win, int keyboard,unsigned int nFrame)
 
     //Make Frame rate faster
     if ((char)keyboard == '+')
+    {
         gTrackerState.cFrameDelayms--;
+        pwindow_main->LogEvent("[info] + Faster playback speed");
+    }
     //Slower
     if ((char)keyboard == '-')
+    {
         gTrackerState.cFrameDelayms++;
+        pwindow_main->LogEvent("[info] - Slowdown playback");
+    }
 
 
     if ((char)keyboard == 't') //Toggle Tracking

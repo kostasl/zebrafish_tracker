@@ -167,7 +167,7 @@ class trackerState
       const double dLearningRateNominal         = 0.001; //Fast Rate as BG Learning Allows for threshold after BGSubstract operation to Augment The mask
       double dactiveMOGLearningRate             = dLearningRateNominal;
       //Processing Loop delay
-      uint cFrameDelayms                        = 1;
+      int cFrameDelayms                        = 1;
 
       /// Constants ///
       /// BLOB DETECTION Filters //
@@ -340,7 +340,7 @@ class trackerState
       string strDNNTensorFlowVerticalModelFile      = "~/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_dir/"; ///\deprecated \remarks Load  Directional model to correct up-right image of fish in image region - used for direction detection
 
       /// Hunt Event Data
-      QString  strHuntEventsDataFile;
+      string  strHuntEventsDataFile;
       std::vector<t_HuntEvent> vHuntEvents;
 
       ///Fish Features Detection Params
