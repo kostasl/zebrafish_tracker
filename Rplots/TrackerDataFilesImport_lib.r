@@ -304,7 +304,8 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
                                                 PreyCount=meanf(TrackerData[[i]][[j]]$RotiferCount,nFrWidth*8),
                                                 countEyeErrors=TrackerData[[i]][[j]]$nFailedEyeDetectionCount,
                                                 TailFitError=TrackerData[[i]][[j]]$lastTailFitError,
-                                                templateScore=TrackerData[[i]][[j]]$templateScore
+                                                templateScore=TrackerData[[i]][[j]]$templateScore,
+                                                huntScore=TrackerData[[i]][[j]]$HuntModeScore
                                                 );
         groupDatIdx = groupDatIdx + 1; ##Count Of Files Containing Data
         
@@ -337,7 +338,8 @@ importTrackerFilesToFrame <- function(listSrcFiles,strNameFieldFUN) {
                                                 PreyCount=0,
                                                 countEyeErrors=0,
                                                 TailFitError=0,
-                                                templateScore=0.0
+                                                templateScore=0.0,
+                                                huntScore=0.0
                                                 );
         
         message(paste("No Data for ΕχpID",expID,"event ",eventID," larva ",larvaID))

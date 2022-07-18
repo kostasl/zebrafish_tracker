@@ -52,7 +52,7 @@ save(groupsrcdatListPerDataSet,file=paste(strDataExportDir,"/groupsrcdatListPerD
 
 #datAllFrames <- rbindlist(datAllSets);
 datAllFrames = do.call(rbind,datAllSets);
-strOutFileName <- paste(strDataExportDir,"datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep="")
+strOutFileName <- paste(strDataExportDir,"/datAllFrames_Ds-",firstDataSet,"-",lastDataSet,".RData",sep="")
 save(datAllFrames,file=strOutFileName)
 
 message("Saved Imported frames to:",strOutFileName)

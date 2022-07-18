@@ -184,7 +184,7 @@
          </size>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="tab">
          <property name="sizePolicy">
@@ -394,6 +394,7 @@
            <property name="font">
             <font>
              <family>FreeMono</family>
+             <weight>75</weight>
              <bold>true</bold>
             </font>
            </property>
@@ -669,6 +670,7 @@
            <property name="font">
             <font>
              <family>FreeMono</family>
+             <weight>75</weight>
              <bold>true</bold>
             </font>
            </property>
@@ -901,6 +903,7 @@
            <property name="font">
             <font>
              <family>FreeMono</family>
+             <weight>75</weight>
              <bold>true</bold>
             </font>
            </property>
@@ -1246,11 +1249,11 @@
               <attribute name="horizontalHeaderCascadingSectionResizes">
                <bool>true</bool>
               </attribute>
-              <attribute name="horizontalHeaderMinimumSectionSize">
-               <number>10</number>
-              </attribute>
               <attribute name="horizontalHeaderDefaultSectionSize">
                <number>70</number>
+              </attribute>
+              <attribute name="horizontalHeaderMinimumSectionSize">
+               <number>10</number>
               </attribute>
               <attribute name="horizontalHeaderStretchLastSection">
                <bool>true</bool>
@@ -1321,7 +1324,7 @@
      <x>0</x>
      <y>0</y>
      <width>712</width>
-     <height>20</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

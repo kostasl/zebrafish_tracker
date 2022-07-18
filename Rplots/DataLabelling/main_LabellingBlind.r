@@ -1,4 +1,6 @@
-## Processing Of Tracker Eye TrackerData, Using R 
+## USER VALIDATION OF HUNTEVENTS ##
+# Jun 2022 : New version: Exports CSV of hunt events detected per experiment.
+#            Tracker loads these in table and lets user view, score and modify hunt event data
 # Kostasl Nov 2017
 # 10-12-17 : Fixed Error on counting number of hunting episodes
 #            Converted to Adding A Row for empty data files such that larva That were tested but produced no data count towards the mean / The case that a fish is invalid should be actually handled when testing in empty conditions and reject a fish that does nothing
@@ -7,10 +9,10 @@
 # Note : Can use findLabelledEvent from auxFunctions.r file to obtain Labelled Event ID (ex.  "505/2149") from Using Event Register 
 # Consider What the Hunt Ratio Is On a No Show Larva? Currently Set To 0 - 
 #
-## NOTE : Can Key IN HuntEvent Index And Playback Specific Event ###
-#TODO: Add Colour Marker of Hunting On Trajectories
+
+
 # ## Pio Eykolo Na diaspasoume to Atomo Para mia prokatalipsi ##
-##  925/2769 <- Weird Tail Motin
+
 library(tools)
 library("MASS");
 #library(hexbin)
@@ -20,7 +22,7 @@ library("MASS");
 setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
 
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
@@ -141,7 +143,7 @@ if (!dir.exists(out_Hdir))
       if (NROW(datEventsForTracker) > 0 )
       {
         filename_csv <- paste0(strsplit(head(basename(datHuntEvents_exp$filename),1),split = ".",fixed=T)[[1]][1],"_huntevents.csv")  
-        if (!file.exists(filename_csv)) ##Do not Overwrite Existing - In case user has updated it 
+        if (!file.exists(paste0(out_Hdir,filename_csv))) ##Do not Overwrite Existing - In case user has updated it 
           write.table(datEventsForTracker,paste0(out_Hdir,filename_csv),sep=",",row.names=F )
         else
           warning("Will not overwrite existing : ", filename_csv," Table may have been validated by user. ")
@@ -156,7 +158,7 @@ if (!dir.exists(out_Hdir))
        ## Run Tracker passing tbl of Hunt Events
        message(paste("\n Validating video  ExpID:",expID,"event :",eventID," ",testCod ) )
        strVideoFile <- head(datHuntEvents_exp$filename,1)
-       strArgs = paste0(" --HideDataSource=0 --MeasureMode=1 --ModelBG=1 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile,
+       strArgs = paste0(" --HideDataSource=1 --MeasureMode=1 --ModelBG=1 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile,
                        " --outputdir=",strTrackeroutPath," --DNNModelFile=","/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc",
                        " --HuntEventsFile=",paste0(out_Hdir,filename_csv)," --startpaused=1")
       
@@ -165,7 +167,7 @@ if (!dir.exists(out_Hdir))
       if (!file.exists(paste(strTrackerPath,"/zebraprey_track",sep="")) )
         stop(paste("Tracker software not found in :",strTrackerPath ))
       
-      execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout=NULL,stderr =NULL) ## stdout=FALSE stderr = FALSE
+      execres <- base::system2(command=paste(strTrackerPath,"/zebraprey_track",sep=""),args =  strArgs,stdout="",stderr =NULL) ## stdout=FALSE stderr = FALSE
       
       ## execres contains all of the stdout - so cant be used for exit code
       if (execres != 0)

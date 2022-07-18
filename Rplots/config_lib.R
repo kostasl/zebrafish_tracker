@@ -39,10 +39,11 @@ DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from 
 DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
 G_APPROXFPS              <- 60
 G_THRESHUNTANGLE         <- 20 #Define Min Angle Both Eyes need for a hunting event to be assumed
-G_THRESHUNTVERGENCEANGLE <- 50 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_HUNTSCORETHRES         <- 0.95 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
 G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
-G_MINGAPBETWEENEPISODES  <- G_APPROXFPS
-G_MINEPISODEDURATION     <- G_APPROXFPS/2
+G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/3
+G_MINEPISODEDURATION     <- G_APPROXFPS/3
 G_MIN_BOUTSPEED          <- 0.2 ##mm/frame - Need to be above to be considered A Motion Bout
 G_THRES_CAPTURE_SPEED    <-  16 ###15##mm/sec ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
 G_THRES_MOTION_BOUT_SPEED <- 2.9 ##Got from Clustering #4 ##mm/sec
@@ -50,7 +51,7 @@ PREY_COUNT_FRAMEWINDOW   <- 1600 ##Number oF Frames Over which to count Prey Sta
 G_MIN_TURNBOUT_ANGLE     <- 10 ##
 G_THRES_TAILFQ_BOUT      <- 9.5 ##Hz
 nFrWidth                 <- 20 ## Sliding Window Filter Width - Reduced From 50 to 20 to improve Meanf sliding window speed estimation lags
-nEyeFilterWidth          <- nFrWidth*2
+nEyeFilterWidth          <- nFrWidth
 
 MIN_BOUT_DURATION        <- 10 ##Used in HuntEpisodeAnalysis_lib
 MIN_BOUT_PAUSE           <- 25
@@ -154,11 +155,11 @@ setEnvFileLocations <- function(strSetName)
   if (strSetName == "OFFICE")
   {
       
-      ## Office PC ##
+    ## Office PC ##
     setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
     #strVideoFilePath  <<- "/media/kostasl/ARXEIO1TB/Behaviour/" 
     strVideoFilePath  <<- "/media/kostasl/zFish-Heta-T7/HungerExp"
-    strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_15_0_GCC_64bit-Release" 
+    strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_15_1_GCC_64bit-Release" ## "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_15_0_GCC_64bit-Release" 
     strTrackeroutPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/Huntevents_retracked"#/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
     #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/"
     #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/expData/Olivia_assay/" 
@@ -183,6 +184,20 @@ setEnvFileLocations <- function(strSetName)
     strDataExportDir  <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/out/"
     strDataStore      <<-  "/mnt/data//Nextcloud/Dropbox_overflow/Calculations/zebrafishtrackerData/out/HungerExp" ##Where Large Data Is stored because Dropbox-Overflows
     strPlotExportPath <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/plots"
+  }  
+  
+  if (strSetName == "LAB")
+  {
+    ## Laptop ##
+    setwd("~/workspace/zebrafishtrack/Rplots")
+    strVideoFilePath  <<- "/mnt/Datastore/Olivia/Appetitesamples"
+    strTrackerPath    <<-  "/home/meyerlab/workspace/build-zebraprey_track-Desktop_Qt_5_14_2_GCC_64bit-Release"
+    strTrackeroutPath <<- "/mnt/Datastore/Olivia/Tracked"
+    strTrackInputPath <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org"##Where to source the Tracker csv files from 
+    strDatDir         <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/dat" ##Where Are the Imported RData Stored
+    strDataExportDir  <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/dat"
+    strDataStore      <<-  "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows
+    strPlotExportPath <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/plots"
   }  
 }
   

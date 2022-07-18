@@ -19,11 +19,12 @@ if (grepl("Qt",Sys.getenv("LD_LIBRARY_PATH") )  == FALSE)
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/opt/Qt/5.15.0/gcc_64/lib/",sep=":" ) ) ##Home PC/
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/media/kostasl/D445GB_ext4/opt/Qt3.0.1/5.10.0/gcc_64/lib/",sep=":" ) ) ##Home PC - OpenCV QT5 lib link/
   
-  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.15.0/gcc_64/lib/",sep=":" ) ) #### Office
+  Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/home/kostasl/Qt/5.15.1//gcc_64/lib/",sep=":" ) ) #### Office
   Sys.setenv(LD_LIBRARY_PATH=paste(Sys.getenv("LD_LIBRARY_PATH"),"/usr/lib/x86_64-linux-gnu/",sep=":" ) )
   
-  Sys.setenv(DISPLAY=":1.0") #<- If getting Errors with loading xcb check paths above and DISPLAY value  here
-  Sys.setenv(PATH="/opt/Qt/5.15.0/gcc_64/bin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin")
+  Sys.setenv(DISPLAY=":1.0") #HOME<- If getting Errors with loading xcb check paths above and DISPLAY value  here
+  Sys.setenv(DISPLAY=":0") #OFFICE
+  Sys.setenv(PATH="/home/kostasl/Qt/5.15.1/gcc_64/bin:/opt/Qt/5.15.0/gcc_64/bin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin")
   Sys.setenv(QT_DIR="/opt/Qt/5.15.0/gcc_64")
   Sys.setenv(XDG_DATA_DIRS="/usr/share/ubuntu:/usr/local/share:/usr/share:/var/lib/snapd/desktop")
   Sys.setenv(XDG_RUNTIME_DIR="/run/user/1000")
@@ -92,13 +93,14 @@ getLabelledHuntEventsSet <- function(strProcDataFileName = "HB_allHuntEvents.rds
       if (NROW(vMatchedFileNames) == 1)
       {
           datHuntLabelledEventsSB[i,"filename"] <- (vMatchedFileNames) #basename
-          #message(i,datHuntLabelledEventsSB[i,"filename"])
+          message(i,datHuntLabelledEventsSB[i,"filename"])
       }else{
           message(i,"**No unique filename found : ", strFpatt, "Retrying with filter event ID:",as.character(rec$eventID))
           ##Retry with Event Number
           strFpatt <- paste0(rec$expID,"_.*",as.character(rec$groupID),".*",as.character(rec$testCond),"_.*",as.character(rec$eventID) )
           vMatchedFileNames <- vAvailableVideoFiles[which(grepl(strFpatt ,vAvailableVideoFiles))]
-          datHuntLabelledEventsSB[i,"filename"] <- (vMatchedFileNames) #xbasename 
+          if (NROW(vMatchedFileNames)> 0)
+            datHuntLabelledEventsSB[i,"filename"] <- (vMatchedFileNames) #xbasename 
       }
       ## Another Way is to search in Saved Records of tracked File Names
       #rec$filename <- basename(groupsrcdatListPerDataSet[[1]][[rec$groupID]][[1]][rec$fileIdx])
