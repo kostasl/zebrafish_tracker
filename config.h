@@ -235,6 +235,7 @@ class trackerState
       bool bshowDetectorDebugImg    = false; //Debug option  True will show the classifier scoring Masks and Extracted Fish Anterior Images
 
       bool bStartPaused             = false; //Command line controlled
+      bool bPauseAtVideoEnd         = true; //Command line controlled
       bool bPaused                  = false;
       bool bExiting;
       bool bTracking          = true;
