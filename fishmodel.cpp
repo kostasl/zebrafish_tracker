@@ -19,7 +19,7 @@ extern cv::Point gptTail,gptHead;
 fishModel::fishModel()
 {
         bNewModel = true;
-        stepUpdate = 1.0; // with fast rate and slow down with updates
+        //stepUpdate = 1.0; // with fast rate and slow down with updates
         bearingAngle                = 0.0f;
         Delta_bearingAngle          = 0.0f; //last Change In bearing
         lastTailFitError            = 0.0;
@@ -67,7 +67,7 @@ fishModel::fishModel()
 
 fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTemplateCenter):fishModel()
 {
-    stepUpdate = 1.0; // with fast rate and slow down with updates
+    //stepUpdate = 1.0; // with fast rate and slow down with updates
     inactiveFrames  = 0;
     this->ID        = blob.hash() ;
     //this->blobLabel = blob.hash();
@@ -164,8 +164,8 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
 //    KF.processNoiseCov.at<float>(5,5) = 1e-4f; //Angular Accell (V of Diff)
 //    KF.processNoiseCov.at<float>(4,5) = 1e-4f; //Angular Diff to Angle Accell
 //    KF.processNoiseCov.at<float>(6,6) = 0.0f; //Not Used
-    KF.processNoiseCov.at<float>(7,7) = 1e-3f; //Left Eye
-    KF.processNoiseCov.at<float>(8,8) = 1e-3f; //Right Eye
+    KF.processNoiseCov.at<float>(7,7) = 1e-2f; //Left Eye
+    KF.processNoiseCov.at<float>(8,8) = 1e-2f; //Right Eye
     //KF.processNoiseCov.at<float>(35) = 1e-1f;
 
     // Measures Noise Covariance Matrix R - Set high/low so Filter Follows Measurement more closely
@@ -180,8 +180,8 @@ fishModel::fishModel(zftblob blob,int bestTemplateOrientation,cv::Point ptTempla
     //KF.measurementNoiseCov.at<float>(4,5) = 1e-3f; //1e-1f; //Angular V_speed - Accell Covar
     //KF.measurementNoiseCov.at<float>(5,6) = 0;//1e-4f;//1e-1f; //Angular Accelleration-
 
-    KF.measurementNoiseCov.at<float>(7,7) = 1e-1f; //Left Eye
-    KF.measurementNoiseCov.at<float>(8,8) = 1e-1f; //Right Eye
+    KF.measurementNoiseCov.at<float>(7,7) = 2e-1f; //Left Eye
+    KF.measurementNoiseCov.at<float>(8,8) = 2e-1f; //Right Eye
 
     KF.statePre = mState;
     KF.statePost = mState.clone();
@@ -511,8 +511,8 @@ int fishModel::updateEyeMeasurement(tEllipsoids& vLeftEll,tEllipsoids& vRightEll
 
     // If we are stuck on same frame then estimate the unbiased empirical mean angle for each eye
     // use an incremental mean calculation
-    if (uiFrameIterations > 1)
-        stepUpdate = 1.0/std::min(200.0, (double)uiFrameIterations);
+//    if (uiFrameIterations > 1)
+//        stepUpdate = 1.0/std::min(200.0, (double)uiFrameIterations);
 
 
     tDetectedEllipsoid mleftEye(vLeftEll);
@@ -551,7 +551,7 @@ int fishModel::updateEyeMeasurement(tEllipsoids& vLeftEll,tEllipsoids& vRightEll
     }
 
     //Reset Step size to default
-     stepUpdate = gTrackerState.eyeStepIncrement;
+    // stepUpdate = gTrackerState.eyeStepIncrement;
 
  return (retPerfScore);
 

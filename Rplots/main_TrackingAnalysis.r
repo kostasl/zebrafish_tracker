@@ -36,7 +36,7 @@ library(boot)
 #library(hexbin)
 rm("temp","subsetDat","TrackerData","frameNAll");
 
-setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+#setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 #setwd(here())
 source("config_lib.R")
 
@@ -57,10 +57,11 @@ source("DataLabelling/labelHuntEvents_lib.r")
 #                               ),sep="/")
 ## Hunger Exp
 strDataSetDirectories <- paste(strTrackInputPath, list(
-                                 "B1/",
-                                 "B2/",
-                                 "B3/",
-                                 "B4/"##Dataset 2
+                                 #"B1/",
+                                 #"B2/",
+                                 #"B3/",
+                                 #"B4/",
+                                 "VAL"##Dataset 2
                                  ),sep="/")
 
 

@@ -163,7 +163,7 @@ public:
   const double c_fitErrorPerContourPoint = 4.5; //Max Error Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
   const double c_MaxSpineLengthLimit = 20;//1.0; //Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
   const double c_MinSpineLengthLimit = 7;//1.0; //Limit At Which The Fitted Spine Seems Far Off the Detected Fish Contour
-  double stepUpdate; //Eye Angle incremental update rate
+  //double stepUpdate; //Eye Angle incremental update rate
 
 private:
   const int stateSize = 9;
