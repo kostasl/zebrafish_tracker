@@ -123,7 +123,7 @@ void MainWindow::createSpinBoxes()
     //this->ui->spinBoxEyeThres->installEventFilter(this); //-Ve Values Allow for lowering Avg Threshold
     //this->ui->spinBoxEyeThres->setRange(-100,100); //-Set On GUI form -Ve Values Allow for lowering Avg Threshold
     this->ui->spinBoxEyeThres->setValue(gTrackerState.thresEyeEdgeCanny_low);
-    this->ui->spinBoxEyeThres_H->setValue(gTrackerState.thresEyeEdgeThresholdBlockSize);
+    this->ui->spinBoxEyeSegBlockSize->setValue(gTrackerState.thresEyeEdgeThresholdBlockSize);
 
     this->ui->spinBoxFoodThresMax->setValue(gTrackerState.g_SegFoodThesMax);
     this->ui->spinBoxFoodThresMin->setValue(gTrackerState.g_SegFoodThesMin);
@@ -1475,7 +1475,7 @@ void MainWindow::on_spinBoxMaxEllipse_valueChanged(int arg1)
 }
 
 
-void MainWindow::on_spinBoxEyeThres_H_valueChanged(int arg1)
+void MainWindow::on_spinBoxEyeSegBlockSize_valueChanged(int arg1)
 {
     if (bSceneMouseLButtonDown)
         LogEvent(QString("Changed higher Canny Eye Seg Threshold:") + QString::number(arg1));
@@ -1483,6 +1483,7 @@ void MainWindow::on_spinBoxEyeThres_H_valueChanged(int arg1)
     gTrackerState.thresEyeEdgeThresholdBlockSize = arg1;
     gTrackerState.thresEyeEdgeCanny_low = min(arg1,gTrackerState.thresEyeEdgeCanny_low);
 }
+
 
 
 void MainWindow::on_spinBoxEyeThres_valueChanged(int arg1)
@@ -1588,4 +1589,5 @@ void MainWindow::on_checkBoxEdgeDetectEllipsoid_toggled(bool checked)
 {
     gTrackerState.bUseEllipseEdgeFittingMethod = checked;
 }
+
 

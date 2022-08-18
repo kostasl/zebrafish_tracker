@@ -46,6 +46,7 @@
 
 ///Summary : Algorithm Checks a candidate ellipse with major axis between to pair of test points,
 ///  then estimates minor axis by testing all 3rd points and uses a voting procedure to check for possible minor axis and ellipse
+#include <QDebug>
 #include <ellipse_detect.h>
 #include <template_detect.h>
 #include <larvatrack.h>
@@ -784,7 +785,7 @@ void getBestEllipsoidFits(cv::Mat& imgRegion,tRankQueueEllipsoids& qEllipsoids,c
 
             }else
             {
-               QDebug() << "Detected Ellipsoid size is out of bounds";
+               qDebug() << "Detected Ellipsoid size is out of bounds";
             }
 
 
@@ -892,7 +893,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     imgUpsampled_gray.copyTo(imgEyeDiscover_secB,imgEyeDiscover_Mask);
     imgEyeDiscover += imgEyeDiscover_secB;
     cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 50,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,
-                          ceil(2*gTrackerState.thresEyeEdgeThresholdBlockSize-1),gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
+                          ceil(2*gTrackerState.thresEyeEdgeThresholdBlockSize-1), gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
     imgUpsampled_gray.copyTo(imgEyeDiscover_secB,imgEyeDiscover_Mask);
     imgEyeDiscover += imgEyeDiscover_secB;
     //cv::GaussianBlur(imgEyeDiscover,imgEyeDiscover,cv::Size(9,9),5,5);

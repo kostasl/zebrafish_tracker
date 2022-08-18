@@ -111,6 +111,15 @@ strCondR  <- "*.csv";
   strCondTags <- names(groupsrcdatList)
   source("processLoadedData.r") ##Detects HuntEvents
  
+  # ^^^^^^^
+  #### RUN UP TO THIS POINT TO GET DATA IMPORTED AND EVENTS DETECTED ####
+  ## The Frames Are in datAllFrames , the huntEvents are in datAllHuntEvents
+  
+  
+  
+  
+  
+  
   ##Once Processed you can Check and Validate Hunt Events Using main_LabellingBlind.r
   # 
   # 

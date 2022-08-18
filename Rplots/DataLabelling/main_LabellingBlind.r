@@ -19,10 +19,10 @@ library("MASS");
 
 ##FIX 4443 to fail with strike
 ####################
-setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+#setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 source("config_lib.R")
 
-setEnvFileLocations("OFFICE") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LAB") #HOME,OFFICE,#LAPTOP
 
 
 DIM_PXRADIUS <- 790 #Is the Radius Of the dish In the Video
@@ -102,6 +102,8 @@ message(paste(" Loading Hunt Event List to Process... ",strProcDataFileName))
 ##Load the latest set
 
 datHuntEventAllGroupToLabel  <- getLabelledHuntEventsSet()
+
+#datHuntEventAllGroupToLabel <- datHuntEventAllGroupToLabel[datHuntEventAllGroupToLabel$expID == 6,]
  ##<- datHuntEvent
 groupsList <- unique(datHuntEventAllGroupToLabel$groupID)
 str_FilterLabel <- "UnLabelled"
@@ -122,6 +124,7 @@ if (!dir.exists(out_Hdir))
 } ## If validation CSV subfolder does not Exist - make dir and export CSV with hunt events for each video
   for (expID in unique(datHuntEventAllGroupToLabel$expID) )
   {
+    
       for (testCod in unique(datHuntEventAllGroupToLabel$testCond))
       {
         if (Keyc == 'q')
@@ -143,6 +146,7 @@ if (!dir.exists(out_Hdir))
       if (NROW(datEventsForTracker) > 0 )
       {
         filename_csv <- paste0(strsplit(head(basename(datHuntEvents_exp$filename),1),split = ".",fixed=T)[[1]][1],"_huntevents.csv")  
+        filename_csv <- paste0("HB",expID,"_",testCod,"_",eventID,"_huntevents.csv")  
         if (!file.exists(paste0(out_Hdir,filename_csv))) ##Do not Overwrite Existing - In case user has updated it 
           write.table(datEventsForTracker,paste0(out_Hdir,filename_csv),sep=",",row.names=F )
         else
@@ -159,7 +163,7 @@ if (!dir.exists(out_Hdir))
        message(paste("\n Validating video  ExpID:",expID,"event :",eventID," ",testCod ) )
        strVideoFile <- head(datHuntEvents_exp$filename,1)
        strArgs = paste0(" --HideDataSource=1 --MeasureMode=1 --ModelBG=1 --SkipTracked=0 --PolygonROI=0 --invideofile=",strVideoFile,
-                       " --outputdir=",strTrackeroutPath," --DNNModelFile=","/home/kostasl/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc",
+                       " --outputdir=",strTrackeroutPath," --DNNModelFile=","/home/meyerlab/workspace/zebrafishtrack/tensorDNN/savedmodels/fishNet_loc",
                        " --HuntEventsFile=",paste0(out_Hdir,filename_csv)," --startpaused=1")
       
        message(paste(strTrackerPath,"/zebraprey_track",strArgs,sep=""))
