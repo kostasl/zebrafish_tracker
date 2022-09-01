@@ -156,8 +156,6 @@ private slots:
 
     void on_spinBoxMaxEllipse_valueChanged(int arg1);
 
-    void on_spinBoxEyeThres_H_valueChanged(int arg1);
-
     void on_tblHuntEvents_cellDoubleClicked(int row, int column);
 
     void on_tblHuntEvents_cellClicked(int row, int column);
@@ -177,6 +175,8 @@ private slots:
     void on_horizontalSlider_sliderMoved(int position);
 
     void on_checkBoxEdgeDetectEllipsoid_toggled(bool checked);
+
+    void on_spinBoxEyeSegBlockSize_valueChanged(int arg1);
 
 private:
     void reportUserMeasurement(cv::Point ptMouse);

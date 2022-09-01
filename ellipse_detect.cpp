@@ -46,6 +46,7 @@
 
 ///Summary : Algorithm Checks a candidate ellipse with major axis between to pair of test points,
 ///  then estimates minor axis by testing all 3rd points and uses a voting procedure to check for possible minor axis and ellipse
+#include <QDebug>
 #include <ellipse_detect.h>
 #include <template_detect.h>
 #include <larvatrack.h>
@@ -766,11 +767,14 @@ void getBestEllipsoidFits(cv::Mat& imgRegion,tRankQueueEllipsoids& qEllipsoids,c
         {
             vEyes.push_back(vEyeHull);
             rcLEye =  cv::fitEllipse(vEyeHull);
+            //Sometimes boundingRect2f returns nan for dimensions
+            float fEllipseWidth = (isnan(rcLEye.boundingRect2f().width))?rcLEye.size.width:rcLEye.boundingRect2f().width;
+            float fEllipseHeight = (isnan(rcLEye.boundingRect2f().height))?rcLEye.size.height:rcLEye.boundingRect2f().height;
             //Check If Ellipse Axis Within Range
-            if (rcLEye.boundingRect2f().height > gTrackerState.gi_minEllipseMajor &
-                rcLEye.boundingRect2f().width > gTrackerState.gi_minEllipseMinor &
-                rcLEye.boundingRect2f().height <= gTrackerState.gi_maxEllipseMajor &
-                rcLEye.boundingRect2f().width <= gTrackerState.gi_maxEllipseMinor)
+            if (fEllipseHeight > gTrackerState.gi_minEllipseMajor &
+                fEllipseWidth > gTrackerState.gi_minEllipseMinor &
+                fEllipseHeight <= gTrackerState.gi_maxEllipseMajor &
+                fEllipseWidth <= gTrackerState.gi_maxEllipseMinor)
             {
                 tDetectedEllipsoid dEll(rcLEye,100);
                 //ellipseDetected.fitscore       = dEll.fitscore;
@@ -779,7 +783,11 @@ void getBestEllipsoidFits(cv::Mat& imgRegion,tRankQueueEllipsoids& qEllipsoids,c
                 // Show Ellipse Made from Combined Contours
                 cv::ellipse(img_colour, rcLEye ,CV_RGB(255,255,255),1); //Draw detected Ellipse
 
+            }else
+            {
+               qDebug() << "Detected Ellipsoid size is out of bounds";
             }
+
 
         }
     }
@@ -885,7 +893,7 @@ int detectEyeEllipses(cv::Mat& pimgIn,tEllipsoids& vLellipses,tEllipsoids& vRell
     imgUpsampled_gray.copyTo(imgEyeDiscover_secB,imgEyeDiscover_Mask);
     imgEyeDiscover += imgEyeDiscover_secB;
     cv::adaptiveThreshold(imgUpsampled_gray, imgEyeDiscover_Mask, 50,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY,
-                          ceil(2*gTrackerState.thresEyeEdgeThresholdBlockSize-1),gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
+                          ceil(2*gTrackerState.thresEyeEdgeThresholdBlockSize-1), gTrackerState.thresEyeEdgeCanny_low); // Log Threshold Image + cv::THRESH_OTSU
     imgUpsampled_gray.copyTo(imgEyeDiscover_secB,imgEyeDiscover_Mask);
     imgEyeDiscover += imgEyeDiscover_secB;
     //cv::GaussianBlur(imgEyeDiscover,imgEyeDiscover,cv::Size(9,9),5,5);

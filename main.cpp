@@ -932,7 +932,8 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
                        {
                            // Too Many Errors / Fail On Tracking
                            std::cerr << gTimer.elapsed()/60000.0 << " [Error] " << nErrorFrames << "  Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure" << std::endl;
-                           gTrackerState.saveState("TrackerConfig.xml");
+                           QFileInfo outFileNfo(outdatafile);
+                           gTrackerState.saveState( (outFileNfo.baseName() + QString::fromStdString("_settings.xml")).toStdString() );
                            removeDataFile(outdatafile);
                            break;
                        }
@@ -942,11 +943,15 @@ unsigned int processVideo(cv::Mat& bgStaticMask, MainWindow& window_main, QStrin
                    {
                        std::clog << gTimer.elapsed()/60000.0 << " [info] processVideo loop done on frame: " << nFrame << std::endl;
                          ::saveImage(frameNumberString,QString::fromStdString( gTrackerState.gstroutDirCSV),videoFilename,outframe);
-                         gTrackerState.saveState("TrackerConfig.xml");
-                         if (gTrackerState.bTracking) //If in Tracking MOde then Exit Loop - Processing done
+                       QFileInfo outFileNfo(outdatafile);
+                       gTrackerState.saveState( (outFileNfo.baseName() + QString::fromStdString("_settings.xml")).toStdString() );
+                         if (gTrackerState.bTracking || !gTrackerState.bPauseAtVideoEnd) //If in Tracking MOde then Exit Loop - Processing done
                             break;
-                         else //In Playback mode - just pause on last frame
+                         if (gTrackerState.bPauseAtVideoEnd) //In Playback mode - just pause on last frame
+                         {
                              gTrackerState.bPaused = true;
+                             gframeLast.copyTo(frame); //Stick to the last Frame
+                         }
                    }
                    //continue;
                 }

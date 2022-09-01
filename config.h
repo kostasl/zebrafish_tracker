@@ -235,6 +235,7 @@ class trackerState
       bool bshowDetectorDebugImg    = false; //Debug option  True will show the classifier scoring Masks and Extracted Fish Anterior Images
 
       bool bStartPaused             = false; //Command line controlled
+      bool bPauseAtVideoEnd         = true; //Command line controlled
       bool bPaused                  = false;
       bool bExiting;
       bool bTracking          = true;
@@ -311,11 +312,11 @@ class trackerState
       int gi_maxEllipseMajor      = 40; /// thres  for Eye Ellipse Detection methods
       int gi_minEllipseMajor      = 21; ///thres for Eye Ellipse Detection methods (These Values Tested Woodrked Best)
       int gi_minEllipseMinor      = 1; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
-      int gi_maxEllipseMinor      = 25; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
+      int gi_maxEllipseMinor      = 30; /// ellipse detection WIDTH - When 0 it allows for detecting straight line
       int gi_MaxEllipseSamples    = 10; //The number of fitted ellipsoids draw from the ranked queue to calculate mean fitted eye Ellipse
       int gi_VotesEllipseThres            = 5; //Votes thres for The Backup Ellipse Detection Based on the Hough Transform
       int thresEyeEdgeCanny_low             = -18; // Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
-      int thresEyeEdgeThresholdBlockSize    = 31; // Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
+      int thresEyeEdgeThresholdBlockSize    = 3; // Additional Adjustment for Adaptive Threshold  For Eye Segmentation In Isolated Head IMage -Shown On GUI
       int edgeCanny_ApertureSize            = 7;
 
       int gEyeMaskErrosionIterations      = 1;
@@ -347,8 +348,8 @@ class trackerState
       int gFishTemplateAngleSteps     = 1;
       int gEyeTemplateAngleSteps      = 5;
 
-      double eyeStepIncrement               = 0.8; //DEPRECATED by Kalman F: Eye Angles Can be Slowly Updated on each Frame- Change with Step Size eyeStepIncrement
-      double gTemplateMatchThreshold        = 0.69; //Template Matching is tested After Fish Net Classifier Has passed-
+      //double eyeStepIncrement               = 0.8; //DEPRECATED by Kalman F: Eye Angles Can be Slowly Updated on each Frame- Change with Step Size eyeStepIncrement
+      double gTemplateMatchThreshold        = 0.79; //Template Matching is tested After Fish Net Classifier Has passed-
       double gTemplateMatchThreshold_LowLimit = 0.65;
       double gTemplateMatchThreshold_UpLimit  = 0.95;
 
@@ -421,7 +422,8 @@ class trackerState
             CEREAL_NVP(bUseBGModelling),CEREAL_NVP(bStaticBGMaskRemove), CEREAL_NVP(gbUpdateBGModel),CEREAL_NVP(gbUpdateBGModelOnAllVids),
             CEREAL_NVP(bSkipExisting),CEREAL_NVP(bTrackFood),CEREAL_NVP(bTracking),CEREAL_NVP(bStartPaused),
             CEREAL_NVP(gfVidfps),CEREAL_NVP(uiStartFrame),CEREAL_NVP(uiStopFrame),CEREAL_NVP(uiTotalFrames),
-            CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(thresEyeEdgeCanny_low),CEREAL_NVP(gEyeMaskErrosionIterations),
+            CEREAL_NVP(g_FGSegthresh),CEREAL_NVP(g_SegFoodThesMax),CEREAL_NVP(g_SegFoodThesMin),CEREAL_NVP(thresEyeEdgeCanny_low),CEREAL_NVP(thresEyeEdgeThresholdBlockSize),
+             CEREAL_NVP(gEyeMaskErrosionIterations),
             CEREAL_NVP(gi_MaxEllipseSamples),CEREAL_NVP(gi_VotesEllipseThres),CEREAL_NVP(gi_minEllipseMinor),CEREAL_NVP(gi_minEllipseMajor),CEREAL_NVP(gi_maxEllipseMajor),
             CEREAL_NVP(gi_CannyThresSmall),CEREAL_NVP(gi_CannyThres),CEREAL_NVP(gdMOGBGRatio),
             CEREAL_NVP(MOGhistory),CEREAL_NVP(thresh_minfishblobarea),CEREAL_NVP(thresh_maxfishblobarea),CEREAL_NVP(iEyeHMaskSepRadius),
