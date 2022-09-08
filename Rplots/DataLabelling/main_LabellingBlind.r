@@ -116,7 +116,7 @@ str_FilterLabel <- "UnLabelled"
 ## New method for validation using updated Tracker -
 # VALIDATION Export Hunt Events table for each experiment - These are then imported to tracker for validation
 ## Write in separate folder so as not to overwrite ongoing validation files ##
-out_Hdir <- paste0(strDataExportDir,"/LabelledSet/ToValidate/")
+out_Hdir <- paste0(strDataExportDir,"/LabelledSet/ToValidate_blank/")
 Keyc = 'n'
 if (!dir.exists(out_Hdir))
 {
@@ -151,6 +151,7 @@ if (!dir.exists(out_Hdir))
           write.table(datEventsForTracker,paste0(out_Hdir,filename_csv),sep=",",row.names=F )
         else
           warning("Will not overwrite existing : ", filename_csv," Table may have been validated by user. ")
+          next()
       }else
       {
         filename_csv <- paste0("HB",expID,"_",testCod,"_",eventID,"_huntevents.csv")  
