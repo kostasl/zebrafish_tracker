@@ -38,11 +38,11 @@ DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from Centroid To Mouth based on h
 DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
 G_APPROXFPS              <- 60
-G_THRESHUNTANGLE         <- 20 #Define Min Angle Both Eyes need for a hunting event to be assumed
-G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
-G_HUNTSCORETHRES         <- 0.95 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
-G_THRESHCLIPEYEDATA      <- 40 ##Limit To Which Eye Angle Data is filtered to lie within
-G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/3
+G_THRESHUNTANGLE         <- 16 #Define Min Angle Both Eyes need to exceed for a hunting event to be assumed
+G_THRESHUNTVERGENCEANGLE <- 44 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_HUNTSCORETHRES         <- 0.65 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
+G_THRESHCLIPEYEDATA      <- 50 ##Limit To Which Eye Angle Data is filtered to lie within
+G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/2
 G_MINEPISODEDURATION     <- G_APPROXFPS/3
 G_MIN_BOUTSPEED          <- 0.2 ##mm/frame - Need to be above to be considered A Motion Bout
 G_THRES_CAPTURE_SPEED    <-  16 ###15##mm/sec ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
@@ -131,8 +131,10 @@ strDataLabels <- expression("NF-s","LF-s","DF-s","NF-e","LF-e","DF-e" )
 ## Uses Global assignment operateor <<- to set file locations depending on which system I am running the code on
 setEnvFileLocations <- function(strSetName)
 {
+  
   if (strSetName == "HOME")
   {
+    message("Set Global path parameters to ", strSetName, " environment")
     ## Required Variables - Locations -- Choose According To 
     # Home Desktop
     setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
@@ -141,8 +143,8 @@ setEnvFileLocations <- function(strSetName)
     strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_15_0_GCC_64bit-Release" 
     strTrackeroutPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/Huntevents_retracked"#/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
     #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/"
-    #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/expData/Olivia_assay/" 
-    strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/" 
+    strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/" 
+    #strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/tracked_org/" 
 
     strDatDir         <<-  "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat" ##Where Are the Imported RData Stored
     #strDatDir         <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedOlivia/" ##Where Are the Imported RData Stored
