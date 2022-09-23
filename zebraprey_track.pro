@@ -47,7 +47,7 @@ RC_ICONS = myappico.ico
 
 QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig
-PKGCONFIG += opencv gsl  #or whatever package here
+PKGCONFIG += opencv4 gsl  #or whatever package here , can be opencv4
 
 unix|win32: LIBS += -ltensorflow
 

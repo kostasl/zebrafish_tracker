@@ -148,10 +148,12 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
     larvaID = unique((datLarvaFramesRaw$larvaID))
     testCond = unique(datLarvaFramesRaw$testCond)
     
-    ##Filter To Keep Only data in range ###
-    datLarvaFrames <- datLarvaFramesRaw[which(datLarvaFramesRaw$REyeAngle > -G_THRESHCLIPEYEDATA & datLarvaFramesRaw$REyeAngle <  G_THRESHCLIPEYEDATA &
-                                              datLarvaFramesRaw$LEyeAngle > -G_THRESHCLIPEYEDATA & datLarvaFramesRaw$LEyeAngle <  G_THRESHCLIPEYEDATA) | 
-                                              datLarvaFramesRaw$huntScore > 0.5,]
+    ## HUNT EVENT FILTER ##
+    ## Filter To Keep Only data in range  ###
+    datLarvaFrames <- datLarvaFramesRaw[which(
+                                              (datLarvaFramesRaw$REyeAngle > -G_THRESHCLIPEYEDATA & datLarvaFramesRaw$REyeAngle <  G_THRESHCLIPEYEDATA) |
+                                              (datLarvaFramesRaw$LEyeAngle > -G_THRESHCLIPEYEDATA & datLarvaFramesRaw$LEyeAngle <  G_THRESHCLIPEYEDATA) & 
+                                              datLarvaFramesRaw$huntScore > 0.5),]
     
     nTotalHuntFrames      <- 0
     nTotalRecordedFrames  <- NROW(datLarvaFrames) ##Will be calculated as diff in frame N for each Event (Each Event FrameN starts from 0 in tracker)
@@ -181,7 +183,7 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
         datHuntFrames    <- datLarvaFrames[which(datLarvaFrames$eventID == k &
                                           (datLarvaFrames$REyeAngle < -G_THRESHUNTANGLE |
                                            datLarvaFrames$LEyeAngle > G_THRESHUNTANGLE) &
-                                        (abs(datLarvaFrames$LEyeAngle-datLarvaFrames$REyeAngle) >= G_THRESHUNTVERGENCEANGLE | 
+                                        (abs(datLarvaFrames$LEyeAngle-datLarvaFrames$REyeAngle) >= G_THRESHUNTVERGENCEANGLE & 
                                           datLarvaFrames$huntScore > G_HUNTSCORETHRES) )  
                                           ,]
         
