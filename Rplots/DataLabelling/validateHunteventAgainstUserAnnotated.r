@@ -30,8 +30,10 @@ vFrameDistToAutoDetectedHuntEvent <- tapply(datAllStartFramePairs_top$frameDista
 ## Get Number of Detected events - use thres between auto detected and manual event 
 vTruePositiveDetected <- vFrameDistToAutoDetectedHuntEvent[vFrameDistToAutoDetectedHuntEvent < G_MINGAPBETWEENEPISODES] 
 nTruePositiveDetected <- NROW(vTruePositiveDetected)
+## The remaining manually labelled events that were not matched are counted as falsellly classified as negative
+nFalseNegativeDetected <- NROW(vFrameDistToAutoDetectedHuntEvent) - NROW(vTruePositiveDetected)
 vValidatedAutoDetectedEvents <- as.numeric(names(vTruePositiveDetected))
-sensitivity <- nTruePositiveDetected/(NROW(vFrameDistToAutoDetectedHuntEvent))
+sensitivity <- nTruePositiveDetected/(nTruePositiveDetected + nFalseNegativeDetected)
 ## Plot Manual and Automatic
 
 datExpFrames = datAllFrames[datAllFrames$expID == vExpID[1] ,]
@@ -43,4 +45,5 @@ points(datAllStartFramePairs_top$automatic,rep(60,NROW(datAllStartFramePairs_top
 points(datHuntEventsM$startFrame,rep(63,NROW(datHuntEventsM)),pch=25,col="blue")
 points(vValidatedAutoDetectedEvents,rep(64,NROW(vValidatedAutoDetectedEvents)),pch=25,col="purple")
 legend("bottomright",legend = c("auto","manual","matched"),col=c("red","blue","purple"),pch=c(2,25,25) )
+title(paste("Validation of Hunt event detection sensitivity:",sensitivity*100) )
 
