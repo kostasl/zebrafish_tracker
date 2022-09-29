@@ -25,6 +25,13 @@ datAllStartFramePairs_top <- datAllStartFramePairs[head(idxSort, nTopSelected ),
 ## Select Events That 
 #datAllStartFramePairs_matched <- datAllStartFramePairs[datAllStartFramePairs$frameDistance,]
 
+## Find Closesto automatically detected frame to the Manually labelled one
+vFrameDistToAutoDetectedHuntEvent <- tapply(datAllStartFramePairs_top$frameDistance,datAllStartFramePairs_top$manual,min)
+## Get Number of Detected events - use thres between auto detected and manual event 
+vTruePositiveDetected <- vFrameDistToAutoDetectedHuntEvent[vFrameDistToAutoDetectedHuntEvent < G_MINGAPBETWEENEPISODES] 
+nTruePositiveDetected <- NROW(vTruePositiveDetected)
+vValidatedAutoDetectedEvents <- as.numeric(names(vTruePositiveDetected))
+sensitivity <- nTruePositiveDetected/(NROW(vFrameDistToAutoDetectedHuntEvent))
 ## Plot Manual and Automatic
 
 datExpFrames = datAllFrames[datAllFrames$expID == vExpID[1] ,]
@@ -34,5 +41,6 @@ abline(h=G_THRESHUNTVERGENCEANGLE,lwd=2,lty=2)
 points(datAllStartFramePairs_top$automatic,rep(60,NROW(datAllStartFramePairs_top)),pch=2,col="red")
 #points(datAllStartFramePairs_top$manual,rep(64,NROW(datAllStartFramePairs_top)),pch=6,col="blue")
 points(datHuntEventsM$startFrame,rep(63,NROW(datHuntEventsM)),pch=25,col="blue")
-legend("bottomright",legend = c("auto","manual"),col=c("red","blue"),pch=c(2,6) )
+points(vValidatedAutoDetectedEvents,rep(64,NROW(vValidatedAutoDetectedEvents)),pch=25,col="purple")
+legend("bottomright",legend = c("auto","manual","matched"),col=c("red","blue","purple"),pch=c(2,25,25) )
 
