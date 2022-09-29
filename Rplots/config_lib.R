@@ -202,6 +202,8 @@ setEnvFileLocations <- function(strSetName)
     strDataExportDir  <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/dat"
     strDataStore      <<-  "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows
     strPlotExportPath <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/plots"
+    
+    # "/mnt/Datastore/Olivia/Thesis
   }  
 }
   
