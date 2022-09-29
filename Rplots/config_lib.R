@@ -38,8 +38,8 @@ DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from Centroid To Mouth based on h
 DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
 G_APPROXFPS              <- 60
-G_THRESHUNTANGLE         <- 16 #Define Min Angle Both Eyes need to exceed for a hunting event to be assumed
-G_THRESHUNTVERGENCEANGLE <- 42 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_THRESHUNTANGLE         <- 14 #Define Min Angle Both Eyes need to exceed for a hunting event to be assumed
+G_THRESHUNTVERGENCEANGLE <- 40 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
 G_HUNTSCORETHRES         <- 0.65 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
 G_THRESHCLIPEYEDATA      <- 50 ##Limit To Which Eye Angle Data is filtered to lie within
 G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/2

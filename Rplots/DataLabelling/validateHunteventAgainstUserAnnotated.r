@@ -8,6 +8,7 @@ setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
 load("/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat/datAllFrames_Ds-1-4.RData")
 
 vExpID <- c(104)
+
 ## Load Manually Labelled Data for Exp
 datHuntEventsM <- read.csv(file="/mnt/data/Dropbox/Calculations/zebrafishtrackerData/OliviaHuntEventValidate/ManuallyLabelled/fish104_video_mpeg_fixed_huntEvents.csv", header = T)
 
@@ -38,12 +39,13 @@ sensitivity <- nTruePositiveDetected/(nTruePositiveDetected + nFalseNegativeDete
 
 datExpFrames = datAllFrames[datAllFrames$expID == vExpID[1] ,]
 
-plot(datExpFrames$frameN,(datExpFrames$LEyeAngle-datExpFrames$REyeAngle),type="l",ylim=c(0,70),ylab="Eye vergence")
+plot(datExpFrames$frameN,(datExpFrames$LEyeAngle-datExpFrames$REyeAngle),type="l",ylim=c(0,70),ylab="Eye vergence",xlab="frame N")
 abline(h=G_THRESHUNTVERGENCEANGLE,lwd=2,lty=2)
 points(datAllStartFramePairs_top$automatic,rep(60,NROW(datAllStartFramePairs_top)),pch=2,col="red")
 #points(datAllStartFramePairs_top$manual,rep(64,NROW(datAllStartFramePairs_top)),pch=6,col="blue")
 points(datHuntEventsM$startFrame,rep(63,NROW(datHuntEventsM)),pch=25,col="blue")
 points(vValidatedAutoDetectedEvents,rep(64,NROW(vValidatedAutoDetectedEvents)),pch=25,col="purple")
-legend("bottomright",legend = c("auto","manual","matched"),col=c("red","blue","purple"),pch=c(2,25,25) )
-title(paste("Validation of Hunt event detection sensitivity:",sensitivity*100) )
+legend("bottomright",
+       legend = c(paste("auto n",NROW(datHuntEvents)),paste("manual n",NROW(datHuntEventsM)),paste("matched n",nTruePositiveDetected) ) ,col=c("red","blue","purple"),pch=c(2,25,25) )
+title(paste("F", unique(datHuntEvents$expID) ,"Hunt event detection sensitivity:",prettyNum(sensitivity*100,digits=4)) )
 
