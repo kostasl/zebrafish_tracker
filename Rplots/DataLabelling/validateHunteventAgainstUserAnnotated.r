@@ -2,15 +2,19 @@
 ## Kostas 2022
 source("config_lib.R")
 source("HuntingEventAnalysis_lib.r")
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
 
 
-load("/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat/datAllFrames_Ds-1-4.RData")
+load("/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat//setn1_Dataset_VAL.RData")
 
-vExpID <- c(108)
+vExpID <- c(3)
+
+
+expID <- vExpID[1]
 ## Load Manually Labelled Data for Exp
-datHuntEventsM <- read.csv(file="/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat/ManuallyLabelled/fish108_video_mpeg_fixed_huntEvents.csv
-", header = T)
+strFileUserHuntEvents <- paste0(strDataExportDir,"ManuallyLabelled/fish",expID,"_video_mpeg_fixed_huntEvents.csv") 
+datHuntEventsM <- read.csv(
+  file=strFileUserHuntEvents, header = T)
 
 ## Load Automated detection
 datHuntEvents <- detectHuntEvents(datAllFrames,vExpID,"LR",1)
@@ -29,17 +33,24 @@ datAllStartFramePairs_top <- datAllStartFramePairs[head(idxSort, nTopSelected ),
 ## Find Closesto automatically detected frame to the Manually labelled one
 vFrameDistToAutoDetectedHuntEvent <- tapply(datAllStartFramePairs_top$frameDistance,datAllStartFramePairs_top$manual,min)
 ## Get Number of Detected events - use thres between auto detected and manual event 
-vTruePositiveDetected <- vFrameDistToAutoDetectedHuntEvent[vFrameDistToAutoDetectedHuntEvent < G_MINGAPBETWEENEPISODES] 
+vTruePositiveDetected <- vFrameDistToAutoDetectedHuntEvent[vFrameDistToAutoDetectedHuntEvent < HUNTEVENT_MATCHING_OFFSET] 
 nTruePositiveDetected <- NROW(vTruePositiveDetected)
-## The remaining manually labelled events that were not matched are counted as falsellly classified as negative
+## The remaining manually labelled events that were not matched are counted as falselly classified as negative
 nFalseNegativeDetected <- NROW(vFrameDistToAutoDetectedHuntEvent) - NROW(vTruePositiveDetected)
 vValidatedAutoDetectedEvents <- as.numeric(names(vTruePositiveDetected))
+## How likely is it that tracker detects a hunt event 
 sensitivity <- nTruePositiveDetected/(nTruePositiveDetected + nFalseNegativeDetected)
+## How likely is it that it responds specific to genuine hunt events
+nFalsePositives <- NROW(datHuntEvents) - NROW(datHuntEventsM)
+## Since we are classifying each frame, then here All non-Hunt Frames classified as such are True negatives - problem is the majority of frames are  true negatives are hunt events are generally rare
+# Sum Total Automatic Detected Hunt Frames
+nDetectedHuntFrames <- sum(datHuntEvents$endFrame - datHuntEvents$startFrame)  
+nTrueNegative <- 
 ## Plot Manual and Automatic
 
 datExpFrames = datAllFrames[datAllFrames$expID == vExpID[1] ,]
 
-plot(datExpFrames$frameN,(datExpFrames$LEyeAngle-datExpFrames$REyeAngle),type="l",ylim=c(0,70),ylab="Eye vergence",xlab="frame N")
+plot(datExpFrames$frameN,(datExpFrames$LEyeAngle-datExpFrames$REyeAngle),type="l",ylim=c(0,70),ylab="Eye vergence",xlab="frame N",xlim=c(0,10000))
 abline(h=G_THRESHUNTVERGENCEANGLE,lwd=2,lty=2)
 points(datAllStartFramePairs_top$automatic,rep(60,NROW(datAllStartFramePairs_top)),pch=2,col="red")
 #points(datAllStartFramePairs_top$manual,rep(64,NROW(datAllStartFramePairs_top)),pch=6,col="blue")

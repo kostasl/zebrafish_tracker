@@ -44,6 +44,7 @@ G_HUNTSCORETHRES         <- 0.65 ## Detection Thresh for DNN HUNT event detectio
 G_THRESHCLIPEYEDATA      <- 50 ##Limit To Which Eye Angle Data is filtered to lie within
 G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/2
 G_MINEPISODEDURATION     <- G_APPROXFPS/3
+HUNTEVENT_MATCHING_OFFSET <- 2*G_APPROXFPS # Max frames to accept as mismatch when matching manual to auto detected huntevents during tracker validation - frames to Used in validateHuntEventsAgainstUserAnnotated
 G_MIN_BOUTSPEED          <- 0.2 ##mm/frame - Need to be above to be considered A Motion Bout
 G_THRES_CAPTURE_SPEED    <-  16 ###15##mm/sec ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
 G_THRES_MOTION_BOUT_SPEED <- 2.9 ##Got from Clustering #4 ##mm/sec
@@ -181,7 +182,7 @@ setEnvFileLocations <- function(strSetName)
     strVideoFilePath  <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples"
     strTrackerPath    <<-  "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_2_GCC_64bit-Release"
     strTrackeroutPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/"
-    strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat"##Where to source the Tracker csv files from 
+    strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/"##Where to source the Tracker csv files from 
     strDatDir         <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/" ##Where Are the Imported RData Stored
     strDataExportDir  <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat/"
     strDataStore      <<-  "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows

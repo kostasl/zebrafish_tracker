@@ -36,7 +36,7 @@ library(boot)
 #library(hexbin)
 rm("temp","subsetDat","TrackerData","frameNAll");
 
-#setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 #setwd(here())
 source("config_lib.R")
 
@@ -72,7 +72,7 @@ rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
 strCondR  <- "*.csv"; 
 #display.brewer.all() to see avaulable options
 
-
+stopifnot(file.exists(strDataSetDirectories))
 #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
 ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
 ##NOTE: Assumes Files Begin with "Auto" and end with "track"
