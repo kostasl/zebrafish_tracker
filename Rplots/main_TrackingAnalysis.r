@@ -40,7 +40,7 @@ rm("temp","subsetDat","TrackerData","frameNAll");
 #setwd(here())
 source("config_lib.R")
 
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP,LAB
+setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP,LAB
 
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")

@@ -178,14 +178,15 @@ setEnvFileLocations <- function(strSetName)
   {
     ## Laptop ##
     setwd("~/workspace/zebrafishtrack/Rplots")
-    strVideoFilePath  <<- "/media/kostasl/zfishDataAlpha"
+    strVideoFilePath  <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples"
     strTrackerPath    <<-  "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_2_GCC_64bit-Release"
-    strTrackeroutPath <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
-    strTrackInputPath <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData"##Where to source the Tracker csv files from 
-    strDatDir         <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/dat/TrkSessionHungerExp/camA" ##Where Are the Imported RData Stored
-    strDataExportDir  <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/out/"
-    strDataStore      <<-  "/mnt/data//Nextcloud/Dropbox_overflow/Calculations/zebrafishtrackerData/out/HungerExp" ##Where Large Data Is stored because Dropbox-Overflows
+    strTrackeroutPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/"
+    strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat"##Where to source the Tracker csv files from 
+    strDatDir         <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/" ##Where Are the Imported RData Stored
+    strDataExportDir  <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat/"
+    strDataStore      <<-  "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows
     strPlotExportPath <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/plots"
+    
   }  
   
   if (strSetName == "LAB")

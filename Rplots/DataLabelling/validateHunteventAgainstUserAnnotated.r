@@ -2,15 +2,15 @@
 ## Kostas 2022
 source("config_lib.R")
 source("HuntingEventAnalysis_lib.r")
-setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 
 load("/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat/datAllFrames_Ds-1-4.RData")
 
-vExpID <- c(104)
-
+vExpID <- c(108)
 ## Load Manually Labelled Data for Exp
-datHuntEventsM <- read.csv(file="/mnt/data/Dropbox/Calculations/zebrafishtrackerData/OliviaHuntEventValidate/ManuallyLabelled/fish104_video_mpeg_fixed_huntEvents.csv", header = T)
+datHuntEventsM <- read.csv(file="/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat/ManuallyLabelled/fish108_video_mpeg_fixed_huntEvents.csv
+", header = T)
 
 ## Load Automated detection
 datHuntEvents <- detectHuntEvents(datAllFrames,vExpID,"LR",1)
