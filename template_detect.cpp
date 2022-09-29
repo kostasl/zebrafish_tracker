@@ -259,7 +259,7 @@ void makeTemplateVar(cv::Mat& templateIn,cv::Mat& imgTemplateOut, int iAngleStep
 /// \param imgTemplCache Global large Mat 2D image having the array of Templates
 /// \param templSz The size of each template icon as saved in the Cache - These are a square along largest templ Dim
 /// \param startRow - Optimization So search begins from the most likely Template as of the last one
-/// \param startCol - Optimization So search begins from the most likely Template Angle
+/// \param startCol - Optimization So search begins from the most likely Template Angle - Set To Zero And the All Angles Will be searched
 /// \param findFirstMatch if true It Looks for 1st template row that exceeds threshold - otherwise it looks for best match through all cache
 /// \note The calling Function needts reposition maxLoc To the global Frame, if imgGreyIn is a subspace of the image
 /// if Row scanning is disabled when bTemplateSearchThroughRows is not set
@@ -300,7 +300,7 @@ int templatefindFishInImage(cv::Mat& imgRegionIn,cv::Mat& imgtemplCache,cv::Size
 
   // Start from Angle Region as set from last search
   if (startCol > iIdxAngleMargin)
-      startCol -=iIdxAngleMargin; //Move to Template 3Angle Steps anticlockwise
+      startCol -=iIdxAngleMargin; //Move to Template N Angle Steps anticlockwise
 
  //Best Match Flag Forces A Full Search Through the Cache
   if (findFirstMatch) //Reset Search To Start From Top

@@ -741,9 +741,10 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                   break;
               }
              }
-       } //Existing FishModel
+       } //Check for Existing FishModel
 
-       ///If Fish No longer on the same position - Scan Region Around Blob to Find precise Head point - using Classifier
+       /// Low Match Score Could mean Fish is No longer on the same position -
+       ///  Scan Region Around Blob to Find precise Head point - using Classifier
        if (kp.response < gTrackerState.fishnet_classifier_thres)
        {
                /// PYRAMID Detection
@@ -794,10 +795,10 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
 
 
            }else{
-               //Show User Where Failed Detection Happened
-               cv::circle(outUserFrame,kp.pt,5,CV_RGB(255,5,5),2,LINE_AA );
+               //Show User Where Fish Contour Detection Happened
+               cv::circle(outUserFrame,kp.pt,5,CV_RGB(5,5,255),2,LINE_AA );
                continue; //Next Contour
-          } //Key Point Does not belong to existing Fish position - where a fish can be detected
+          } //Check If Key Point Does not belong existing Fish position / and Scan Area to relocate Fish
 
 
        // Head Has been located by Classifier - Now Fix Orientation
@@ -813,7 +814,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
 
         QString strfRecScore = QString::number(kp.response,'g',3);
         iHitCount++;
-        //qDebug() << "(" << kp.pt.x << "," << kp.pt.y << ")" << "R:" << strfRecScore;
+        qDebug() << kp.angle << " (" << kp.pt.x << "," << kp.pt.y << ")" << "R:" << strfRecScore;
 
         /// Add TO Filtered KP - IF keypoint is still within roi (moved by classifier) and Passes Classifier threshold
         if (kp.response >= gTrackerState.fishnet_classifier_thres &&
@@ -836,6 +837,17 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                     kp.pt               = ptSearch; //Does not Work Accuratelly
                     //qDebug() << "+Tmpl:" << maxMatchScore;
                 }
+                else //Fish May Have turned Too Fast And the Restrained Angle Optimization Failed
+                { //Search Again Along All Angles
+                    iTemplCol = 0;
+                    maxMatchScore = doTemplateMatchAroundPoint(frameImg_grey, kp.pt, iTemplRow, iTemplCol, bestAngle, ptSearch, outUserFrame);//fishblob->response; //  gTrackerState.gTemplateMatchThreshold*1.1;//
+                    gTrackerState.iLastKnownGoodTemplateRow = iTemplRow;
+                    // Update to template Matched Angle and position
+                    kp.angle            = bestAngle;
+                    kp.pt               = ptSearch; //Does not Work Accuratelly
+
+                }
+
             }//If template Matching is used
 
             ptFishblobs.push_back(kp);

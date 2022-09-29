@@ -38,8 +38,8 @@ DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from Centroid To Mouth based on h
 DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
 G_APPROXFPS              <- 60
-G_THRESHUNTANGLE         <- 16 #Define Min Angle Both Eyes need to exceed for a hunting event to be assumed
-G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_THRESHUNTANGLE         <- 14 #Define Min Angle Both Eyes need to exceed for a hunting event to be assumed
+G_THRESHUNTVERGENCEANGLE <- 40 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
 G_HUNTSCORETHRES         <- 0.65 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
 G_THRESHCLIPEYEDATA      <- 50 ##Limit To Which Eye Angle Data is filtered to lie within
 G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/2
@@ -178,14 +178,15 @@ setEnvFileLocations <- function(strSetName)
   {
     ## Laptop ##
     setwd("~/workspace/zebrafishtrack/Rplots")
-    strVideoFilePath  <<- "/media/kostasl/zfishDataAlpha"
+    strVideoFilePath  <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples"
     strTrackerPath    <<-  "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_2_GCC_64bit-Release"
-    strTrackeroutPath <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
-    strTrackInputPath <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData"##Where to source the Tracker csv files from 
-    strDatDir         <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/dat/TrkSessionHungerExp/camA" ##Where Are the Imported RData Stored
-    strDataExportDir  <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/out/"
-    strDataStore      <<-  "/mnt/data//Nextcloud/Dropbox_overflow/Calculations/zebrafishtrackerData/out/HungerExp" ##Where Large Data Is stored because Dropbox-Overflows
+    strTrackeroutPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/"
+    strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat"##Where to source the Tracker csv files from 
+    strDatDir         <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/" ##Where Are the Imported RData Stored
+    strDataExportDir  <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat/"
+    strDataStore      <<-  "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows
     strPlotExportPath <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/plots"
+    
   }  
   
   if (strSetName == "LAB")

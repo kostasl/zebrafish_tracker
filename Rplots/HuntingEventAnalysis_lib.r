@@ -134,8 +134,9 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
   for (i in vexpID)
   {
     idx = idx+1;
-    datLarvaFramesRaw <- datAllGroupFrames[which(datAllGroupFrames$expID == i & datAllGroupFrames$testCond == ptestCond),]
-    
+    datLarvaFramesRaw <- datAllGroupFrames[which(datAllGroupFrames$expID == i & datAllGroupFrames$testCond == ptestCond &
+                                                   datAllGroupFrames$dataSet %in% vdatasetID),]
+    stopifnot(NROW(datLarvaFramesRaw) > 0)
     #Used to Identify Experimet Set From Which Data COmes from - Plotted AS different colour
     DataSetID             <- ifelse(any(names(datLarvaFramesRaw) == "dataSet"),unique(datLarvaFramesRaw$dataSet),0 )
     stopifnot(DataSetID >= 0 )
