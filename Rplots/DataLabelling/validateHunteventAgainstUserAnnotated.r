@@ -60,7 +60,7 @@ for (expID in vExpID)
   
   plot(datExpFrames$frameN,datExpEyeV,type="l",ylim=c(0,70),ylab="Eye vergence",xlab="frame N")
   abline(h=G_THRESHUNTVERGENCEANGLE,lwd=2,lty=2)
-  points(datAllStartFramePairs_top$automatic,rep(60,NROW(datAllStartFramePairs_top)),pch=2,col="red")
+  points(datAllStartFramePairs$automatic,rep(60,NROW(datAllStartFramePairs)),pch=2,col="red")
   #points(datAllStartFramePairs_top$manual,rep(64,NROW(datAllStartFramePairs_top)),pch=6,col="blue")
   points(datHuntEventsM$startFrame,rep(63,NROW(datHuntEventsM)),pch=25,col="blue")
   points(vValidatedAutoDetectedEvents,rep(64,NROW(vValidatedAutoDetectedEvents)),pch=25,col="purple")
