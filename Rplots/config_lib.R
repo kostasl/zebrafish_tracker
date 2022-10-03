@@ -203,9 +203,22 @@ setEnvFileLocations <- function(strSetName)
     strDataStore      <<-  "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows
     strPlotExportPath <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/plots"
     
-    # "/mnt/Datastore/Olivia/Thesis
   }  
-}
+  if (strSetName == "LABOLIVIA") 
+  {
+    setwd("~/workspace/zebrafishtrack/Rplots")
+    strVideoFilePath  <<- "/mnt/Datastore/Olivia/Thesis/Videos"
+    strTrackerPath    <<- "/home/meyerlab/workspace/build-zebraprey_track-Desktop_Qt_5_14_2_GCC_64bit-Release"
+    strTrackeroutPath <<- "/mnt/Datastore/Olivia/Thesis/Track"
+    strTrackInputPath <<- "/mnt/Datastore/Olivia/Thesis/Track" ##Where to source the Tracker csv files from 
+    strDatDir         <<- "/mnt/Datastore/Olivia/Thesis/Track_hunt/Data" ##Where Are the Imported RData Stored
+    strDataExportDir  <<- "/mnt/Datastore/Olivia/Thesis/Track_hunt/Data"
+    strDataStore      <<-  "/mnt/Datastore/Olivia/Thesis/Track_hunt/Data" ##Where Large Data Is stored because Dropbox-Overflows
+    strPlotExportPath <<- "/mnt/Datastore/Olivia/Thesis/Track_hunt/Plots"
+    
+  }
+  }
+
   
 ## GLOBAL VARS ###
 
