@@ -9,10 +9,17 @@ load("/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysi
 
 vExpID <- unique(datAllFrames$expID)
 
+lCompHuntEvents <- list()
+
 for (expID in vExpID)
 {
   ## Load Manually Labelled Data for Exp
   strFileUserHuntEvents <- paste0(strDataExportDir,"ManuallyLabelled/fish",expID,"_video_mpeg_fixed_huntEvents.csv") 
+  if (!file.exists(strFileUserHuntEvents))
+  {
+    warning("MISSING hunt event file for expID:",expID,"-",strFileUserHuntEvents ,"*Skiped. ")
+    next
+  }
   datHuntEventsM <- read.csv(
     file=strFileUserHuntEvents, header = T)
   
@@ -67,4 +74,26 @@ for (expID in vExpID)
   legend("bottomright",
          legend = c(paste("auto n",NROW(datHuntEvents)),paste("manual n",NROW(datHuntEventsM)),paste("matched n",nTruePositiveDetected) ) ,col=c("red","blue","purple"),pch=c(2,25,25) )
   title(paste("F", expID ,"Hunt event sensitivity:",prettyNum(sensitivity*100,digits=4)," specificity:",prettyNum(specificity*100,digits=4) ) )
-} ## each experiment
+
+  lCompHuntEvents[[as.character(expID)]] <- data.frame(expID=expID,
+                                                       ManualCount=NROW(datHuntEventsM),
+                                                       AutomaticCount=NROW(datHuntEvents),
+                                                       Matched=nTruePositiveDetected,
+                                                       Sensitivity=sensitivity,
+                                                       Specificity=specificity)
+  
+  
+  } ## each experiment
+
+
+datCompEvents <- do.call(rbind,lCompHuntEvents)
+lmmodel <- lm(AutomaticCount~ManualCount,data=datCompEvents)
+
+mxAxis <- max(c(datCompEvents$AutomaticCount,datCompEvents$ManualCount))
+plot(datCompEvents$ManualCount,datCompEvents$AutomaticCount,xlim=c(0,mxAxis),ylim=c(0,mxAxis),asp=1,
+     xlab="Manual Count",ylab="Automatic",main="Compare Event Counts across Exp")
+abline(lmmodel,col="red",lwd=3,lty=2)
+legend("bottomright",legend=c(paste("LM c=",prettyNum(lmmodel$coefficients[1],digits=3),
+                                    "b=",prettyNum(lmmodel$coefficients[2],digits=3) ))
+                                     ,lty=2,col="red",lwd=3)
+text(datCompEvents$ManualCount,datCompEvents$AutomaticCount+4,datCompEvents$expID,cex=0.6)
