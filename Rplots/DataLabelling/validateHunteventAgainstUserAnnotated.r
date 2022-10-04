@@ -2,6 +2,7 @@
 ## Kostas 2022
 source("config_lib.R")
 source("HuntingEventAnalysis_lib.r")
+
 setEnvFileLocations("LABOLIVIA") #HOME,OFFICE,#LAPTOP
 
 
