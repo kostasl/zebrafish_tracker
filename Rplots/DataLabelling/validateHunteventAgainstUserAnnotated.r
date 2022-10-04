@@ -14,7 +14,7 @@ lCompHuntEvents <- list()
 for (expID in vExpID)
 {
   ## Load Manually Labelled Data for Exp
-  strFileUserHuntEvents <- paste0(strDataExportDir,"ManuallyLabelled/fish",expID,"_video_mpeg_fixed_huntEvents.csv") 
+  strFileUserHuntEvents <- paste0("/mnt/Datastore/Olivia/Thesis/ManuallyLabelled/fish",expID,"_video_mpeg_fixed_huntEvents.csv") 
   if (!file.exists(strFileUserHuntEvents))
   {
     warning("MISSING hunt event file for expID:",expID,"-",strFileUserHuntEvents ,"*Skiped. ")
