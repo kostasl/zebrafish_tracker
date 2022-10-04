@@ -89,11 +89,20 @@ for (expID in vExpID)
 datCompEvents <- do.call(rbind,lCompHuntEvents)
 lmmodel <- lm(AutomaticCount~ManualCount,data=datCompEvents)
 
-mxAxis <- max(c(datCompEvents$AutomaticCount,datCompEvents$ManualCount))
-plot(datCompEvents$ManualCount,datCompEvents$AutomaticCount,xlim=c(0,mxAxis),ylim=c(0,mxAxis),asp=1,
-     xlab="Manual Count",ylab="Automatic",main="Compare Event Counts across Exp")
-abline(lmmodel,col="red",lwd=3,lty=2)
-legend("bottomright",legend=c(paste("LM c=",prettyNum(lmmodel$coefficients[1],digits=3),
-                                    "b=",prettyNum(lmmodel$coefficients[2],digits=3) ))
-                                     ,lty=2,col="red",lwd=3)
-text(datCompEvents$ManualCount,datCompEvents$AutomaticCount+4,datCompEvents$expID,cex=0.6)
+
+## Success / Strike Non Strike Percentage ##
+strPlotName = paste(strPlotExportPath,"/trackerHEventDetectValidation.pdf",sep="")
+pdf(strPlotName,bg="white",
+    compress=FALSE,onefile = FALSE, 
+    title="Compare User vs Automated Hunt Event Detection  ") #col=(as.integer(filtereddatAllFrames$expID))
+  
+  mxAxis <- max(c(datCompEvents$AutomaticCount,datCompEvents$ManualCount))
+  plot(datCompEvents$ManualCount,datCompEvents$AutomaticCount,xlim=c(0,mxAxis),ylim=c(0,mxAxis),asp=1,
+       xlab="Manual Count",ylab="Automatic",main="Compare User vs Automated Hunt Event Detection ")
+  abline(lmmodel,col="red",lwd=3,lty=2)
+  legend("bottomright",legend=c(paste("LM c=",prettyNum(lmmodel$coefficients[1],digits=3),
+                                      "b=",prettyNum(lmmodel$coefficients[2],digits=3) ))
+                                       ,lty=2,col="red",lwd=3)
+  text(datCompEvents$ManualCount,datCompEvents$AutomaticCount+4,datCompEvents$expID,cex=0.6)
+  
+dev.off()

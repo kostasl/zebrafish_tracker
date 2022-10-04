@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 
-#define ZTF_FISHCONTOURSIZE          62//40
+//#define ZTF_FISHCONTOURSIZE          100
 #define ZTF_TAILFITMAXITERATIONS     200 //For Spine To Contour Tail Fitting
 #define ZTF_TAILSPINECOUNT          8
 #define EYE_SEG_SAMPLE_POINTS_COUNT 20
@@ -181,7 +181,7 @@ class trackerState
 
       const int gFitTailIntensityScanAngleDeg   = 60; //
       const int gFishTailSpineSegmentCount      = ZTF_TAILSPINECOUNT;
-      const int gcFishContourSize               = ZTF_FISHCONTOURSIZE;
+      static const int gcFishContourSize               = 100; // Number of points in Simplified/Smoothed Fish Contour
       const int gMaxFitIterations               = ZTF_TAILFITMAXITERATIONS; //Constant For Max Iteration to Fit Tail Spine to Fish Contour
 
       int gcMaxFishModelInactiveFrames          = gfVidfps; //Number of frames inactive until track is deleted
@@ -191,7 +191,7 @@ class trackerState
       const int thActive                            = 0;// Deprecated If a track becomes inactive but it has been active less than thActive frames, the track will be deleted.
       const int gc_FishTailSpineSegmentLength_init  = 16;
       int gFoodReportInterval                       = (int)gfVidfps;
-      const int nTemplatesToLoad                    = 13; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
+      const int nTemplatesToLoad                    = 15; //Number of Templates To Load Into Cache - These need to exist as images in QtResources
       const int gi_FoodModelNumberLimit             = 250; // Maximum Number of Food Objects /Prey To track
       const int c_MaxFrameErrors                    = 200; //Limit of frame read errors before quiting tracking
 

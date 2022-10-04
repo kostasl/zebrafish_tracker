@@ -1350,7 +1350,7 @@ QTextStream& operator<<(QTextStream& out, const fishModel& h)
 double fishModel::fitSpineToContour(cv::Mat& frameImg_grey, std::vector<std::vector<cv::Point> >& contours_body,int idxInnerContour,int idxOuterContour)
 {
     static const int cntParam = this->c_spineParamCnt;
-    static const int gcFishContourSize = ZTF_FISHCONTOURSIZE+1;//Fixed PLus 1 tail Point
+    static const int gcFishContourSize = gTrackerState.gcFishContourSize;// ZTF_FISHCONTOURSIZE+1;//Fixed PLus 1 tail Point
 
     //Parameter Found By Experience for current size fish
     ///Param sfish model should contain initial spline curve (Hold Last Frame Position)
