@@ -1,11 +1,16 @@
-### Match Hunt Event Annotation between manual and automated methods
-## Kostas 2022
+## Match Hunt Event Annotation between manual and automated methods
+# \brief:  Script  To Validate effectiveness of Tracker and data processing scripts to detect hunt events - compared to user defined
+# I upgraded the tracker to allow user to denote hunt events startframes. Me and Olivia went through 12 videos (Validation Set) .
+# The effectiveness of particular hunt event detection parameters in Config.R can be tested by running the script here each time params are modified.
+# If zebrafishtracker is modified, then videos need to be reprocessed and csv files re-imported using main_TrackingAnalysis.r 
+#
+# / Kostas Lagogiannis 2022 /
 source("config_lib.R")
 source("HuntingEventAnalysis_lib.r")
-setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
-  
 
-load("/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat//setn1_Dataset_VAL.RData")
+setEnvFileLocations("LABOLIVIA") #HOME,OFFICE,#LAPTOP
+
+load(paste0(strDataStore,"/setn1_Dataset_VAL.RData"))
 
 vExpID <- unique(datAllFrames$expID)
 
@@ -14,7 +19,7 @@ lCompHuntEvents <- list()
 for (expID in vExpID)
 {
   ## Load Manually Labelled Data for Exp
-  strFileUserHuntEvents <- paste0(strDataExportDir,"ManuallyLabelled/fish",expID,"_video_mpeg_fixed_huntEvents.csv") 
+  strFileUserHuntEvents <- paste0("/mnt/Datastore/Olivia/Thesis/ManuallyLabelled/fish",expID,"_video_mpeg_fixed_huntEvents.csv") 
   if (!file.exists(strFileUserHuntEvents))
   {
     warning("MISSING hunt event file for expID:",expID,"-",strFileUserHuntEvents ,"*Skiped. ")

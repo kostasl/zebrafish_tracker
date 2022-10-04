@@ -42,7 +42,11 @@ G_THRESHUNTANGLE         <- 14 #Define Min Angle Both Eyes need to exceed for a 
 G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
 G_HUNTSCORETHRES         <- 0.95 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
 G_THRESHCLIPEYEDATA      <- 50 ##Limit To Which Eye Angle Data is filtered to lie within
+<<<<<<< HEAD
 G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/3
+=======
+G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/2
+>>>>>>> 49cda696f63fbfb2dda1d3c3b27b7da08c838000
 G_MINEPISODEDURATION     <- G_APPROXFPS/4
 HUNTEVENT_MATCHING_OFFSET <- 2*G_APPROXFPS # Max frames to accept as mismatch when matching manual to auto detected huntevents during tracker validation - frames to Used in validateHuntEventsAgainstUserAnnotated
 G_MIN_BOUTSPEED          <- 0.2 ##mm/frame - Need to be above to be considered A Motion Bout
@@ -203,9 +207,22 @@ setEnvFileLocations <- function(strSetName)
     strDataStore      <<-  "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows
     strPlotExportPath <<- "/mnt/Datastore/Olivia/Appetitesamples/tracked_org/Analysis/plots"
     
-    # "/mnt/Datastore/Olivia/Thesis
   }  
-}
+  if (strSetName == "LABOLIVIA") 
+  {
+    setwd("~/workspace/zebrafishtrack/Rplots")
+    strVideoFilePath  <<- "/mnt/Datastore/Olivia/Thesis/Videos"
+    strTrackerPath    <<- "/home/meyerlab/workspace/build-zebraprey_track-Desktop_Qt_5_14_2_GCC_64bit-Release"
+    strTrackeroutPath <<- "/mnt/Datastore/Olivia/Thesis/Track"
+    strTrackInputPath <<- "/mnt/Datastore/Olivia/Thesis/Track" ##Where to source the Tracker csv files from 
+    strDatDir         <<- "/mnt/Datastore/Olivia/Thesis/Track_hunt/Data" ##Where Are the Imported RData Stored
+    strDataExportDir  <<- "/mnt/Datastore/Olivia/Thesis/Track_hunt/Data"
+    strDataStore      <<-  "/mnt/Datastore/Olivia/Thesis/Track_hunt/Data" ##Where Large Data Is stored because Dropbox-Overflows
+    strPlotExportPath <<- "/mnt/Datastore/Olivia/Thesis/Track_hunt/Plots"
+    
+  }
+  }
+
   
 ## GLOBAL VARS ###
 

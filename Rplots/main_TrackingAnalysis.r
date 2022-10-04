@@ -36,11 +36,11 @@ library(boot)
 #library(hexbin)
 rm("temp","subsetDat","TrackerData","frameNAll");
 
-setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+#setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
 #setwd(here())
 source("config_lib.R")
 
-setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LABOLIVIA") #HOME,OFFICE,#LAPTOP, LABOLIVIA
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
 source("DataLabelling/labelHuntEvents_lib.r")
