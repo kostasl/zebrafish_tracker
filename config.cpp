@@ -167,7 +167,7 @@ int initDetectionTemplates()
     int idxTempl;
 
     for (idxTempl=0; idxTempl<gTrackerState.nTemplatesToLoad;idxTempl++)
-    {
+    {  /// \TODO:Need to invalidate lastfish_template_img Before loadFromQrc and checking if Empty
         trackerState::loadFromQrc(QString::fromStdString(gTrackerState.strTemplateImg + to_string(idxTempl+1) + std::string(".pgm")),lastfish_template_img,IMREAD_GRAYSCALE); //  loadImage(strTemplateImg);
         if (lastfish_template_img.empty())
         {
@@ -178,6 +178,7 @@ int initDetectionTemplates()
         gTrackerState.vTemplImg.push_back(lastfish_template_img);
         //Add to Cache and generate all All Angle Varations
         addTemplateToCache(lastfish_template_img,gFishTemplateCache,idxTempl); //Increments Index
+
     }
 
     // Set Paster Region for Inset Image
@@ -609,7 +610,11 @@ void trackerState::loadFromQrc(QString qrc,cv::Mat& imRes,int flag )
         file.read((char*)buf.data(), sz);
         imRes = cv::imdecode(buf, flag);
     }else
+     {
         std::cerr << " Could not load template file " << qrc.toStdString();
+        cv::Mat emptyMat;
+        imRes = emptyMat;
+    }
 
     //double toc = (double(getTickCount()) - tic) * 1000.0 / getTickFrequency();
     //qDebug() << "OpenCV loading time: " << toc;

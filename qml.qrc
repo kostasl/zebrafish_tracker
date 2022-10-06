@@ -15,5 +15,7 @@
         <file>img/fish_templates_12.pgm</file>
         <file>img/fish_templates_13.pgm</file>
         <file>img/fish_template_1.pgm</file>
+        <file>img/fish_templates_14.pgm</file>
+        <file>img/fish_templates_15.pgm</file>
     </qresource>
 </RCC>
