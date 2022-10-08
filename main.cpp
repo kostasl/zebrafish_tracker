@@ -58,6 +58,7 @@
  /// \note Example: /zebraprey_track --ModelBG=0 --SkipTracked=0  --PolygonROI=1 --invideolist=VidFilesToProcessSplit1.txt --outputdir=/media/kostasl/Maxtor/KOSTAS/Tracked/
  /// \todo * Add Learning to exclude large detected blobs that fail to be detected as fish - so as to stop fish detection failures
  ///        :added fishdetector class
+ /// \todo limit rendered tracking traces to most recent time - to improve visibility and tracking time.
  ///
  /// \remarks * Using Kalman Filtering of Fish and GL filtering for Prey position
  ///          * Uses DNN trained model to classify blob as fish and locate head position - Template matching is the used to fix orientation of head inset for furtther feature detection

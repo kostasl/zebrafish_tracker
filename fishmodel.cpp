@@ -195,7 +195,7 @@ fishModel::~fishModel()
     this->zTrack.pointStack.clear();
     this->zTrack.pointStack.shrink_to_fit();
     this->zTrack.pointStackRender.clear();
-    this->zTrack.pointStackRender.shrink_to_fit();
+//    this->zTrack.pointStackRender.shrink_to_fit();
 
 }
 
@@ -833,18 +833,10 @@ bool fishModel::updateState(zftblob* fblob, cv::Point2f bcentre,unsigned int nFr
     this->zfishBlob      = *fblob;
     //this->c_spineSegL   = SpineSegLength;
     this->zTrack.pointStack.push_back(this->ptRotCentre);
+    this->zTrack.addRenderPoint(this->ptRotCentre);
 
     this->zTrack.effectiveDisplacement = cv::norm(this->ptRotCentre - this->zTrack.centroid);
     this->zTrack.centroid = this->ptRotCentre;//fblob->pt; //Or Maybe bcentre
-    ///Optimization only Render Point If Displaced Enough from Last One
-    if (zTrack.pointStackRender.empty())
-        this->zTrack.pointStackRender.push_back(this->ptRotCentre); //Add 1st point to render pt list
-    else{
-        cv::Point2f ptlastRenderPt = zTrack.pointStackRender.back();
-        //Check If Render Track Points Needs updating since last point added
-        if ( (float)cv::norm(ptlastRenderPt - this->ptRotCentre) >  gTrackerState.gDisplacementThreshold)
-             this->zTrack.pointStackRender.push_back(this->ptRotCentre); //Only add Render point if Threshold distance from last point has been exceeded
-    }
 
     if (this->zTrack.effectiveDisplacement > gTrackerState.gDisplacementThreshold)
     {

@@ -355,7 +355,8 @@ class trackerState
 
       int gFishBoundBoxSize               = 100; ///100 For HRes Top CamB 24/ pixel width/radius of bounding Box When Isolating the fish's head From the image
       int gnumberOfTemplatesInCache       = 0; //INcreases As new Are Added
-      float  gDisplacementThreshold       = 2.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
+      float  gDisplacementThreshold       = 6.0; //Distance That Fish Is displaced so as to consider active and Record A point For the rendered Track /
+      uint maxTrackPointHistory           = 100; // History Size Of Recent Track Points to render (Too large and tracker is slowed down)
       int  gDisplacementLimitPerFrame     = gFishBoundBoxSize*4; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
       int  gAngleChangeLimitPerFrame      = 90; //Distance That Fish-Blob can be allowed to displace - Filter Out Large Motion Noise in FishModel UpdateState
 

@@ -13,8 +13,8 @@
 #include <list>
 #include <QDebug>
 
-
-
+#include "config.h"
+extern trackerState gTrackerState;
 
 //// New track.
 //maxTrackID++;
@@ -66,6 +66,27 @@ std::ostream& operator<<(std::ostream& out, const zftTrack& h)
         out << h.centroid.x << "\t" << h.centroid.y;
 
     return out;
+}
+
+
+// Manages Recent Points to be rendered on Tracker Screen -
+void zftTrack::addRenderPoint(cv::Point2f& pt)
+{
+    ///Optimization only Render Point If Displaced Enough from Last One
+    if (pointStackRender.empty())
+        pointStackRender.push_front(pt); //Add 1st point to render pt list
+    else{
+        cv::Point2f ptlastRenderPt = pointStackRender.front();
+        //Check If Render Track Points Needs updating since last point added
+        if ( (float)cv::norm(ptlastRenderPt - pt) >  gTrackerState.gDisplacementThreshold)
+             pointStackRender.push_front(pt); //Only add Render point if Threshold distance from last point has been exceeded
+
+    }
+
+    if (pointStackRender.size() > gTrackerState.maxTrackPointHistory)
+        pointStackRender.resize(gTrackerState.maxTrackPointHistory);//Removes excess points at the back of the list
+
+
 }
 
 ///
@@ -153,8 +174,12 @@ void zftRenderTrack(zftTrack& track, const cv::Mat& frameIn, cv::Mat& frameOut, 
       //cv::Mat img = cv::Mat::zeros(400, 400, CV_8UC3);
       if (mode&CV_TRACK_RENDER_PATH)
       {
-          //std::vector<cv::Point> plotPts(track.pointStack.begin(), track.pointStack.end());
-          cv::Mat mTrack(track.pointStackRender);
+          track.vplotPts.clear();
+          track.vplotPts.reserve(track.pointStackRender.size());
+          std::copy(std::begin(track.pointStackRender), std::end(track.pointStackRender), std::back_inserter(track.vplotPts));
+
+
+          cv::Mat mTrack(track.vplotPts);
           cv::Point *pts = (cv::Point*) mTrack.data;
           int npts = mTrack.rows;
           cv::polylines(frameOut, &pts,&npts, 1,

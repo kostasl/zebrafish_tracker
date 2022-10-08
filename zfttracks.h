@@ -11,6 +11,8 @@
 #include <string>
 #include <QTextStream>
 
+
+
 #define CV_TRACK_RENDER_ID              0b00000001 ///< Print the ID of each track in the image. \see cvRenderTrack
 #define CV_TRACK_RENDER_BOUNDING_BOX    0b00000010 ///< Draw bounding box of each track in the image. \see cvRenderTrack
 #define CV_TRACK_RENDER_BOUNDING_CIRCLE 0b00000100 ///< Draw bounding box of each track in the image. \see cvRenderTrack
@@ -30,7 +32,8 @@ typedef unsigned int zfdID;
 /// \see CvTrack
 typedef cv::Point2f zftTrackPoint;
 typedef std::vector<zftTrackPoint> zftTrackPoints;
-typedef std::vector<cv::Point> zftRenderedTrackPoints; //Used only For Rendering on image /Shorter vector And Integer based
+typedef std::list<cv::Point> zftRenderedTrackPoints; //Used only For Rendering on image /Shorter vector And Integer based
+
 
 
 ///// \var typedef std::map<CvID, CvTrack *> CvTracks
@@ -78,6 +81,8 @@ struct zftTrack
         id = ID;
     }
 
+    void addRenderPoint(cv::Point2f& pt);
+
   zftID id; ///< Track identification number.
   //ltROI* pROI; ///< Pointer To Region of Interest structure to which this track belongs
   cv::Scalar colour = CV_RGB(255., 0., 0.); ///> Colourwhen drawing Countour
@@ -86,6 +91,9 @@ struct zftTrack
   cv::Point2f centroid; ///< Centroid.
   zftTrackPoints pointStack; /// <Holds list of past centroid positions along the track
   zftRenderedTrackPoints pointStackRender; //List Of Int Points Used for rendering Only
+  std::vector<cv::Point> vplotPts;//(track.pointStackRender.begin(), track.pointStackRender.end());
+
+
 
   double effectiveDisplacement; ///< Used to indicate a px speed measure so as to estimate possible blob distance from track on next frame.
   unsigned int lifetime; ///< Indicates how much frames the object has been in scene.
