@@ -40,7 +40,7 @@ rm("temp","subsetDat","TrackerData","frameNAll");
 #setwd(here())
 source("config_lib.R")
 
-setEnvFileLocations("LABOLIVIA") #HOME,OFFICE,#LAPTOP, LABOLIVIA
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP, LABOLIVIA
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
 source("DataLabelling/labelHuntEvents_lib.r")
@@ -60,10 +60,10 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                                  #"B2/",
                                  #"B3/",
                                  #"B4/",
-                                 "VAL"##Dataset 2
+                                 "TrackerValidation_081022"##Dataset 2
                                  ),sep="/")
 
-
+ 
 ### Set Colour Pallette Size from List Of Datasets
 G_DATASETPALLETSIZE = NROW(strDataSetDirectories)
 rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");

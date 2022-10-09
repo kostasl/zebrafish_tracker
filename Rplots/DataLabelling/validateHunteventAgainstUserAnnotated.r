@@ -8,7 +8,7 @@
 source("config_lib.R")
 source("HuntingEventAnalysis_lib.r")
 
-setEnvFileLocations("LABOLIVIA") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 
 load(paste0(strDataStore,"/setn1_Dataset_VAL.RData"))
 
