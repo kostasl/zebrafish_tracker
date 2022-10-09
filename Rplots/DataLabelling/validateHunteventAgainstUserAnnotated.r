@@ -121,24 +121,38 @@ vEyeThres <- seq(40,50,length=9)
    
   
   datCompEvents <- do.call(rbind,lCompHuntEvents)
-  lmmodel <- lm(AutomaticCount~ManualCount,data=datCompEvents)
+  for (testedEyeV in vEyeThres)
+  {
+    for (testedHuntScore in vHuntScores)
+    {    
+      
+      datParamComp <-  datCompEvents[datCompEvents$EyeVThres == testedEyeV & datCompEvents$ClassifierThres == testedHuntScore,  ]
+      lmmodel <- lm(AutomaticCount~ManualCount,data=datParamComp)
+  
+    
+      ## Success / Strike Non Strike Percentage ##
+      strPlotName = paste(strPlotExportPath,"/trackerHEventVal_HC",testedHuntScore,"_EyeV",testedEyeV,".pdf",sep="")
+      pdf(strPlotName,bg="white",
+          compress=FALSE,onefile = FALSE, 
+          title="Compare User vs Automated Hunt Event Detection  ") #col=(as.integer(filtereddatAllFrames$expID))
+      
+      mxAxis <- max(c(datCompEvents$AutomaticCount,datCompEvents$ManualCount))
+      plot(datParamComp$ManualCount,datParamComp$AutomaticCount,xlim=c(0,mxAxis),ylim=c(0,mxAxis),asp=1,
+           xlab="Manual Count",ylab="Automatic",
+           main=paste(" HuntEvent Detection H:",testedHuntScore,"V:",testedEyeV))
+      abline(lmmodel,col="red",lwd=3,lty=2)
+      legend("bottomright",legend=c(paste("LM c=",prettyNum(lmmodel$coefficients[1],digits=3),
+                                          "b=",prettyNum(lmmodel$coefficients[2],digits=3) ))
+             ,lty=2,col="red",lwd=3)
+      text(datParamComp$ManualCount,datParamComp$AutomaticCount+4,datParamComp$expID,cex=0.6)
+      
+      dev.off()
+      
+      
+          
+    }
+  }
+  
   
   plot(1-datCompEvents$Specificity,datCompEvents$Sensitivity,main="ROC")
   
-  ## Success / Strike Non Strike Percentage ##
-  strPlotName = paste(strPlotExportPath,"/trackerHEventVal_HC",G_HUNTSCORETHRES,"_EyeV",G_THRESHUNTVERGENCEANGLE,".pdf",sep="")
-  pdf(strPlotName,bg="white",
-      compress=FALSE,onefile = FALSE, 
-      title="Compare User vs Automated Hunt Event Detection  ") #col=(as.integer(filtereddatAllFrames$expID))
-    
-    mxAxis <- max(c(datCompEvents$AutomaticCount,datCompEvents$ManualCount))
-    plot(datCompEvents$ManualCount,datCompEvents$AutomaticCount,xlim=c(0,mxAxis),ylim=c(0,mxAxis),asp=1,
-         xlab="Manual Count",ylab="Automatic",
-         main=paste(" HuntEvent Detection H:",G_HUNTSCORETHRES,"V:",G_THRESHUNTVERGENCEANGLE))
-    abline(lmmodel,col="red",lwd=3,lty=2)
-    legend("bottomright",legend=c(paste("LM c=",prettyNum(lmmodel$coefficients[1],digits=3),
-                                        "b=",prettyNum(lmmodel$coefficients[2],digits=3) ))
-                                         ,lty=2,col="red",lwd=3)
-    text(datCompEvents$ManualCount,datCompEvents$AutomaticCount+4,datCompEvents$expID,cex=0.6)
-    
-  dev.off()
