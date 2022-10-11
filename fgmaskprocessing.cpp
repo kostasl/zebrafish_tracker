@@ -758,20 +758,20 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                //2nd Pass
                if (fRH[0] >= gTrackerState.fishnet_classifier_thres*0.65){
                     fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,20,5,5, QString::number(iHitCount).toStdString()+"B",false);
+                                                                mask_fnetScore,8,4,4, QString::number(iHitCount).toStdString()+"B",false);
                     if (gTrackerState.bshowDetectorDebugImg)
                         cv::circle(outUserFrame,kp.pt,5,CV_RGB(5,80,5),1,LINE_AA );
                }
 
                else
-                    //Show User LaseFailed Detection Happened
+                    //Show User where Failed Detection Happened
                     cv::circle(outUserFrame,kp.pt,2,CV_RGB(255,5,5),2,LINE_AA );
 
                //3rd Pass - Extensive Search in Small Region to match best score
                if (fRH[1] >= gTrackerState.fishnet_classifier_thres*0.75)
                {
                     fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,6,2,2, QString::number(iHitCount).toStdString()+"C",false);
+                                                                mask_fnetScore,4,1,1, QString::number(iHitCount).toStdString()+"C",false);
                     if (gTrackerState.bshowDetectorDebugImg)
                         cv::circle(outUserFrame,kp.pt,2,CV_RGB(5,120,5),1,LINE_AA );
                }
@@ -780,24 +780,24 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                     //Show User LaseFailed Detection Happened
                     cv::circle(outUserFrame,kp.pt,1,CV_RGB(255,5,5),2,LINE_AA );
 
-               //4th Pass - Extensive Search in Small Region to match best score
-               if (fRH[2] >= gTrackerState.fishnet_classifier_thres*0.95){
-                    fRH[3] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,3,1,1, QString::number(iHitCount).toStdString()+"D",false);
+//               //4th Pass - Extensive Search in Small Region to match best score
+//               if (fRH[2] >= gTrackerState.fishnet_classifier_thres*0.95){
+//                    fRH[3] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
+//                                                                mask_fnetScore,3,1,1, QString::number(iHitCount).toStdString()+"D",false);
 
-                    if (gTrackerState.bshowDetectorDebugImg)
-                        cv::circle(outUserFrame,kp.pt,1,CV_RGB(5,200,5),1,LINE_AA );
-               }
+//                    if (gTrackerState.bshowDetectorDebugImg)
+//                        cv::circle(outUserFrame,kp.pt,1,CV_RGB(5,200,5),1,LINE_AA );
+//               }
 
-               else
-                    //Show User LaseFailed Detection Happened
-                    cv::circle(outUserFrame,kp.pt,1,CV_RGB(255,5,5),1,LINE_AA );
+//               else
+//                    //Show User LaseFailed Detection Happened
+//                    cv::circle(outUserFrame,kp.pt,1,CV_RGB(255,5,5),1,LINE_AA );
 
 
-           }else{
-               //Show User Where Fish Contour Detection Happened
-               cv::circle(outUserFrame,kp.pt,5,CV_RGB(5,5,255),2,LINE_AA );
-               continue; //Next Contour
+           }else{ //Match Score was Above threshold
+               //Show Where Fish-Contour Match Happened
+               cv::circle(outUserFrame,kp.pt,3,CV_RGB(5,5,255),2,LINE_AA );
+               //continue; //Next Contour
           } //Check If Key Point Does not belong existing Fish position / and Scan Area to relocate Fish
 
 
@@ -884,7 +884,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
     //Check If Any Contours Where Classified As Fish
     if (vFilteredFishbodycontours_classified.size() == 0)
     {
-        qDebug() << "No Fish Blob detected.";
+        //qDebug() << "No Fish Blob detected.";
         cv::drawContours( outUserFrame, vFilteredFishbodycontours, 0, CV_RGB(255,5,5),1,cv::LINE_AA); //
     }
 

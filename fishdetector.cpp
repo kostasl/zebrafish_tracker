@@ -395,7 +395,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
           //dscore combines fish Score + huntMode score
           dscore = this->netDNNDetect_fish(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreHuntMode,scoreNonFish);
           // Overide with Fish Score Only - As frequently Fish is missed
-          dscore = scoreFish+scoreHuntMode;
+          dscore = max(scoreFish,scoreHuntMode); //Either Of these Being High
           ///Do Not Test Orientation - Blob Should Have the correct Angle
           //Check Both Vertical Orientations
           //cv::flip(imgFishAnterior_Norm_tmplcrop, imgFishAnterior_Norm_tmplcrop_vflip, 0);
@@ -404,7 +404,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
           ///  Store recognition score in Mask at(row,col) -//
           maskRegionScore_Norm.at<float>(j + gTrackerState.gszTemplateImg.height/2, // , row
                                          i + gTrackerState.gszTemplateImg.width/2) = dscore;//col //max(0.0f,dscore);//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
-          if (dscore > max_dscore)
+          if (dscore > max_dscore && scoreNonFish < 0.6)
           {
               max_dscore = dscore;
               mxLocFishScore = scoreFish;
@@ -432,9 +432,9 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     //Need to Rotate Score Image Back to Original Orientiation to return Coordinates oF Best Match
     //- Removed  - Scores scaled too low Find Max Match Position In Non-Norm pic (original orientation)
     double minL1, maxL1;
-    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,
-                     cv::Size(max(2*(iSlidePx_H_step),2)+1,max(2*(iSlidePx_V_step),20)+1),
-                     max(iSlidePx_H_step/2,30),max(iSlidePx_V_step/2,30),BORDER_ISOLATED);
+//    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,
+//                     cv::Size(max(2*(iSlidePx_H_step),2)+1,max(2*(iSlidePx_V_step),20)+1),
+//                     max(iSlidePx_H_step/2,30),max(iSlidePx_V_step/2,30),BORDER_ISOLATED);
 
     cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, max_dscore, 0, cv::NORM_MINMAX);
     //ptmax = mxLocFishScore;
