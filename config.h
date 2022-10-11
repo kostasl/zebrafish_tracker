@@ -330,7 +330,7 @@ class trackerState
 
       /// Fishnet Classifier params //
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_classifier_thres  = 0.98f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_classifier_thres  = 0.85f; //DNN fish contour clasifier threshold for either HuntMode / Fish identified beyond which we accept as Fish Contour
       float fishnet_classifierHuntMode_thres = 0.4;
       float fishnet_inputSparseness = 0.1f; //Ratio of Active Pixels in Binarized input Image
 

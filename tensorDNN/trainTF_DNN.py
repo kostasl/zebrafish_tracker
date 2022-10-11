@@ -243,7 +243,6 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
     plt.subplot(1, 2, 2)
     plt.hist(validation_generator.classes, bins=2,label="Validation Data Split")
 
-
     #np.concatenate([y for x, y in train_ds], axis=0)
     #pEval = np.concatenate ([c for c in validation_generator.classes ] )
     #err = np.substract(pEval,preds)
