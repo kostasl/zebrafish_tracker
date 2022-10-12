@@ -18,13 +18,18 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras import regularizers
 from tensorflow.keras.callbacks import EarlyStopping
 
+# Templates 28x38 images size form the dataset, however data is augmented such that all fish rotations can be detected
+# for this reason the training image needs to be square, so are rotations do not clip the top of the image (the eyes) when rotated
+# 90 degrees. Altenrativelly, Classification could be done ny rotated the detected Regions and classify based on Normed - vertical orientiation only
+#
+
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 
 # To Batch convert from pgm to jpg use mogrify :
 # mogrify -format jpg *.pgm
-
+#
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     print('FishNet TensorFlow Model Training')
@@ -40,12 +45,12 @@ fish = list(data_dir.glob('./fish/*.jpg'))
 nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 # PIL.Image.open(str(nonfish[0]))
 
-bResetModelTraining = True  ## Do Not Incremental Train / Reset And Start over
+bResetModelTraining = False  ## Do Not Incremental Train / Reset And Start over
 
 batch_size = 32
-img_height = 38
+img_height = 28
 img_width = 28
-epochs = 150
+epochs = 100
 num_classes = 4
 
 ## Had To run x3 times with a validation split 0.3 - 0.5 before I got good filtering of entire scene - as tested by testModel
@@ -177,7 +182,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
         model.compile(optimizer='adam',
                       # optimizer=RMSprop(lr=0.001),
                       #loss=tf.keras.losses.binary_crossentropy, ##For Binary Classifier
-                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), ##Categorial classifier
+                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False), ##Categorial classifier
                       metrics=['accuracy'])
 
     model.summary()
