@@ -814,7 +814,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
 
         QString strfRecScore = QString::number(kp.response,'g',3);
         iHitCount++;
-        qDebug() << kp.angle << " (" << kp.pt.x << "," << kp.pt.y << ")" << "R:" << strfRecScore;
+        //qDebug() << kp.angle << " (" << kp.pt.x << "," << kp.pt.y << ")" << "R:" << strfRecScore;
 
         /// Add TO Filtered KP - IF keypoint is still within roi (moved by classifier) and Passes Classifier threshold
         if (kp.response >= gTrackerState.fishnet_classifier_thres &&

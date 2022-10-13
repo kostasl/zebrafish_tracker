@@ -45,12 +45,12 @@ fish = list(data_dir.glob('./fish/*.jpg'))
 nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 # PIL.Image.open(str(nonfish[0]))
 
-bResetModelTraining = False  ## Do Not Incremental Train / Reset And Start over
+bResetModelTraining = True  ## Do Not Incremental Train / Reset And Start over
 
 batch_size = 32
 img_height = 28
 img_width = 28
-epochs = 100
+epochs = 150
 num_classes = 4
 
 ## Had To run x3 times with a validation split 0.3 - 0.5 before I got good filtering of entire scene - as tested by testModel

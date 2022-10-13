@@ -91,16 +91,16 @@ vEyeThres <- seq(40,50,length=9)
         specificity <- nTrueNegative/(nTrueNegative+nFalsePositiveFrames)
         ## Plot Manual and Automatic
         
-        # plot(datExpFrames$frameN,datExpEyeV,type="l",ylim=c(0,70),ylab="Eye vergence",xlab="frame N")
-        # abline(h=G_THRESHUNTVERGENCEANGLE,lwd=2,lty=2)
-        # points(datAllStartFramePairs$automatic,rep(60,NROW(datAllStartFramePairs)),pch=2,col="red")
-        # #points(datAllStartFramePairs_top$manual,rep(64,NROW(datAllStartFramePairs_top)),pch=6,col="blue")
-        # points(datHuntEventsM$startFrame,rep(63,NROW(datHuntEventsM)),pch=25,col="blue")
-        # points(vValidatedAutoDetectedEvents,rep(64,NROW(vValidatedAutoDetectedEvents)),pch=25,col="purple")
-        # legend("bottomright",
-        #        legend = c(paste("auto n",NROW(datHuntEvents)),paste("manual n",NROW(datHuntEventsM)),paste("matched n",nTruePositiveDetected) ) ,col=c("red","blue","purple"),pch=c(2,25,25) )
-        # title(paste("F", expID ,"Hunt event sensitivity:",prettyNum(sensitivity*100,digits=4)," specificity:",prettyNum(specificity*100,digits=4) ) )
-        # 
+        plot(datExpFrames$frameN,datExpEyeV,type="l",ylim=c(0,70),ylab="Eye vergence",xlab="frame N")
+        abline(h=G_THRESHUNTVERGENCEANGLE,lwd=2,lty=2)
+        points(datAllStartFramePairs$automatic,rep(60,NROW(datAllStartFramePairs)),pch=2,col="red")
+        #points(datAllStartFramePairs_top$manual,rep(64,NROW(datAllStartFramePairs_top)),pch=6,col="blue")
+        points(datHuntEventsM$startFrame,rep(63,NROW(datHuntEventsM)),pch=25,col="blue")
+        points(vValidatedAutoDetectedEvents,rep(64,NROW(vValidatedAutoDetectedEvents)),pch=25,col="purple")
+        legend("bottomright",
+               legend = c(paste("auto n",NROW(datHuntEvents)),paste("manual n",NROW(datHuntEventsM)),paste("matched n",nTruePositiveDetected) ) ,col=c("red","blue","purple"),pch=c(2,25,25) )
+        title(paste("F", expID ,"Hunt event sensitivity:",prettyNum(sensitivity*100,digits=4)," specificity:",prettyNum(specificity*100,digits=4) ) )
+
         lCompHuntEvents[[paste0(expID,"_",n)]] <- data.frame(expID=expID,
                                                              ClassifierThres = G_HUNTSCORETHRES,
                                                              EyeVThres=G_THRESHUNTVERGENCEANGLE,
