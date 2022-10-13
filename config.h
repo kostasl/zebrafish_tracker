@@ -208,7 +208,7 @@ class trackerState
       QStringList inVidFileNames; //List of Video Files to Process
       std::string  gstrvidFilename; //Currently Tracked Vid
       cv::Size gszTemplateImg = cv::Size(28,38);
-      cv::Size szDNNClassifierImg = cv::Size(28,28);
+      cv::Size szDNNClassifierImg = cv::Size(38,38);
       cv::Size sztemplateArray_Icon=  cv::Size(std::max(gszTemplateImg.width, gszTemplateImg.height),
                                      std::max(gszTemplateImg.width, gszTemplateImg.height)
                                     );

@@ -176,7 +176,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
             layers.Dense(100, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dense(50, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dropout(0.3),
-            layers.Dense(num_classes, activation='softmax')  ##
+            layers.Dense(num_classes, activation='softmax',output_layer_name=output)  ##
         ])
         ##COMPILE MODEL
         model.compile(optimizer='adam',
@@ -356,12 +356,12 @@ model_dir_invar = None
 model_directional = None
 ## LOAD MODEL ##
 if (not bResetModelTraining):
-    model_dir_invar = tf.keras.models.load_model('savedmodels/fishNet_loc')
+    model_dir_invar = tf.keras.models.load_model('savedmodels/fishNet_loc_sq')
 
 ## Train to identify fish in region regardless of orientation
 [class_names, model_dir_invar] = train_model(epochs, batch_size, img_height, img_width, 1.0, model_dir_invar)
 ## Save Model ##
-model_dir_invar.save('savedmodels/fishNet_loc')
+model_dir_invar.save('savedmodels/fishNet_loc_sq')
 # print("Model training complete")
 print(class_names)
 
