@@ -45,14 +45,14 @@ fish = list(data_dir.glob('./fish/*.jpg'))
 nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 # PIL.Image.open(str(nonfish[0]))
 
-bResetModelTraining = True  ## Do Not Incremental Train / Reset And Start over
+bResetModelTraining = False  ## Do Not Incremental Train / Reset And Start over
 
 batch_size = 32
 img_height = 38
 img_width = 38
-epochs = 120
-num_classes = 3
-
+epochs = 5
+num_classes = 4
+strModelPath = 'savedmodels/fishNet_loc_sq'
 ## Had To run x3 times with a validation split 0.3 - 0.5 before I got good filtering of entire scene - as tested by testModel
 def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
                 , model=None):
@@ -176,7 +176,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
             layers.Dense(100, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dense(50, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dropout(0.3),
-            layers.Dense(num_classes, activation='softmax',output_layer_name=output)  ##
+            layers.Dense(num_classes, activation='softmax',name="output")  ##
         ])
         ##COMPILE MODEL
         model.compile(optimizer='adam',
@@ -262,7 +262,7 @@ def testModel(strTImg):
     ## Test SLIDING WINDOW CLASSIFIER ##
     from tensorflow.keras.preprocessing import image
 
-    probability_model_loc = tf.keras.models.load_model('savedmodels/fishNet_loc')
+    probability_model_loc = tf.keras.models.load_model(strModelPath)
 
     # change this as you see fit
     # image_path = pathlib.Path("/home/kostasl/workspace/hello_tf_c_api/build/nonfish_sample.jpg")
@@ -356,12 +356,12 @@ model_dir_invar = None
 model_directional = None
 ## LOAD MODEL ##
 if (not bResetModelTraining):
-    model_dir_invar = tf.keras.models.load_model('savedmodels/fishNet_loc_sq')
+    model_dir_invar = tf.keras.models.load_model(strModelPath)
 
 ## Train to identify fish in region regardless of orientation
 [class_names, model_dir_invar] = train_model(epochs, batch_size, img_height, img_width, 1.0, model_dir_invar)
 ## Save Model ##
-model_dir_invar.save('savedmodels/fishNet_loc_sq')
+model_dir_invar.save(strModelPath)
 # print("Model training complete")
 print(class_names)
 
@@ -375,11 +375,11 @@ if (not model_dir_invar is  None):
 
 
 print("~~~~~~~~~ Test Prediction on Non-fish and 2 fish samples ~~~~")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/nonfish/non-fish.jpg")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/fish.jpg")
-#testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/10796.png")
-
-
+testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/nonfish/00240-28x684.jpg")
+testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/templ_HB40_LR_camB_Templ_42695.jpg")
+testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/34450.png")
+testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/22271.png")
+testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/46047.png")
 
 
 # ## MAKE PROB PREDICTION Version Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
