@@ -84,7 +84,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
         color_mode='grayscale',
         batch_size=batch_size,
         class_mode='binary',
-        classes=['fish','hunting', 'nonfish'])
+        classes=class_names)
 
     test_datagen = tf.keras.preprocessing.image.ImageDataGenerator()
     validation_generator = test_datagen.flow_from_directory(
@@ -93,7 +93,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
         color_mode='grayscale',
         batch_size=batch_size,
         class_mode='binary',
-        classes=['fish','hunting', 'nonfish'])
+        classes=class_names)
 
     y_labels = np.concatenate([y for x, y in train_ds], axis=0)
     x_images = np.concatenate([x for x, y in train_ds], axis=0)
@@ -374,12 +374,12 @@ if (not model_dir_invar is  None):
     print(f'output_layer_name={output_layer_name},{model_dir_invar.output.name}')
 
 
-print("~~~~~~~~~ Test Prediction on Non-fish and 2 fish samples ~~~~")
+print("~~~~~~~~~ Test Prediction on Non-fish and fish samples ~~~~")
 testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/nonfish/00240-28x684.jpg")
 testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/templ_HB40_LR_camB_Templ_42695.jpg")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/34450.png")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/22271.png")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/46047.png")
+#testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/34450.png")
+#testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/22271.png")
+#testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/46047.png")
 
 
 # ## MAKE PROB PREDICTION Version Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
