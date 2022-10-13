@@ -35,8 +35,8 @@ if __name__ == '__main__':
     print('FishNet TensorFlow Model Training')
     print(tf.version.VERSION)
 
-data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset_sq/")
-valid_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset_sq/")
+data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
+valid_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
 
 fish = list(data_dir.glob('./fish/*.jpg'))
 # PIL.Image.open(str(fish[0]))
@@ -45,14 +45,14 @@ fish = list(data_dir.glob('./fish/*.jpg'))
 nonfish = list(data_dir.glob('./nonfish/*.jpg'))
 # PIL.Image.open(str(nonfish[0]))
 
-bResetModelTraining = False  ## Do Not Incremental Train / Reset And Start over
+bResetModelTraining = True  ## Do Not Incremental Train / Reset And Start over
 
 batch_size = 32
 img_height = 38
-img_width = 38
-epochs = 5
+img_width = 28
+epochs = 80
 num_classes = 4
-strModelPath = 'savedmodels/fishNet_loc_sq'
+strModelPath = 'savedmodels/fishNet_loc'
 ## Had To run x3 times with a validation split 0.3 - 0.5 before I got good filtering of entire scene - as tested by testModel
 def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
                 , model=None):
@@ -327,12 +327,14 @@ def testModel(strTImg):
             # classifier(imgByteArray,label_path,retrained_path)
             predictions = probability_model_loc.predict(cropped_image)
             print(predictions[0])
+            print(class_names)
             if (np.shape(predictions[0])[0] > 1):
                 #pclass = np.argmax(predictions[0])
                 if (predictions[0][0]-predictions[0][1] > 0.5):
                     pclass = 0
                 else:
                     pclass = 1
+
                 print("~~~ Predicted Class: %s %s" % (predictions[0], class_names[pclass]))
                 image.save_img(
                 "/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/" + str(class_names[pclass]) + "/" + str(
