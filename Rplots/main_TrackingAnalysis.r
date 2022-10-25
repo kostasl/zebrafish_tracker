@@ -59,8 +59,8 @@ strDataSetDirectories <- paste(strTrackInputPath, list(
                                  #"B1/",
                                  #"B2/",
                                  #"B3/",
-                                 #"B4/",
-                                 "VAL"##Dataset 2
+                                 "VAL/"
+                                 #"DATA"##Dataset 2
                                  ),sep="/")
 
 
@@ -109,11 +109,11 @@ stopifnot(file.exists(strDataSetDirectories))
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   strCondTags <- names(groupsrcdatList)
   source("processLoadedData.r") ##Detects HuntEvents
- 
+
   # ^^^^^^^
   #### RUN UP TO THIS POINT TO GET DATA IMPORTED AND EVENTS DETECTED ####
   ## The Frames Are in datAllFrames , the huntEvents are in datAllHuntEvents
-  
+
   
   
   

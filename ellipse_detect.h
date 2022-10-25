@@ -83,7 +83,6 @@ typedef struct tDetectedEllipsoid{
 
     }//Constuctor With Rank Q
 
-
     //Initialiazes object using mean values from vector of ellipsoids provided
     tDetectedEllipsoid(const tEllipsoids& vEll):tDetectedEllipsoid()
     {

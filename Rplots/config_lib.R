@@ -39,16 +39,12 @@ DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from 
 DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
 G_APPROXFPS              <- 60
 G_THRESHUNTANGLE         <- 14 #Define Min Angle Both Eyes need to exceed for a hunting event to be assumed
-G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
-G_HUNTSCORETHRES         <- 0.95 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
+G_THRESHUNTVERGENCEANGLE <- 40 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_HUNTSCORETHRES         <- 0.85## Detection Thresh for DNN HUNT event detections (Based on fish image)
 G_THRESHCLIPEYEDATA      <- 50 ##Limit To Which Eye Angle Data is filtered to lie within
-<<<<<<< HEAD
 G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/3
-=======
-G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/2
->>>>>>> 49cda696f63fbfb2dda1d3c3b27b7da08c838000
-G_MINEPISODEDURATION     <- G_APPROXFPS/4
-HUNTEVENT_MATCHING_OFFSET <- 2*G_APPROXFPS # Max frames to accept as mismatch when matching manual to auto detected huntevents during tracker validation - frames to Used in validateHuntEventsAgainstUserAnnotated
+G_MINEPISODEDURATION     <- G_APPROXFPS/3
+HUNTEVENT_MATCHING_OFFSET <- 5*G_APPROXFPS # Max frames to accept as mismatch when matching manual to auto detected huntevents during tracker validation - frames to Used in validateHuntEventsAgainstUserAnnotated
 G_MIN_BOUTSPEED          <- 0.2 ##mm/frame - Need to be above to be considered A Motion Bout
 G_THRES_CAPTURE_SPEED    <-  16 ###15##mm/sec ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
 G_THRES_MOTION_BOUT_SPEED <- 2.9 ##Got from Clustering #4 ##mm/sec
