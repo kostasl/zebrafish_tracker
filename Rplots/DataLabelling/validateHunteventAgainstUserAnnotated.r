@@ -56,7 +56,7 @@ vEyeThres <- seq(40,50,length=9)
         datAllStartFramePairs$frameDistance <- abs(datAllStartFramePairs$manual-datAllStartFramePairs$automatic)
         idxSort <- order(datAllStartFramePairs$frameDistance,decreasing = FALSE)
         nTopSelected <- NROW(datHuntEventsM)
-        ## Select Closest For Each Manual Event ##
+        ## Select Closest For Each Manual Event ##  
         datAllStartFramePairs_top <- datAllStartFramePairs[head(idxSort, nTopSelected ),]
         ## Select Events That 
         #datAllStartFramePairs_matched <- datAllStartFramePairs[datAllStartFramePairs$frameDistance,]
@@ -135,6 +135,7 @@ vEyeThres <- seq(40,50,length=9)
    
   
   datCompEvents <- do.call(rbind,lCompHuntEvents)
+  write.csv(datCompEvents,file=paste0(strDataExportDir,"/datHEventsDetectionAbility.csv") )
   for (testedEyeV in vEyeThres)
   {
     for (testedHuntScore in vHuntScores)
