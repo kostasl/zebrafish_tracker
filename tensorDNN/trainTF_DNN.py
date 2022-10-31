@@ -35,8 +35,8 @@ if __name__ == '__main__':
     print('FishNet TensorFlow Model Training')
     print(tf.version.VERSION)
 
-data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
-valid_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
+data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset_cleaned/")
+valid_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset_cleaned/")
 
 fish = list(data_dir.glob('./fish/*.jpg'))
 # PIL.Image.open(str(fish[0]))
@@ -52,7 +52,7 @@ img_height = 38
 img_width = 28
 epochs = 80
 num_classes = 4
-strModelPath = 'savedmodels/fishNet_loc'
+strModelPath = 'savedmodels/fishNet_loc_cleaned'
 ## Had To run x3 times with a validation split 0.3 - 0.5 before I got good filtering of entire scene - as tested by testModel
 def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
                 , model=None):

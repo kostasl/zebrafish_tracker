@@ -750,7 +750,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                /// PYRAMID Detection
                //1st Pass - blob position is updated to Detected Position
                fRH[0] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,100,10,10, QString::number(iHitCount).toStdString(),false);
+                                                                mask_fnetScore,100,5,5, QString::number(iHitCount).toStdString(),false);
                if (gTrackerState.bshowDetectorDebugImg)
                     cv::circle(outUserFrame,kp.pt,10,CV_RGB(5,20,5),1,LINE_AA );
 
@@ -758,7 +758,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                //2nd Pass
                if (fRH[0] >= gTrackerState.fishnet_classifier_thres*0.75){
                     fRH[1] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,16,4,4, QString::number(iHitCount).toStdString()+"B",false);
+                                                                mask_fnetScore,16,3,3, QString::number(iHitCount).toStdString()+"B",false);
                     if (gTrackerState.bshowDetectorDebugImg)
                         cv::circle(outUserFrame,kp.pt,5,CV_RGB(5,80,5),1,LINE_AA );
                }
@@ -771,7 +771,7 @@ std::vector<std::vector<cv::Point> > getFishMask(const cv::Mat& frameImg_grey,co
                if (fRH[1] >= gTrackerState.fishnet_classifier_thres*0.85)
                {
                     fRH[2] = gTrackerState.fishnet.scoreBlobRegion(frameImg_grey, kp,boundEllipse, imgFishAnterior_NetNorm,
-                                                                mask_fnetScore,8,2,2, QString::number(iHitCount).toStdString()+"C",false);
+                                                                mask_fnetScore,8,1,1, QString::number(iHitCount).toStdString()+"C",false);
                     if (gTrackerState.bshowDetectorDebugImg)
                         cv::circle(outUserFrame,kp.pt,2,CV_RGB(5,120,5),1,LINE_AA );
                }
