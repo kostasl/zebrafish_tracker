@@ -24,8 +24,8 @@ HUNTEVENT_MATCHING_OFFSET <- 3*G_APPROXFPS # Max frames to accept as mismatch wh
 vExpID <- unique(datAllFrames$expID)
 
 lCompHuntEvents <- list()
-vHuntScores <- round(100*seq(0.5,0.99,length=10))/100
-vEyeThres <- seq(40,50,length=9)
+vHuntScores <- round(100*seq(0.45,0.99,length=12))/100
+vEyeThres <- seq(38,55,length=10)
 
   for (expID in vExpID)
   {
@@ -166,6 +166,22 @@ vEyeThres <- seq(40,50,length=9)
     }
   }
   
+  ## Marginalize/Integrate Free param and Find mean sensitivity Specificity
+  vmuSensitivity <- tapply(datCompEvents$Sensitivity,datCompEvents$ClassifierThres,mean)
+  vmuSpecificity <- tapply(datCompEvents$Specificity,datCompEvents$ClassifierThres,mean)
   
-  plot(1-datCompEvents$Specificity,datCompEvents$Sensitivity,main="ROC")
+  plot(1-vmuSpecificity,vmuSensitivity,type="lp",
+       main=paste("ROC Hclassifier ",min(datCompEvents$ClassifierThres),"-",max(datCompEvents$ClassifierThres) ),xlim=c(0,1),ylim=c(0,1))
+       
+  ## Marginalize/Integrate Eye Threshold param and Find mean sensitivity Specificity
+  vmuSensitivity <- tapply(datCompEvents$Sensitivity,datCompEvents$EyeVThres,mean)
+  vmuSpecificity <- tapply(datCompEvents$Specificity,datCompEvents$EyeVThres,mean)
+  
+  plot(1-vmuSpecificity,vmuSensitivity,type="b",
+       main=paste("ROC EyeV ",min(datCompEvents$EyeVThres),"-",max(datCompEvents$EyeVThres) ),xlim=c(0,1),ylim=c(0,1))
+  
+    
+  ## 
+
+  plot(1-datCompEvents$Specificity,datCompEvents$Sensitivity,main="All ROC points")
   
