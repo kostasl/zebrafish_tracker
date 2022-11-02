@@ -43,7 +43,7 @@
  ///   * Tail spine is tracking with both, sequential intensity scanning and a variational approach on fitting smoothed fish contour angle and length (estimates fish's tail size)
  ///   * Detect tail and Head points of candidate fish contours: extend tail mask to improve tail spine fitting /Use head pt to inform template matching search region for speed optimizing of larva tracing.
 
-///  \remark OutputFiles
+ ///  \remark OutputFiles
  ///  Data processing:
  ///  * Added Record of Food Count at regular intervals on each video in case, so that even if no fish is being tracked ROI
  ///    the evolution of prey Count in time can be observed. saveTracks outputs a count of prey numbers at a regular interval 1sec, it shows up with fishID 0

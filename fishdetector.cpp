@@ -270,7 +270,7 @@ cv::Mat sparseBinarize(cv::Mat& imgRegion,float targetdensity)
 /// @outframeAnterior_Norm returns image of isolated head centered at best detection point by the DNN and oriented according to blob angle
 /// \note Only updates Blob position and response score if new classifier score is higher than existing
 float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedRect fishRotAnteriorBox,cv::Mat& outframeAnterior_Norm,
-                                    cv::Mat& outmaskRegionScore, int iSlidepxLim = 40,int iSlidePx_H_step = 10, int iSlidePx_V_step = 10,string regTag="0", bool bstopAtFirstMatch =true)
+                                    cv::Mat& outmaskRegionScore, int iSlidepxLim = 40,int iSlidePx_H_step = 10, int iSlidePx_V_step = 10, string regTag="0", bool bstopAtFirstMatch =true)
 {
   cv::Mat imgFishAnterior,imgFishAnterior_bin,imgFishAnterior_Norm_tmplcrop;
   cv::Mat imgFishAnterior_Norm_bin_dense; //Used to Find Contours

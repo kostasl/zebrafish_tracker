@@ -37,7 +37,11 @@ if __name__ == '__main__':
     print(tf.version.VERSION)
 
 data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset_cleaned/")
+<<<<<<< HEAD
 valid_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
+=======
+valid_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset_cleaned/")
+>>>>>>> 3bcea158f3182a7b751f5e736233034771dbee8f
 
 fish = list(data_dir.glob('./fish/*.jpg'))
 # PIL.Image.open(str(fish[0]))

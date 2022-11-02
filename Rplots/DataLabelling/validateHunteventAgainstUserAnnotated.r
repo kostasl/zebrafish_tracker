@@ -11,12 +11,12 @@ setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
 load(paste0(strDataStore,"/setn1_Dataset_TrackerValidation_081022.RData"))
 
 
-G_THRESHUNTANGLE          <- 16 #Define Min Angle Both Eyes need to exceed for a hunting event to be assumed
+G_THRESHUNTANGLE          <- 14 #Define Min Angle Both Eyes need to exceed for a hunting event to be assumed
 G_THRESHUNTVERGENCEANGLE  <- 47 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
 G_HUNTSCORETHRES          <- 0.96 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
 G_THRESHCLIPEYEDATA       <- 50 ##Limit To Which Eye Angle Data is filtered to lie within
-G_MINGAPBETWEENEPISODES   <- G_APPROXFPS/2
-G_MINEPISODEDURATION      <- G_APPROXFPS/2
+G_MINGAPBETWEENEPISODES   <- G_APPROXFPS/3
+G_MINEPISODEDURATION      <- G_APPROXFPS/3
 HUNTEVENT_MATCHING_OFFSET <- 3*G_APPROXFPS # Max frames to accept as mismatch when matching manual to auto detected huntevents during tracker validation - frames to Used in validateHuntEventsAgainstUserAnnotated
 
 
@@ -24,8 +24,8 @@ HUNTEVENT_MATCHING_OFFSET <- 3*G_APPROXFPS # Max frames to accept as mismatch wh
 vExpID <- unique(datAllFrames$expID)
 
 lCompHuntEvents <- list()
-vHuntScores <- round(100*seq(0.5,0.99,length=10))/100
-vEyeThres <- seq(40,50,length=9)
+vHuntScores <- round(100*seq(0.45,0.99,length=15))/100
+vEyeThres <- round(100*seq(40,55,length=16))/100
 
   for (expID in vExpID)
   {
@@ -47,6 +47,7 @@ vEyeThres <- seq(40,50,length=9)
         
         ## Load Automated detection
         datHuntEvents <- detectHuntEvents(datAllFrames,expID,"LR",1)
+        datHuntEvents <- datHuntEvents[datHuntEvents$eventID > 0,]
         
         datExpFrames = datAllFrames[datAllFrames$expID == expID ,]
         datExpEyeV = (datExpFrames$LEyeAngle-datExpFrames$REyeAngle)
@@ -56,23 +57,27 @@ vEyeThres <- seq(40,50,length=9)
         datAllStartFramePairs$frameDistance <- abs(datAllStartFramePairs$manual-datAllStartFramePairs$automatic)
         idxSort <- order(datAllStartFramePairs$frameDistance,decreasing = FALSE)
         nTopSelected <- NROW(datHuntEventsM)
-        ## Select Closest For Each Manual Event ##
+        ## Select Closest For Each Manual Event ##  
         datAllStartFramePairs_top <- datAllStartFramePairs[head(idxSort, nTopSelected ),]
         ## Select Events That 
         #datAllStartFramePairs_matched <- datAllStartFramePairs[datAllStartFramePairs$frameDistance,]
         
-        ## Find Closesto automatically detected frame to the Manually labelled one
-        vFrameDistToAutoDetectedHuntEvent <- tapply(datAllStartFramePairs_top$frameDistance,datAllStartFramePairs_top$manual,min)
+        ## Find Closest to automatically detected frame to the Manually labelled one
+        vFrameDistToAutoDetectedHuntEvent <- tapply(datAllStartFramePairs_top$frameDistance,datAllStartFramePairs_top$automatic,min)
         ## Get Number of Detected events - use thres between auto detected and manual event 
         vTruePositiveDetected <- vFrameDistToAutoDetectedHuntEvent[vFrameDistToAutoDetectedHuntEvent < HUNTEVENT_MATCHING_OFFSET] 
         nTruePositiveDetected <- NROW(vTruePositiveDetected)
         ## The remaining manually labelled events that were not matched are counted as falsely classified as negative
-        nFalseNegativeDetected <- NROW(datHuntEventsM) - NROW(vTruePositiveDetected)
+        ## COUNT Only uniquely matched manual to auto event
+        nUniquelyMatchedManualEvents <- NROW(unique(datAllStartFramePairs_top$manual))
+        nFalseNegativeDetected <- NROW(datHuntEventsM) - nUniquelyMatchedManualEvents
         vValidatedAutoDetectedEvents <- as.numeric(names(vTruePositiveDetected))
         ## How likely is it that tracker detects a hunt event 
         sensitivity <- nTruePositiveDetected/(nTruePositiveDetected + nFalseNegativeDetected)
-        ## How likely is it that it responds specific to genuine hunt events
-        nFalsePositives <- NROW(datHuntEvents) - NROW(datHuntEventsM)
+        # FalsePositives : Remove number of validated events from total automatically detected events
+        # Note: Each automatic event may be matched to multiple Manual Ones and so 
+        nFalsePositives <- NROW(datHuntEvents) - nUniquelyMatchedManualEvents #NROW(vTruePositiveDetected)
+        stopifnot(nFalsePositives >= 0)
         ## Since we are classifying each frame, then here All non-Hunt Frames classified as such are True negatives - problem is the majority of frames are  true negatives are hunt events are generally rare
         # Sum Total Automatic Detected Hunt Frames
         vValidatedAutoHuntEvents <- datAllStartFramePairs_top[datAllStartFramePairs_top$manual %in% as.numeric(names(vTruePositiveDetected)),"automatic"]
@@ -85,35 +90,48 @@ vEyeThres <- seq(40,50,length=9)
         # Count Total Experiment Frames which have been correctly classified as non-Hunting 
         # Note: GIven Imbalance in number of hunt frames to total frames specificity (fraction of -ve classified that are truly negative) will score very high
         # a subsect of likely hunt frames need to be selected
-        nTrueNegative <- NROW(datExpEyeV[datExpEyeV > G_THRESHUNTVERGENCEANGLE*0.90])-nTruePositiveHuntFrames
+        nTrueNegative <- NROW(datExpEyeV[datExpEyeV > G_THRESHUNTVERGENCEANGLE])-nTruePositiveHuntFrames
         ##  Specificity 
+        ## How likely is it that it responds specific to genuine hunt events
+        
         stopifnot(nTrueNegative >= 0 & nFalsePositiveFrames >= 0 )
         specificity <- nTrueNegative/(nTrueNegative+nFalsePositiveFrames)
+        
+        # Positive Predicted Value
+        PositivepredictiveValue <- nUniquelyMatchedManualEvents/(nUniquelyMatchedManualEvents + nFalsePositives)
+        
         ## Plot Manual and Automatic
-        
-        plot(datExpFrames$frameN,datExpEyeV,type="l",ylim=c(0,70),ylab="Eye vergence",xlab="frame N")
-        abline(h=G_THRESHUNTVERGENCEANGLE,lwd=2,lty=2)
-        points(datAllStartFramePairs$automatic,rep(60,NROW(datAllStartFramePairs)),pch=2,col="red")
-        #points(datAllStartFramePairs_top$manual,rep(64,NROW(datAllStartFramePairs_top)),pch=6,col="blue")
-        points(datHuntEventsM$startFrame,rep(63,NROW(datHuntEventsM)),pch=25,col="blue")
-        points(vValidatedAutoDetectedEvents,rep(64,NROW(vValidatedAutoDetectedEvents)),pch=25,col="purple")
-        legend("bottomright",
-               legend = c(paste("auto n",NROW(datHuntEvents)),paste("manual n",NROW(datHuntEventsM)),paste("matched n",nTruePositiveDetected) ) ,col=c("red","blue","purple"),pch=c(2,25,25) )
-        title(paste("F", expID ,"Hunt event sensitivity:",prettyNum(sensitivity*100,digits=4)," specificity:",prettyNum(specificity*100,digits=4) ) )
-
-        lCompHuntEvents[[paste0(expID,"_",n)]] <- data.frame(expID=expID,
-                                                             ClassifierThres = G_HUNTSCORETHRES,
-                                                             EyeVThres=G_THRESHUNTVERGENCEANGLE,
-                                                             TruePositiveHuntFrames=nTruePositiveHuntFrames,
-                                                             FalsePositiveFrames=nFalsePositiveFrames,
-                                                             TrueNegativeFrames = nTrueNegative,
-                                                             FalseNegativeFrames = nFalseNegativeDetected,
-                                                             ManualCount=NROW(datHuntEventsM),
-                                                             AutomaticCount=NROW(datHuntEvents),
-                                                             Matched=nTruePositiveDetected,
-                                                             Sensitivity=sensitivity,
-                                                             Specificity=specificity)
-        
+        strPlotName = paste(strPlotExportPath,"/fish",expID,"_",n,"-HEventMatching_HC",G_HUNTSCORETHRES,"_EyeV",G_THRESHUNTVERGENCEANGLE,".pdf",sep="")
+        pdf(strPlotName)
+          plot(datExpFrames$frameN,datExpEyeV,type="l",ylim=c(0,70),ylab="Eye vergence",xlab="frame N")
+          abline(h=G_THRESHUNTVERGENCEANGLE,lwd=2,lty=2)
+          points(datAllStartFramePairs$automatic,rep(60,NROW(datAllStartFramePairs)),pch='|',cex=1,col="red")
+          points(datAllStartFramePairs$automatic,rep(60,NROW(datAllStartFramePairs))-0.5,pch='|',cex=0.3,col="black")
+          #points(datAllStartFramePairs_top$manual,rep(64,NROW(datAllStartFramePairs_top)),pch=6,col="blue")
+          points(datHuntEventsM$startFrame,rep(63,NROW(datHuntEventsM)),pch=25,col="blue")
+          points(vValidatedAutoDetectedEvents,rep(64,NROW(vValidatedAutoDetectedEvents)),pch='|',col="purple")
+          legend("bottomright",box.col = "white",bg="white",
+                 legend = c(paste("auto n",NROW(datHuntEvents)),paste("manual n",NROW(datHuntEventsM)),
+                            paste("matched n",nUniquelyMatchedManualEvents) ) ,
+                           col=c("red","blue","purple"),pch=c(2,25,25) )
+          title(paste("F", expID ,"H event sensitivity:",prettyNum(sensitivity*100,digits=4),
+                      " specificity:",prettyNum(specificity*100,digits=4),
+                      "PPV:",prettyNum(PositivepredictiveValue*100,digits=4)) )
+  
+          lCompHuntEvents[[paste0(expID,"_",n)]] <- data.frame(expID=expID,
+                                                               ClassifierThres = G_HUNTSCORETHRES,
+                                                               EyeVThres=G_THRESHUNTVERGENCEANGLE,
+                                                               TruePositiveHuntFrames=nTruePositiveHuntFrames,
+                                                               FalsePositiveFrames=nFalsePositiveFrames,
+                                                               TrueNegativeFrames = nTrueNegative,
+                                                               FalseNegativeFrames = nFalseNegativeDetected,
+                                                               ManualCount=NROW(datHuntEventsM),
+                                                               AutomaticCount=NROW(datHuntEvents),
+                                                               Matched=nTruePositiveDetected,
+                                                               Sensitivity=sensitivity,
+                                                               Specificity=specificity,
+                                                               PPV=PositivepredictiveValue)
+      dev.off()        
         n = n + 1
       } ## Eye V
      } # VHuntScore  
@@ -121,6 +139,7 @@ vEyeThres <- seq(40,50,length=9)
    
   
   datCompEvents <- do.call(rbind,lCompHuntEvents)
+  write.csv(datCompEvents,file=paste0(strDataExportDir,"/datHEventsDetectionAbility.csv") )
   for (testedEyeV in vEyeThres)
   {
     for (testedHuntScore in vHuntScores)
@@ -128,7 +147,6 @@ vEyeThres <- seq(40,50,length=9)
       
       datParamComp <-  datCompEvents[datCompEvents$EyeVThres == testedEyeV & datCompEvents$ClassifierThres == testedHuntScore,  ]
       lmmodel <- lm(AutomaticCount~ManualCount,data=datParamComp)
-  
     
       ## Success / Strike Non Strike Percentage ##
       strPlotName = paste(strPlotExportPath,"/trackerHEventVal_HC",testedHuntScore,"_EyeV",testedEyeV,".pdf",sep="")
@@ -136,23 +154,38 @@ vEyeThres <- seq(40,50,length=9)
           compress=FALSE,onefile = FALSE, 
           title="Compare User vs Automated Hunt Event Detection  ") #col=(as.integer(filtereddatAllFrames$expID))
       
-      mxAxis <- max(c(datCompEvents$AutomaticCount,datCompEvents$ManualCount))
-      plot(datParamComp$ManualCount,datParamComp$AutomaticCount,xlim=c(0,mxAxis),ylim=c(0,mxAxis),asp=1,
-           xlab="Manual Count",ylab="Automatic",
-           main=paste(" HuntEvent Detection H:",testedHuntScore,"V:",testedEyeV))
-      abline(lmmodel,col="red",lwd=3,lty=2)
-      legend("bottomright",legend=c(paste("LM c=",prettyNum(lmmodel$coefficients[1],digits=3),
-                                          "b=",prettyNum(lmmodel$coefficients[2],digits=3) ))
-             ,lty=2,col="red",lwd=3)
-      text(datParamComp$ManualCount,datParamComp$AutomaticCount+4,datParamComp$expID,cex=0.6)
-      
+        mxAxis <- max(c(datCompEvents$AutomaticCount,datCompEvents$ManualCount))
+        plot(datParamComp$ManualCount,datParamComp$AutomaticCount,xlim=c(0,mxAxis),ylim=c(0,mxAxis),asp=1,
+             xlab="Manual Count",ylab="Automatic",
+             main=paste(" HuntEvent Detection H:",testedHuntScore,"V:",testedEyeV))
+        abline(lmmodel,col="red",lwd=3,lty=2)
+        legend("bottomright",bg="white",legend=c(paste("LM c=",prettyNum(lmmodel$coefficients[1],digits=3),
+                                            "b=",prettyNum(lmmodel$coefficients[2],digits=3) ))
+               ,lty=2,col="red",lwd=3)
+        text(datParamComp$ManualCount,datParamComp$AutomaticCount+4,datParamComp$expID,cex=0.6)
+        
       dev.off()
-      
       
           
     }
   }
   
+  ## Marginalize/Integrate Free param and Find mean sensitivity Specificity
+  vmuSensitivity <- tapply(datCompEvents$Sensitivity,datCompEvents$ClassifierThres,mean)
+  vmuSpecificity <- tapply(datCompEvents$Specificity,datCompEvents$ClassifierThres,mean)
   
-  plot(1-datCompEvents$Specificity,datCompEvents$Sensitivity,main="ROC")
+  plot(1-vmuSpecificity,vmuSensitivity,type="lp",
+       main=paste("ROC Hclassifier ",min(datCompEvents$ClassifierThres),"-",max(datCompEvents$ClassifierThres) ),xlim=c(0,1),ylim=c(0,1))
+       
+  ## Marginalize/Integrate Eye Threshold param and Find mean sensitivity Specificity
+  vmuSensitivity <- tapply(datCompEvents$Sensitivity,datCompEvents$EyeVThres,mean)
+  vmuSpecificity <- tapply(datCompEvents$Specificity,datCompEvents$EyeVThres,mean)
+  
+  plot(1-vmuSpecificity,vmuSensitivity,type="b",
+       main=paste("ROC EyeV ",min(datCompEvents$EyeVThres),"-",max(datCompEvents$EyeVThres) ),xlim=c(0,1),ylim=c(0,1))
+  
+    
+  ## 
+
+  plot(1-datCompEvents$Specificity,datCompEvents$Sensitivity,main="All ROC points")
   
