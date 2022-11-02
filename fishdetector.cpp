@@ -726,7 +726,7 @@ float fishdetector::netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,fl
          //std::cout << std::fixed << std::setprecision(4) << results[0][j] << "\t";
       }
        /// \TODO Exclude Small Fish From Here
-       fFishClass = results[0][0]+results[0][3]; //Fish + Small Fish Classes //Add Small and Large Fish Class Togetherresults[0][1] //Shifted
+       fFishClass = results[0][0]; //Fish + Small Fish Classes //Add Small and Large Fish Class Togetherresults[0][1] //Shifted
        fHuntModeClass = results[0][1];
        fNonFishClass = results[0][2];//1.0f - fFishClass;//results[0][2];
     }

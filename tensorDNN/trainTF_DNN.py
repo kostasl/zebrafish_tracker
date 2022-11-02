@@ -17,6 +17,7 @@ from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import regularizers
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.applications.efficientnet import EfficientNetB1, preprocess_input
 
 # Templates 28x38 images size form the dataset, however data is augmented such that all fish rotations can be detected
 # for this reason the training image needs to be square, so are rotations do not clip the top of the image (the eyes) when rotated
@@ -35,7 +36,7 @@ if __name__ == '__main__':
     print('FishNet TensorFlow Model Training')
     print(tf.version.VERSION)
 
-data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
+data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset_cleaned/")
 valid_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
 
 fish = list(data_dir.glob('./fish/*.jpg'))
@@ -50,9 +51,9 @@ bResetModelTraining = True  ## Do Not Incremental Train / Reset And Start over
 batch_size = 32
 img_height = 38
 img_width = 28
-epochs = 80
+epochs = 150
 num_classes = 4
-strModelPath = 'savedmodels/fishNet_loc'
+strModelPath = 'savedmodels/fishNet_loc_cleaned'
 ## Had To run x3 times with a validation split 0.3 - 0.5 before I got good filtering of entire scene - as tested by testModel
 def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
                 , model=None):
@@ -124,6 +125,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
             layers.experimental.preprocessing.RandomRotation(randRot),
             ##layers.experimental.preprocessing.RandomTranslation((0, 0.15), 0, fill_mode="nearest"),
             layers.experimental.preprocessing.RandomZoom(0.1),
+
         ]
     )
 
@@ -156,25 +158,25 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
         model = Sequential([
             data_augmentation,
             layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=(img_height, img_width, 1)),
-            layers.Conv2D(8, (3, 3), padding='same', activation='relu'),  # , activation='relu'
+            layers.Conv2D(8, (3, 4), padding='same', activation='relu'),  # , activation='relu'
             #layers.Dropout(0.1),
             layers.MaxPooling2D(),
-            layers.Conv2D(16, (3, 3), padding='same', activation='relu'),  # , activation='relu'
+            layers.Conv2D(16, (3, 4), padding='same', activation='relu'),  # , activation='relu'
             #layers.Dropout(0.1),
             layers.MaxPooling2D(),
-            layers.Conv2D(32, (3, 3), padding='same', activation='relu'),  # , activation='relu'
+            layers.Conv2D(32, (3, 4), padding='same', activation='relu'),  # , activation='relu'
             #layers.Dropout(0.1),
             layers.MaxPooling2D(),
-            layers.Conv2D(64, (3, 3), padding='same', activation='relu'),
+            layers.Conv2D(64, (3, 4), padding='same', activation='relu'),
             #layers.MaxPooling2D(),
-            layers.Conv2D(80, (3, 3), padding='same', activation='relu'),
+            layers.Conv2D(128, (3, 4), padding='same', activation='relu'),
             layers.MaxPooling2D(),
             layers.Flatten(),
-            layers.Dense(750, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-            layers.Dense(300, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(1250, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(720, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dropout(0.3),
-            layers.Dense(100, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-            layers.Dense(50, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(200, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(20, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dropout(0.3),
             layers.Dense(num_classes, activation='softmax',name="output")  ##
         ])
