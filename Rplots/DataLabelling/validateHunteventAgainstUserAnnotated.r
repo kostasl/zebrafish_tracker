@@ -24,8 +24,8 @@ HUNTEVENT_MATCHING_OFFSET <- 3*G_APPROXFPS # Max frames to accept as mismatch wh
 vExpID <- unique(datAllFrames$expID)
 
 lCompHuntEvents <- list()
-vHuntScores <- round(100*seq(0.45,0.99,length=12))/100
-vEyeThres <- seq(38,55,length=10)
+vHuntScores <- round(100*seq(0.45,0.99,length=5))/100
+vEyeThres <- round(100*seq(45,55,length=5))/100
 
   for (expID in vExpID)
   {
@@ -87,7 +87,7 @@ vEyeThres <- seq(38,55,length=10)
         # Count Total Experiment Frames which have been correctly classified as non-Hunting 
         # Note: GIven Imbalance in number of hunt frames to total frames specificity (fraction of -ve classified that are truly negative) will score very high
         # a subsect of likely hunt frames need to be selected
-        nTrueNegative <- NROW(datExpEyeV[datExpEyeV > G_THRESHUNTVERGENCEANGLE*0.90])-nTruePositiveHuntFrames
+        nTrueNegative <- NROW(datExpEyeV[datExpEyeV > G_THRESHUNTVERGENCEANGLE])-nTruePositiveHuntFrames
         ##  Specificity 
         ## How likely is it that it responds specific to genuine hunt events
         
@@ -98,7 +98,7 @@ vEyeThres <- seq(38,55,length=10)
         PositivepredictiveValue <- nTruePositiveDetected/(nTruePositiveDetected + nFalsePositives)
         
         ## Plot Manual and Automatic
-        strPlotName = paste(strPlotExportPath,"/fish_",expID,"_HEventMatching_HC",G_HUNTSCORETHRES,"_EyeV",G_THRESHUNTVERGENCEANGLE,".pdf",sep="")
+        strPlotName = paste(strPlotExportPath,"/fish",expID,"_",n,"-HEventMatching_HC",G_HUNTSCORETHRES,"_EyeV",G_THRESHUNTVERGENCEANGLE,".pdf",sep="")
         pdf(strPlotName)
           plot(datExpFrames$frameN,datExpEyeV,type="l",ylim=c(0,70),ylab="Eye vergence",xlab="frame N")
           abline(h=G_THRESHUNTVERGENCEANGLE,lwd=2,lty=2)
