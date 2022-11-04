@@ -37,11 +37,9 @@ if __name__ == '__main__':
     print(tf.version.VERSION)
 
 data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset_cleaned/")
-<<<<<<< HEAD
+
 valid_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
-=======
-valid_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset_cleaned/")
->>>>>>> 3bcea158f3182a7b751f5e736233034771dbee8f
+
 
 fish = list(data_dir.glob('./fish/*.jpg'))
 # PIL.Image.open(str(fish[0]))
@@ -176,11 +174,13 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
             layers.Conv2D(128, (3, 4), padding='same', activation='relu'),
             layers.MaxPooling2D(),
             layers.Flatten(),
-            layers.Dense(1250, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-            layers.Dense(720, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(250, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(120, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dropout(0.3),
-            layers.Dense(200, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-            layers.Dense(20, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Flatten(),
+            layers.Dense(50, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(25, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(12, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dropout(0.3),
             layers.Dense(num_classes, activation='softmax',name="output")  ##
         ])

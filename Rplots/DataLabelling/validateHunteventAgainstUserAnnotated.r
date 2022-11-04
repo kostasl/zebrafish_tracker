@@ -68,8 +68,10 @@ vEyeThres <- round(100*seq(40,55,length=16))/100
         vTruePositiveDetected <- vFrameDistToAutoDetectedHuntEvent[vFrameDistToAutoDetectedHuntEvent < HUNTEVENT_MATCHING_OFFSET] 
         nTruePositiveDetected <- NROW(vTruePositiveDetected)
         ## The remaining manually labelled events that were not matched are counted as falsely classified as negative
-        ## COUNT Only uniquely matched manual to auto event
-        nUniquelyMatchedManualEvents <- NROW(unique(datAllStartFramePairs_top$manual))
+        ## COUNT Only uniquely matched manual to auto event - ie unique pairs
+        nUniquelyMatchedManualEvents <- min( NROW(unique(datAllStartFramePairs_top$automatic)),
+                                             NROW(unique(datAllStartFramePairs_top$manual)) )
+        
         nFalseNegativeDetected <- NROW(datHuntEventsM) - nUniquelyMatchedManualEvents
         vValidatedAutoDetectedEvents <- as.numeric(names(vTruePositiveDetected))
         ## How likely is it that tracker detects a hunt event 
@@ -80,13 +82,13 @@ vEyeThres <- round(100*seq(40,55,length=16))/100
         stopifnot(nFalsePositives >= 0)
         ## Since we are classifying each frame, then here All non-Hunt Frames classified as such are True negatives - problem is the majority of frames are  true negatives are hunt events are generally rare
         # Sum Total Automatic Detected Hunt Frames
-        vValidatedAutoHuntEvents <- datAllStartFramePairs_top[datAllStartFramePairs_top$manual %in% as.numeric(names(vTruePositiveDetected)),"automatic"]
+        vValidatedAutoHuntEvents <- datAllStartFramePairs_top[datAllStartFramePairs_top$automatic %in% as.numeric(names(vTruePositiveDetected)),"automatic"]
         # Count Number of Automatically Correctly Classified Frames
         # by summing the duration of Validated automatically selected Hunt Events 
         nTruePositiveHuntFrames <- sum(datHuntEvents[datHuntEvents$startFrame %in% vValidatedAutoHuntEvents,]$endFrame - 
-                                     datHuntEvents[datHuntEvents$startFrame %in% vValidatedAutoHuntEvents,]$startFrame )
-        nFalsePositiveFrames <- sum(datHuntEvents[!datHuntEvents$startFrame %in% vValidatedAutoHuntEvents,]$endFrame - 
-                                     datHuntEvents[!datHuntEvents$startFrame %in% vValidatedAutoHuntEvents,]$startFrame )
+                                     datHuntEvents[datHuntEvents$startFrame %in% vValidatedAutoHuntEvents,]$startFrame) 
+        nFalsePositiveFrames <- sum(datHuntEvents[!(datHuntEvents$startFrame %in% vValidatedAutoHuntEvents),]$endFrame - 
+                                     datHuntEvents[!(datHuntEvents$startFrame %in% vValidatedAutoHuntEvents),]$startFrame) 
         # Count Total Experiment Frames which have been correctly classified as non-Hunting 
         # Note: GIven Imbalance in number of hunt frames to total frames specificity (fraction of -ve classified that are truly negative) will score very high
         # a subsect of likely hunt frames need to be selected
@@ -136,7 +138,7 @@ vEyeThres <- round(100*seq(40,55,length=16))/100
       } ## Eye V
      } # VHuntScore  
   } ## each experiment
-   
+    
   
   datCompEvents <- do.call(rbind,lCompHuntEvents)
   write.csv(datCompEvents,file=paste0(strDataExportDir,"/datHEventsDetectionAbility.csv") )
@@ -174,15 +176,16 @@ vEyeThres <- round(100*seq(40,55,length=16))/100
   vmuSensitivity <- tapply(datCompEvents$Sensitivity,datCompEvents$ClassifierThres,mean)
   vmuSpecificity <- tapply(datCompEvents$Specificity,datCompEvents$ClassifierThres,mean)
   
-  plot(1-vmuSpecificity,vmuSensitivity,type="lp",
-       main=paste("ROC Hclassifier ",min(datCompEvents$ClassifierThres),"-",max(datCompEvents$ClassifierThres) ),xlim=c(0,1),ylim=c(0,1))
+  plot(1-vmuSpecificity,vmuSensitivity,type="l",
+       main=paste("ROC HUNTSCORETHRES ",min(datCompEvents$ClassifierThres),"-",max(datCompEvents$ClassifierThres) ),
+       xlim=c(0,1),ylim=c(0,1))
        
   ## Marginalize/Integrate Eye Threshold param and Find mean sensitivity Specificity
   vmuSensitivity <- tapply(datCompEvents$Sensitivity,datCompEvents$EyeVThres,mean)
   vmuSpecificity <- tapply(datCompEvents$Specificity,datCompEvents$EyeVThres,mean)
   
-  plot(1-vmuSpecificity,vmuSensitivity,type="b",
-       main=paste("ROC EyeV ",min(datCompEvents$EyeVThres),"-",max(datCompEvents$EyeVThres) ),xlim=c(0,1),ylim=c(0,1))
+  plot(1-vmuSpecificity,vmuSensitivity,type="l",
+       main=paste("ROC THRESHUNTVERGENCEANGLE ",min(datCompEvents$EyeVThres),"-",max(datCompEvents$EyeVThres) ),xlim=c(0,1),ylim=c(0,1))
   
     
   ## 
