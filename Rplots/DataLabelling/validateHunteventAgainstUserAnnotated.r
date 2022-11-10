@@ -69,8 +69,8 @@ vEyeThres <- round(100*seq(40,55,length=16))/100
         nTruePositiveDetected <- NROW(vTruePositiveDetected)
         ## The remaining manually labelled events that were not matched are counted as falsely classified as negative
         ## COUNT Only uniquely matched manual to auto event - ie unique pairs
-        nUniquelyMatchedManualEvents <- min( NROW(unique(datAllStartFramePairs_top$automatic)),
-                                             NROW(unique(datAllStartFramePairs_top$manual)) )
+        nUniquelyMatchedManualEvents <- min( NROW(unique(datAllStartFramePairs_top[datAllStartFramePairs_top$frameDistance< HUNTEVENT_MATCHING_OFFSET,]$automatic)),
+                                             NROW(unique(datAllStartFramePairs_top[datAllStartFramePairs_top$frameDistance< HUNTEVENT_MATCHING_OFFSET,]$manual)) )
         
         nFalseNegativeDetected <- NROW(datHuntEventsM) - nUniquelyMatchedManualEvents
         vValidatedAutoDetectedEvents <- as.numeric(names(vTruePositiveDetected))
