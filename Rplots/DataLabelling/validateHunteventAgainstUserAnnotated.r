@@ -24,8 +24,8 @@ HUNTEVENT_MATCHING_OFFSET <- 3*G_APPROXFPS # Max frames to accept as mismatch wh
 vExpID <- unique(datAllFrames$expID)
 
 lCompHuntEvents <- list()
-vHuntScores <- round(100*seq(0.45,0.99,length=15))/100
-vEyeThres <- round(100*seq(40,55,length=16))/100
+vHuntScores <- c(0.1, round(100*seq(0.5,0.90,length=5))/100,0.99)
+vEyeThres <- round(100*seq(40,50,length=16))/100
 
   for (expID in vExpID)
   {
@@ -46,7 +46,11 @@ vEyeThres <- round(100*seq(40,55,length=16))/100
           file=strFileUserHuntEvents, header = T)
         
         ## Load Automated detection
-        datHuntEvents <- detectHuntEvents(datAllFrames,expID,"LR",1)
+        datHuntEvents <- detectHuntEvents(datAllFrames,expID,"LR",1,
+                                          THRESHUNTVERGENCEANGLE=G_THRESHUNTVERGENCEANGLE,
+                                          HUNTSCORETHRES=G_HUNTSCORETHRES,
+                                          THRESHCLIPEYEDATA = G_THRESHCLIPEYEDATA
+                                          )
         datHuntEvents <- datHuntEvents[datHuntEvents$eventID > 0,]
         
         datExpFrames = datAllFrames[datAllFrames$expID == expID ,]
@@ -75,7 +79,8 @@ vEyeThres <- round(100*seq(40,55,length=16))/100
         nFalseNegativeDetected <- NROW(datHuntEventsM) - nUniquelyMatchedManualEvents
         vValidatedAutoDetectedEvents <- as.numeric(names(vTruePositiveDetected))
         ## How likely is it that tracker detects a hunt event 
-        sensitivity <- nTruePositiveDetected/(nTruePositiveDetected + nFalseNegativeDetected)
+        #sensitivity <- nTruePositiveDetected/(nTruePositiveDetected + nFalseNegativeDetected)
+        sensitivity<-nUniquelyMatchedManualEvents/(nUniquelyMatchedManualEvents+nFalseNegativeDetected)
         # FalsePositives : Remove number of validated events from total automatically detected events
         # Note: Each automatic event may be matched to multiple Manual Ones and so 
         nFalsePositives <- NROW(datHuntEvents) - nUniquelyMatchedManualEvents #NROW(vTruePositiveDetected)
@@ -90,12 +95,12 @@ vEyeThres <- round(100*seq(40,55,length=16))/100
         nFalsePositiveFrames <- sum(datHuntEvents[!(datHuntEvents$startFrame %in% vValidatedAutoHuntEvents),]$endFrame - 
                                      datHuntEvents[!(datHuntEvents$startFrame %in% vValidatedAutoHuntEvents),]$startFrame) 
         # Count Total Experiment Frames which have been correctly classified as non-Hunting 
-        # Note: GIven Imbalance in number of hunt frames to total frames specificity (fraction of -ve classified that are truly negative) will score very high
-        # a subsect of likely hunt frames need to be selected
-        nTrueNegative <- NROW(datExpEyeV[datExpEyeV > G_THRESHUNTVERGENCEANGLE])-nTruePositiveHuntFrames
+        # Note: Given Imbalance in number of hunt frames to total frames specificity (fraction of -ve classified that are truly negative) will score very high
+        # a subset of likely hunt frames need to be selected
+        nTrueNegative <- NROW(datExpEyeV[datExpEyeV >= G_THRESHUNTVERGENCEANGLE*0.98])-nTruePositiveHuntFrames
+
         ##  Specificity 
         ## How likely is it that it responds specific to genuine hunt events
-        
         stopifnot(nTrueNegative >= 0 & nFalsePositiveFrames >= 0 )
         specificity <- nTrueNegative/(nTrueNegative+nFalsePositiveFrames)
         
@@ -132,24 +137,37 @@ vEyeThres <- round(100*seq(40,55,length=16))/100
                                                                Matched=nTruePositiveDetected,
                                                                Sensitivity=sensitivity,
                                                                Specificity=specificity,
-                                                               PPV=PositivepredictiveValue)
+                                                               PPV=PositivepredictiveValue,
+                                                               rSq=NA)
       dev.off()        
         n = n + 1
       } ## Eye V
      } # VHuntScore  
   } ## each experiment
     
-  
+  ## Do Linear Fit Through 
   datCompEvents <- do.call(rbind,lCompHuntEvents)
-  write.csv(datCompEvents,file=paste0(strDataExportDir,"/datHEventsDetectionAbility.csv") )
+
+  
   for (testedEyeV in vEyeThres)
   {
     for (testedHuntScore in vHuntScores)
     {    
       
-      datParamComp <-  datCompEvents[datCompEvents$EyeVThres == testedEyeV & datCompEvents$ClassifierThres == testedHuntScore,  ]
       lmmodel <- lm(AutomaticCount~ManualCount,data=datParamComp)
-    
+      ## Extract R square from Linear fit
+      rSq <- summary(lmmodel)$r.squared 
+      datCompEvents[datCompEvents$EyeVThres == testedEyeV &
+                      datCompEvents$ClassifierThres == testedHuntScore,"rSq"] = rSq
+      datCompEvents[datCompEvents$EyeVThres == testedEyeV &
+                      datCompEvents$ClassifierThres == testedHuntScore,"lm_slope"] = lmmodel$coefficients[2]
+      datCompEvents[datCompEvents$EyeVThres == testedEyeV &
+                      datCompEvents$ClassifierThres == testedHuntScore,"lm_intercept"] = lmmodel$coefficients[1]
+      
+      
+      datParamComp <-  datCompEvents[datCompEvents$EyeVThres == testedEyeV &
+                                       datCompEvents$ClassifierThres == testedHuntScore,  ]
+      
       ## Success / Strike Non Strike Percentage ##
       strPlotName = paste(strPlotExportPath,"/trackerHEventVal_HC",testedHuntScore,"_EyeV",testedEyeV,".pdf",sep="")
       pdf(strPlotName,bg="white",
@@ -162,7 +180,8 @@ vEyeThres <- round(100*seq(40,55,length=16))/100
              main=paste(" HuntEvent Detection H:",testedHuntScore,"V:",testedEyeV))
         abline(lmmodel,col="red",lwd=3,lty=2)
         legend("bottomright",bg="white",legend=c(paste("LM c=",prettyNum(lmmodel$coefficients[1],digits=3),
-                                            "b=",prettyNum(lmmodel$coefficients[2],digits=3) ))
+                                            "b=",prettyNum(lmmodel$coefficients[2],digits=3),
+                                            "r2=",prettyNum(rSq,digits=3) ) ) 
                ,lty=2,col="red",lwd=3)
         text(datParamComp$ManualCount,datParamComp$AutomaticCount+4,datParamComp$expID,cex=0.6)
         
@@ -171,6 +190,8 @@ vEyeThres <- round(100*seq(40,55,length=16))/100
           
     }
   }
+  ## Export Results from Parameter Scanning
+  write.csv(datCompEvents,file=paste0(strDataExportDir,"/datHEventsDetectionAbility.csv") )
   
   ## Marginalize/Integrate Free param and Find mean sensitivity Specificity
   vmuSensitivity <- tapply(datCompEvents$Sensitivity,datCompEvents$ClassifierThres,mean)
