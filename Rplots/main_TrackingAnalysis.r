@@ -45,45 +45,46 @@ source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
 source("DataLabelling/labelHuntEvents_lib.r")
 
-########   Directory to Source Tracker Exported CSV Files 
-# Hunting Assay Experiments
-# strDataSetDirectories <- paste(strTrackInputPath, list(
-#                               "HB80_7dpf_LF3/", ##Dataset 2
-#                               "HB70_7dpf_NF1/",
-#                               "HB60_7dpf_LF2",
-#                               "HB50_7dpf_NF0",
-#                               "HB40_7dpf_LF1"
-#                               ),sep="/")
-## Hunger Exp
-strDataSetDirectories <- paste(strTrackInputPath, list(
-                                 #"B1/",
-                                 #"B2/",
-                                 #"B3/",
-                                 "VAL/"
-                                 #"DATA"##Dataset 2
-                                 ),sep="/")
-
-
-### Set Colour Pallette Size from List Of Datasets
-G_DATASETPALLETSIZE = NROW(strDataSetDirectories)
-rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
-
-strCondR  <- "*.csv"; 
-#display.brewer.all() to see avaulable options
-
-stopifnot(file.exists(strDataSetDirectories))
-#################IMPORT TRACKER FILES # source Tracker Data Files############################### 
-##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
-##NOTE: Assumes Files Begin with "Auto" and end with "track"
-## These need to be grouped in folders per GroupID
-  lastDataSet   = NROW(strDataSetDirectories)
-  firstDataSet  = 1 
-  #strFileNameFn = "extractFileNameParams_FOntogeny"
-  strFileNameFn = "extractFileNameParams_OliviaAssay"
-  source("runimportTrackerDataFiles.r") 
-
-###### END OF IMPORT TRACKER DATA ############
-
+  ########   Directory to Source Tracker Exported CSV Files 
+  # Hunting Assay Experiments
+  # strDataSetDirectories <- paste(strTrackInputPath, list(
+  #                               "HB80_7dpf_LF3/", ##Dataset 2
+  #                               "HB70_7dpf_NF1/",
+  #                               "HB60_7dpf_LF2",
+  #                               "HB50_7dpf_NF0",
+  #                               "HB40_7dpf_LF1"
+  #                               ),sep="/")
+  ## Hunger Exp
+  strDataSetDirectories <- paste(strTrackInputPath, list(
+                                   #"B1/",
+                                   #"B2/",
+                                   #"B3/",
+                                   #"B4/",
+                                   "DATA081022"##VAL DATA
+                                   #"/ReTrack_081022"
+                                   ),sep="/")
+  
+   
+  ### Set Colour Pallette Size from List Of Datasets
+  G_DATASETPALLETSIZE = NROW(strDataSetDirectories)
+  rDataset <- c(rfc(G_DATASETPALLETSIZE),"#FF00AA");
+  
+  strCondR  <- "*.csv"; 
+  #display.brewer.all() to see avaulable options
+  
+  stopifnot(file.exists(strDataSetDirectories))
+  #################IMPORT TRACKER FILES # source Tracker Data Files############################### 
+  ##Saves imported Data In Group Separeted RData Files as setn1_Dataset_...RData
+  ##NOTE: Assumes Files Begin with "Auto" and end with "track"
+  ## These need to be grouped in folders per GroupID
+    lastDataSet   = NROW(strDataSetDirectories)
+    firstDataSet  = 1 
+    #strFileNameFn = "extractFileNameParams_FOntogeny"
+    strFileNameFn = "extractFileNameParams_OliviaAssay"
+    source("runimportTrackerDataFiles.r") 
+  
+  ###### END OF IMPORT TRACKER DATA ############
+  
 
 ### LOAD Imported Data Sets - Starting From firstDataSet
   ##Alternatevelly Load The Complete Set From datAllFrames_Ds-5-16-.RData ##Avoids data.frame bug rbind
@@ -114,11 +115,18 @@ stopifnot(file.exists(strDataSetDirectories))
   #### RUN UP TO THIS POINT TO GET DATA IMPORTED AND EVENTS DETECTED ####
   ## The Frames Are in datAllFrames , the huntEvents are in datAllHuntEvents
 
+  ## Compare Number of Hunt Events Per Group
+  vEventsPerFish <- tapply(datAllHuntEvents$groupID,datAllHuntEvents$expID,length)
+  datEventsPerExpID<- cbind.data.frame(nHuntEvents=as.numeric(vEventsPerFish),ExpID=names(vEventsPerFish))
+  vGroupPerExpID <-tapply(datAllHuntEvents$groupID,datAllHuntEvents$expID,unique)
+  rownames(datEventsPerExpID) <- as.character(datEventsPerExpID$ExpID)
+  datEventsPerExpID[names(vGroupPerExpID),"groupID"] <- vGroupPerExpID
   
+  plot(density(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",]$nHuntEvents),col="blue")
+  lines(density(datEventsPerExpID[datEventsPerExpID$groupID == "HET",]$nHuntEvents),col="magenta")
+  lines(density(datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents),col="red")
   
-  
-  
-  
+  t.test(datEventsPerExpID[datEventsPerExpID$groupID == "HET",]$nHuntEvents,datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents)
   ##Once Processed you can Check and Validate Hunt Events Using main_LabellingBlind.r
   # 
   # 

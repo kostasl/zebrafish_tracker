@@ -270,7 +270,7 @@ cv::Mat sparseBinarize(cv::Mat& imgRegion,float targetdensity)
 /// @outframeAnterior_Norm returns image of isolated head centered at best detection point by the DNN and oriented according to blob angle
 /// \note Only updates Blob position and response score if new classifier score is higher than existing
 float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedRect fishRotAnteriorBox,cv::Mat& outframeAnterior_Norm,
-                                    cv::Mat& outmaskRegionScore, int iSlidepxLim = 40,int iSlidePx_H_step = 10, int iSlidePx_V_step = 10,string regTag="0", bool bstopAtFirstMatch =true)
+                                    cv::Mat& outmaskRegionScore, int iSlidepxLim = 40,int iSlidePx_H_step = 10, int iSlidePx_V_step = 10, string regTag="0", bool bstopAtFirstMatch =true)
 {
   cv::Mat imgFishAnterior,imgFishAnterior_bin,imgFishAnterior_Norm_tmplcrop;
   cv::Mat imgFishAnterior_Norm_bin_dense; //Used to Find Contours
@@ -348,7 +348,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
    imgFishAnterior = frame(fishRotAnteriorBox_Bound); // getNormedBoundedImg(frame,fishRotAnteriorBox);
 
 
-   if (szFishAnteriorNorm.area() < gTrackerState.gszTemplateImg.area())
+   if (szFishAnteriorNorm.area() < gTrackerState.szDNNClassifierImg.area())
    {
        //Not Enough Space Abort
        qDebug() << "scoreBlobRegion: Scan area too small for template size";
@@ -369,14 +369,14 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
   /// SliDing Window Scanning //- gTrackerState.gszTemplateImg.width/2
   /// \note for some reason X coord needs to be inverted so as to pick the right spot on imgFishAnterior_bin
-  int iSlidePx_H_begin = std::max(0, (int)ptRotCenter.x - gTrackerState.gszTemplateImg.width/2-iSlidepxLim/2);// - iSlidepxLim/2 //max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
-  int iSlidePx_H_lim = min(imgFishAnterior_bin.cols - gTrackerState.gszTemplateImg.width, iSlidePx_H_begin + iSlidepxLim);  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
+  int iSlidePx_H_begin = std::max(0, (int)ptRotCenter.x - gTrackerState.szDNNClassifierImg.width/2-iSlidepxLim/2);// - iSlidepxLim/2 //max(0, imgFishAnterior_Norm.cols/2- sztemplate.width);
+  int iSlidePx_H_lim = min(imgFishAnterior_bin.cols - gTrackerState.szDNNClassifierImg.width, iSlidePx_H_begin + iSlidepxLim);  //imgFishAnterior_Norm.cols/2; //min(imgFishAnterior_Norm.cols-sztemplate.width, max(0,imgFishAnterior_Norm.cols/2+ sztemplate.width) ) ;
 
    // V step - scanning for fishhead like image in steps
   //Bound Starting point
   int iSlidePx_V_begin = std::min(imgFishAnterior_bin.rows,
-                                  std::max(0,(int)(ptRotCenter.y - gTrackerState.gszTemplateImg.height/2-iSlidepxLim/2) )); //  -  - iSlidepxLim/2==== -iSlidepxLim/2op(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
-  int iSlidePx_V_lim = min(imgFishAnterior_bin.rows-gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + iSlidepxLim);//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
+                                  std::max(0,(int)(ptRotCenter.y - gTrackerState.szDNNClassifierImg.height/2-iSlidepxLim/2) )); //  -  - iSlidepxLim/2==== -iSlidepxLim/2op(int)(ptRotCenter.y - sztemplate.height) sztemplate.height/2
+  int iSlidePx_V_lim = min(imgFishAnterior_bin.rows-gTrackerState.szDNNClassifierImg.height, iSlidePx_V_begin + iSlidepxLim);//min(imgFishAnterior_Norm.rows - gTrackerState.gszTemplateImg.height, iSlidePx_V_begin + 10); //(int)(sztemplate.height/2)
 
 
   float scoreFish,scoreNonFish,scoreHuntMode,dscore,max_dscore = 0.0f; //Recognition Score tested in both Vertical Directions
@@ -389,28 +389,28 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
       {
           //Define Regions Top-Left Corner Position within Extracted Blob Region and
           cv::Point ptTopLeftTemplate(i,j);
-          cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate, gTrackerState.gszTemplateImg );
+          cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate, gTrackerState.szDNNClassifierImg  );
           //CROP Extract a Template sized subregion of Orthonormal Fish
           imgFishAnterior_bin(rectFishTemplateBound).copyTo(imgFishAnterior_Norm_tmplcrop);
           //dscore combines fish Score + huntMode score
           dscore = this->netDNNDetect_fish(imgFishAnterior_Norm_tmplcrop,scoreFish,scoreHuntMode,scoreNonFish);
           // Overide with Fish Score Only - As frequently Fish is missed
-          dscore = scoreFish+scoreHuntMode;
+          dscore = max(scoreFish,scoreHuntMode); //Either Of these Being High
           ///Do Not Test Orientation - Blob Should Have the correct Angle
           //Check Both Vertical Orientations
           //cv::flip(imgFishAnterior_Norm_tmplcrop, imgFishAnterior_Norm_tmplcrop_vflip, 0);
           /// Score Number of Bin Pix In cropped region so as to push for regions that fully contain the eyes
           //float activePixRatio = (1+cv::sum(imgFishAnterior_Norm_tmplcrop)[0])/(imgFishAnterior_Norm_tmplcrop.cols*imgFishAnterior_Norm_tmplcrop.rows);
           ///  Store recognition score in Mask at(row,col) -//
-          maskRegionScore_Norm.at<float>(j + gTrackerState.gszTemplateImg.height/2, // , row
-                                         i + gTrackerState.gszTemplateImg.width/2) = dscore;//col //max(0.0f,dscore);//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
-          if (dscore > max_dscore)
+          maskRegionScore_Norm.at<float>(j + gTrackerState.szDNNClassifierImg.height/2, // , row
+                                         i + gTrackerState.szDNNClassifierImg.width/2) = dscore;//col //max(0.0f,dscore);//(scoreFish + scoreNonFish + 1e-3))/activePixRatio; //+ activePixRatio; //
+          if (dscore > max_dscore && scoreNonFish < 0.6)
           {
               max_dscore = dscore;
               mxLocFishScore = scoreFish;
               mxLocHuntScore = scoreHuntMode;
-              ptmax.y = j + gTrackerState.gszTemplateImg.height/2;
-              ptmax.x = i + gTrackerState.gszTemplateImg.width/2;
+              ptmax.y = j + gTrackerState.szDNNClassifierImg.height/2;
+              ptmax.x = i + gTrackerState.szDNNClassifierImg.width/2;
           }
 
           if (bstopAtFirstMatch && max_dscore > gTrackerState.fishnet_classifier_thres)
@@ -432,9 +432,9 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
     //Need to Rotate Score Image Back to Original Orientiation to return Coordinates oF Best Match
     //- Removed  - Scores scaled too low Find Max Match Position In Non-Norm pic (original orientation)
     double minL1, maxL1;
-    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,
-                     cv::Size(max(2*(iSlidePx_H_step),2)+1,max(2*(iSlidePx_V_step),20)+1),
-                     max(iSlidePx_H_step/2,30),max(iSlidePx_V_step/2,30),BORDER_ISOLATED);
+//    cv::GaussianBlur(maskRegionScore_Norm,maskRegionScore_Norm,
+//                     cv::Size(max(2*(iSlidePx_H_step),2)+1,max(2*(iSlidePx_V_step),20)+1),
+//                     max(iSlidePx_H_step/2,30),max(iSlidePx_V_step/2,30),BORDER_ISOLATED);
 
     cv::normalize(maskRegionScore_Norm, maskRegionScore_Norm, max_dscore, 0, cv::NORM_MINMAX);
     //ptmax = mxLocFishScore;
@@ -484,11 +484,11 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 
     /// Find Max Score Coords In Normed FishAnterior / Around Best Match Region (Using Normed Regiest Match Region (Using Normed Region)
 
-    cv::Point ptTopLeftTemplate(max(0,ptmax.x-gTrackerState.gszTemplateImg.width/2-1),      //   TemplateImg.width/2),
-                                max(0,ptmax.y-gTrackerState.gszTemplateImg.height/2-1) );
+    cv::Point ptTopLeftTemplate(max(0,ptmax.x-gTrackerState.szDNNClassifierImg.width/2-1),      //   TemplateImg.width/2),
+                                max(0,ptmax.y-gTrackerState.szDNNClassifierImg.height/2-1) );
     // Stick To Boundary for Template Size Window
-    ptTopLeftTemplate.x =((ptTopLeftTemplate.x + gTrackerState.gszTemplateImg.width) >= maskRegionScore_Norm.cols)?max(0,maskRegionScore_Norm.cols-gTrackerState.gszTemplateImg.width) : ptTopLeftTemplate.x;
-    ptTopLeftTemplate.y =((ptTopLeftTemplate.y + gTrackerState.gszTemplateImg.height) >= maskRegionScore_Norm.rows)?max(0,maskRegionScore_Norm.rows-gTrackerState.gszTemplateImg.height) : ptTopLeftTemplate.y;
+    ptTopLeftTemplate.x =((ptTopLeftTemplate.x + gTrackerState.szDNNClassifierImg.width) >= maskRegionScore_Norm.cols)?max(0,maskRegionScore_Norm.cols-gTrackerState.szDNNClassifierImg.width) : ptTopLeftTemplate.x;
+    ptTopLeftTemplate.y =((ptTopLeftTemplate.y + gTrackerState.szDNNClassifierImg.height) >= maskRegionScore_Norm.rows)?max(0,maskRegionScore_Norm.rows-gTrackerState.szDNNClassifierImg.height) : ptTopLeftTemplate.y;
     // OR Simply Take Midline Of Image as best Guess of Fish Location
     //cv::Point ptTopLeftTemplate(szFishAnteriorNorm.width/2-gTrackerState.gLastfishimg_template.size().width/2,
     //                         szFishAnteriorNorm.height/2-gTrackerState.gLastfishimg_template.size().height/2);
@@ -504,7 +504,7 @@ float fishdetector::scoreBlobRegion(cv::Mat frame,zftblob& fishblob,cv::RotatedR
 //                               );
 
 
-    cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate, gTrackerState.gszTemplateImg );
+    cv::Rect rectFishTemplateBound = cv::Rect(ptTopLeftTemplate, gTrackerState.szDNNClassifierImg );
     assert(rectFishTemplateBound.width + rectFishTemplateBound.x <= imgFishAnterior.cols );
     assert(rectFishTemplateBound.height + rectFishTemplateBound.y <= imgFishAnterior.rows );
 
@@ -726,7 +726,7 @@ float fishdetector::netDNNDetect_fish(cv::Mat imgRegion_bin,float &fFishClass,fl
          //std::cout << std::fixed << std::setprecision(4) << results[0][j] << "\t";
       }
        /// \TODO Exclude Small Fish From Here
-       fFishClass = results[0][0]; //+results[0][2]; //Add Small and Large Fish Class Togetherresults[0][1] //Shifted
+       fFishClass = results[0][0]; //Fish + Small Fish Classes //Add Small and Large Fish Class Togetherresults[0][1] //Shifted
        fHuntModeClass = results[0][1];
        fNonFishClass = results[0][2];//1.0f - fFishClass;//results[0][2];
     }

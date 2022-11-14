@@ -111,9 +111,14 @@ mergeDispersionOntoHuntEvents <- function(datDispersion, datAllFrames, datHuntLa
 ##Focus on extracting and Identifying Hunting events - Eye Vergence
 ##Return list of HuntEvents / With start and End Frame / and Video FileName
 ## TODO : Add Hysterisis in the ON/Off of Eye Vergence Event Detection
-detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
+detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID,
+                             THRESHUNTVERGENCEANGLE= G_THRESHUNTVERGENCEANGLE,
+                             HUNTSCORETHRES = G_HUNTSCORETHRES,
+                             THRESHCLIPEYEDATA = G_THRESHCLIPEYEDATA)
 {  
   message("## Extract Hunting Events For Group ##")
+  message("-- EyeThres:",THRESHUNTVERGENCEANGLE, " HuntScoreThres:",HUNTSCORETHRES," --")
+  
   lGroupHunting    <- list()
   lHuntingEvents    <- list()
   #lHuntingDuration <-list()
@@ -152,9 +157,9 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
     ## HUNT EVENT FILTER ##
     ## Filter To Keep Only data in range  ###
     datLarvaFrames <- datLarvaFramesRaw[which(
-                                              (datLarvaFramesRaw$REyeAngle > -G_THRESHCLIPEYEDATA & datLarvaFramesRaw$REyeAngle <  G_THRESHCLIPEYEDATA) |
-                                              (datLarvaFramesRaw$LEyeAngle > -G_THRESHCLIPEYEDATA & datLarvaFramesRaw$LEyeAngle <  G_THRESHCLIPEYEDATA) & 
-                                              datLarvaFramesRaw$huntScore > 0.5),]
+                                              (datLarvaFramesRaw$REyeAngle > -THRESHCLIPEYEDATA & datLarvaFramesRaw$REyeAngle <  THRESHCLIPEYEDATA) |
+                                              (datLarvaFramesRaw$LEyeAngle > -THRESHCLIPEYEDATA & datLarvaFramesRaw$LEyeAngle <  THRESHCLIPEYEDATA) & 
+                                              datLarvaFramesRaw$huntScore > HUNTSCORETHRES/2),]
     
     nTotalHuntFrames      <- 0
     nTotalRecordedFrames  <- NROW(datLarvaFrames) ##Will be calculated as diff in frame N for each Event (Each Event FrameN starts from 0 in tracker)
@@ -184,8 +189,8 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID)
         datHuntFrames    <- datLarvaFrames[which(datLarvaFrames$eventID == k &
                                           (datLarvaFrames$REyeAngle < -G_THRESHUNTANGLE |
                                            datLarvaFrames$LEyeAngle > G_THRESHUNTANGLE) &
-                                        (abs(datLarvaFrames$LEyeAngle-datLarvaFrames$REyeAngle) >= G_THRESHUNTVERGENCEANGLE & 
-                                          datLarvaFrames$huntScore > G_HUNTSCORETHRES) )  
+                                        (abs(datLarvaFrames$LEyeAngle-datLarvaFrames$REyeAngle) >= THRESHUNTVERGENCEANGLE & 
+                                          datLarvaFrames$huntScore > HUNTSCORETHRES) )  
                                           ,]
         
         nTotalHuntFrames <- nTotalHuntFrames + NROW(datHuntFrames$frameN)

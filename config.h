@@ -208,6 +208,7 @@ class trackerState
       QStringList inVidFileNames; //List of Video Files to Process
       std::string  gstrvidFilename; //Currently Tracked Vid
       cv::Size gszTemplateImg = cv::Size(28,38);
+      cv::Size szDNNClassifierImg = cv::Size(28,38);
       cv::Size sztemplateArray_Icon=  cv::Size(std::max(gszTemplateImg.width, gszTemplateImg.height),
                                      std::max(gszTemplateImg.width, gszTemplateImg.height)
                                     );
@@ -272,7 +273,7 @@ class trackerState
       bool gbUpdateBGModel                      = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool gbUpdateBGModelOnAllVids             = true; //When Set a new BGModel Is learned at the beginning of the next video
       bool bApplyFishMaskBeforeFeatureDetection = true; ///Pass the masked image of the fish to the feature detector /Fails If the Mask draw contour only has the edges
-      bool bUseTemplateMatching                 = true; /// Cmd Line Param Use Template Matching Following DNN classifier Success
+      bool bUseTemplateMatching                 = false; /// Cmd Line Param Use Template Matching Following DNN classifier Success
       bool bFitSpineToTail                      = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bUseContourToFitSpine                = true; // Periodically Runs The Contour And Tail Fitting Spine Optimization Algorith
       bool bSkipExisting                        = false; /// If A Tracker DataFile Exists Then Skip This Video
@@ -330,7 +331,7 @@ class trackerState
 
       /// Fishnet Classifier params //
       //float fishnet_L1_threshold  = 0.5; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
-      float fishnet_classifier_thres  = 0.98f; //L1 neuron Activity Threshold Sets the Pattern Selectivity and sparseness of L1 output
+      float fishnet_classifier_thres  = 0.85f; //DNN fish contour clasifier threshold for either HuntMode / Fish identified beyond which we accept as Fish Contour
       float fishnet_classifierHuntMode_thres = 0.4;
       float fishnet_inputSparseness = 0.1f; //Ratio of Active Pixels in Binarized input Image
 

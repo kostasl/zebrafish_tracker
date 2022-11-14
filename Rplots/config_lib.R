@@ -38,13 +38,17 @@ DIM_DISTTOMOUTH_PX <- 14 ## Estimated Distance from Centroid To Mouth based on h
 DIM_DISTTOMOUTH_MM <- DIM_DISTTOMOUTH_PX*DIM_MMPERPX ## Estimated Distance from CEntroid To Mouth based on head template size used in tracker
 DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
 G_APPROXFPS              <- 60
+
 G_THRESHUNTANGLE         <- 14 #Define Min Angle Both Eyes need to exceed for a hunting event to be assumed
-G_THRESHUNTVERGENCEANGLE <- 40 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
-G_HUNTSCORETHRES         <- 0.85## Detection Thresh for DNN HUNT event detections (Based on fish image)
+G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_HUNTSCORETHRES         <- 0.5 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
 G_THRESHCLIPEYEDATA      <- 50 ##Limit To Which Eye Angle Data is filtered to lie within
 G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/3
 G_MINEPISODEDURATION     <- G_APPROXFPS/3
-HUNTEVENT_MATCHING_OFFSET <- 5*G_APPROXFPS # Max frames to accept as mismatch when matching manual to auto detected huntevents during tracker validation - frames to Used in validateHuntEventsAgainstUserAnnotated
+HUNTEVENT_MATCHING_OFFSET <- 3*G_APPROXFPS # Max frames to accept as mismatch when matching manual to auto detected huntevents during tracker validation - frames to Used in validateHuntEventsAgainstUserAnnotated
+
+
+
 G_MIN_BOUTSPEED          <- 0.2 ##mm/frame - Need to be above to be considered A Motion Bout
 G_THRES_CAPTURE_SPEED    <-  16 ###15##mm/sec ##Theshold on Body Speed above which a hunt event is marked to have a capture strike
 G_THRES_MOTION_BOUT_SPEED <- 2.9 ##Got from Clustering #4 ##mm/sec
@@ -140,18 +144,24 @@ setEnvFileLocations <- function(strSetName)
     # Home Desktop
     setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
     #strVideoFilePath  <<- "/media/kostasl/ARXEIO1TB/Behaviour/" 
-    strVideoFilePath  <<- "/media/kostasl/zFish-Heta-T7/HungerExp"
+    #strVideoFilePath  <<- "/media/kostasl/zFish-Heta-T7/HungerExp"
+    strVideoFilePath  <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/AppetitiveExpVids"
     strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_15_0_GCC_64bit-Release" 
-    strTrackeroutPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/Huntevents_retracked"#/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
+    #strTrackeroutPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/Huntevents_retracked"#/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/HuntEvents_Retracked/"
+    strTrackeroutPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/tracking_temp"
     #strTrackInputPath <<- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/"
-    strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/" 
+    strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/tracked_org/Datasets" 
     #strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/tracked_org/" 
 
-    strDatDir         <<-  "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat" ##Where Are the Imported RData Stored
+    #strDatDir         <<-  "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat" ##Where Are the Imported RData Stored
+    strDatDir         <<-  "/media/kostasl/zFish-Heta-T7/OliviaExp/tracked_org/Analysis/dat"
     #strDatDir         <<-  "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/dat/TrackedOlivia/" ##Where Are the Imported RData Stored
-    strDataExportDir  <<-  "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat"
-    strDataStore      <<-  "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows
-    strPlotExportPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat/plots" ##Where to source the Tracker csv files from 
+    #strDataExportDir  <<-  "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat"
+    strDataExportDir  <<-  "/media/kostasl/zFish-Heta-T7/OliviaExp/tracked_org/Analysis/dat"
+    #strDataStore      <<-  "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows
+    strDataStore      <<-  "/media/kostasl/zFish-Heta-T7/OliviaExp/tracked_org/Analysis/dat"
+    #strPlotExportPath <<- "/media/kostasl/zFish-Heta-T7/HungerExp/tracked/Analysis/dat/plots" ##Where to source the Tracker csv files from 
+    strPlotExportPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/tracked_org/Analysis/plots"
   }
   
   

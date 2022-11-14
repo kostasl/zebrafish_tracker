@@ -17,6 +17,12 @@ from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import regularizers
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.applications.efficientnet import EfficientNetB1, preprocess_input
+
+# Templates 28x38 images size form the dataset, however data is augmented such that all fish rotations can be detected
+# for this reason the training image needs to be square, so are rotations do not clip the top of the image (the eyes) when rotated
+# 90 degrees. Altenrativelly, Classification could be done ny rotated the detected Regions and classify based on Normed - vertical orientiation only
+#
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
@@ -24,14 +30,16 @@ from tensorflow.keras.callbacks import EarlyStopping
 
 # To Batch convert from pgm to jpg use mogrify :
 # mogrify -format jpg *.pgm
-
+#
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     print('FishNet TensorFlow Model Training')
     print(tf.version.VERSION)
 
-data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
+data_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset_cleaned/")
+
 valid_dir = pathlib.Path("/home/kostasl/workspace/zebrafishtrack/tensorDNN/trainset/")
+
 
 fish = list(data_dir.glob('./fish/*.jpg'))
 # PIL.Image.open(str(fish[0]))
@@ -47,7 +55,7 @@ img_height = 38
 img_width = 28
 epochs = 150
 num_classes = 4
-
+strModelPath = 'savedmodels/fishNet_loc_cleaned'
 ## Had To run x3 times with a validation split 0.3 - 0.5 before I got good filtering of entire scene - as tested by testModel
 def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
                 , model=None):
@@ -79,7 +87,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
         color_mode='grayscale',
         batch_size=batch_size,
         class_mode='binary',
-        classes=['fish','hunting', 'nonfish'])
+        classes=class_names)
 
     test_datagen = tf.keras.preprocessing.image.ImageDataGenerator()
     validation_generator = test_datagen.flow_from_directory(
@@ -88,7 +96,7 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
         color_mode='grayscale',
         batch_size=batch_size,
         class_mode='binary',
-        classes=['fish','hunting', 'nonfish'])
+        classes=class_names)
 
     y_labels = np.concatenate([y for x, y in train_ds], axis=0)
     x_images = np.concatenate([x for x, y in train_ds], axis=0)
@@ -118,7 +126,8 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
                                                          input_shape=(img_height, img_width, 1)),
             layers.experimental.preprocessing.RandomRotation(randRot),
             ##layers.experimental.preprocessing.RandomTranslation((0, 0.15), 0, fill_mode="nearest"),
-            layers.experimental.preprocessing.RandomZoom(0.2),
+            layers.experimental.preprocessing.RandomZoom(0.1),
+
         ]
     )
 
@@ -151,33 +160,35 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
         model = Sequential([
             data_augmentation,
             layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=(img_height, img_width, 1)),
-            layers.Conv2D(8, (3, 3), padding='same', activation='relu'),  # , activation='relu'
+            layers.Conv2D(8, (3, 4), padding='same', activation='relu'),  # , activation='relu'
             #layers.Dropout(0.1),
             layers.MaxPooling2D(),
-            layers.Conv2D(16, (3, 3), padding='same', activation='relu'),  # , activation='relu'
+            layers.Conv2D(16, (3, 4), padding='same', activation='relu'),  # , activation='relu'
             #layers.Dropout(0.1),
             layers.MaxPooling2D(),
-            layers.Conv2D(32, (3, 3), padding='same', activation='relu'),  # , activation='relu'
+            layers.Conv2D(32, (3, 4), padding='same', activation='relu'),  # , activation='relu'
             #layers.Dropout(0.1),
             layers.MaxPooling2D(),
-            layers.Conv2D(64, (3, 3), padding='same', activation='relu'),
+            layers.Conv2D(64, (3, 4), padding='same', activation='relu'),
             #layers.MaxPooling2D(),
-            layers.Conv2D(80, (3, 3), padding='same', activation='relu'),
+            layers.Conv2D(128, (3, 4), padding='same', activation='relu'),
             layers.MaxPooling2D(),
             layers.Flatten(),
-            layers.Dense(750, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-            layers.Dense(300, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(250, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(120, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dropout(0.3),
-            layers.Dense(100, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Flatten(),
             layers.Dense(50, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(25, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            layers.Dense(12, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
             layers.Dropout(0.3),
-            layers.Dense(num_classes, activation='softmax')  ##
+            layers.Dense(num_classes, activation='softmax',name="output")  ##
         ])
         ##COMPILE MODEL
         model.compile(optimizer='adam',
                       # optimizer=RMSprop(lr=0.001),
                       #loss=tf.keras.losses.binary_crossentropy, ##For Binary Classifier
-                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), ##Categorial classifier
+                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False), ##Categorial classifier
                       metrics=['accuracy'])
 
     model.summary()
@@ -243,7 +254,6 @@ def train_model(epochs, batch_size, img_height, img_width, randRot=0.0
     plt.subplot(1, 2, 2)
     plt.hist(validation_generator.classes, bins=2,label="Validation Data Split")
 
-
     #np.concatenate([y for x, y in train_ds], axis=0)
     #pEval = np.concatenate ([c for c in validation_generator.classes ] )
     #err = np.substract(pEval,preds)
@@ -258,7 +268,7 @@ def testModel(strTImg):
     ## Test SLIDING WINDOW CLASSIFIER ##
     from tensorflow.keras.preprocessing import image
 
-    probability_model_loc = tf.keras.models.load_model('savedmodels/fishNet_loc')
+    probability_model_loc = tf.keras.models.load_model(strModelPath)
 
     # change this as you see fit
     # image_path = pathlib.Path("/home/kostasl/workspace/hello_tf_c_api/build/nonfish_sample.jpg")
@@ -323,12 +333,14 @@ def testModel(strTImg):
             # classifier(imgByteArray,label_path,retrained_path)
             predictions = probability_model_loc.predict(cropped_image)
             print(predictions[0])
+            print(class_names)
             if (np.shape(predictions[0])[0] > 1):
                 #pclass = np.argmax(predictions[0])
                 if (predictions[0][0]-predictions[0][1] > 0.5):
                     pclass = 0
                 else:
                     pclass = 1
+
                 print("~~~ Predicted Class: %s %s" % (predictions[0], class_names[pclass]))
                 image.save_img(
                 "/home/kostasl/workspace/zebrafishtrack/tensorDNN/test/" + str(class_names[pclass]) + "/" + str(
@@ -352,12 +364,12 @@ model_dir_invar = None
 model_directional = None
 ## LOAD MODEL ##
 if (not bResetModelTraining):
-    model_dir_invar = tf.keras.models.load_model('savedmodels/fishNet_loc')
+    model_dir_invar = tf.keras.models.load_model(strModelPath)
 
 ## Train to identify fish in region regardless of orientation
 [class_names, model_dir_invar] = train_model(epochs, batch_size, img_height, img_width, 1.0, model_dir_invar)
 ## Save Model ##
-model_dir_invar.save('savedmodels/fishNet_loc')
+model_dir_invar.save(strModelPath)
 # print("Model training complete")
 print(class_names)
 
@@ -370,12 +382,12 @@ if (not model_dir_invar is  None):
     print(f'output_layer_name={output_layer_name},{model_dir_invar.output.name}')
 
 
-print("~~~~~~~~~ Test Prediction on Non-fish and 2 fish samples ~~~~")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/nonfish/non-fish.jpg")
-testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/fish.jpg")
-#testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/img_target/10796.png")
-
-
+print("~~~~~~~~~ Test Prediction on Non-fish and fish samples ~~~~")
+testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/nonfish/00240-28x684.jpg")
+testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/fish/templ_HB40_LR_camB_Templ_42695.jpg")
+#testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/34450.png")
+#testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/22271.png")
+#testModel("/home/kostasl/workspace/zebrafishtrack/tensorDNN/valid/img_target/46047.png")
 
 
 # ## MAKE PROB PREDICTION Version Add Softmax Layer And Save as fishNet_prob - THis version is used by the tracker
