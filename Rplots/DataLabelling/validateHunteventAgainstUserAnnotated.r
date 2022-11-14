@@ -25,7 +25,7 @@ vExpID <- unique(datAllFrames$expID)
 
 lCompHuntEvents <- list()
 vHuntScores <- c(0.1, round(100*seq(0.5,0.90,length=5))/100,0.99)
-vEyeThres <- round(100*seq(40,50,length=16))/100
+vEyeThres <- round(100*seq(40,50,length=11))/100
 
   for (expID in vExpID)
   {
@@ -192,6 +192,21 @@ vEyeThres <- round(100*seq(40,50,length=16))/100
   }
   ## Export Results from Parameter Scanning
   write.csv(datCompEvents,file=paste0(strDataExportDir,"/datHEventsDetectionAbility.csv") )
+  ## Plot Avg Eye And Hunt Score Per rSq Value 
+  ## Eye Thresh
+  muEyePerRsq <- tapply(datCompEvents$EyeVThres,datCompEvents$rSq,mean)
+  muRsqPerEyeThres <- tapply(datCompEvents$rSq,datCompEvents$EyeVThres,mean)
+  #Hunt Score
+  muHuntScorePerRsq <- tapply(datCompEvents$ClassifierThres,datCompEvents$rSq,mean)
+  muRsqPerHuntScore <- tapply(datCompEvents$rSq,datCompEvents$ClassifierThres,mean)
+  strPlotName = paste(strPlotExportPath,"/LinFit_rSqVsParams.pdf",sep="")
+  pdf(strPlotName,onefile=T)
+    plot(muEyePerRsq,as.numeric(names(muEyePerRsq)),xlab="mean Eye Threshold ",ylab="R Squared" )
+    plot(muHuntScorePerRsq,as.numeric(names(muHuntScorePerRsq)),xlab="mean Hunt score threshold",ylab="R Squared" )
+    
+    plot(as.numeric(names(muRsqPerEyeThres)),muRsqPerEyeThres,xlab="Eye Threshold ",ylab="mean R Squared",type="b" )
+    plot(as.numeric(names(muRsqPerHuntScore)),muRsqPerHuntScore,xlab="Hunt score threshold",ylab="mean R Squared",type="b" )
+  dev.off()  
   
   ## Marginalize/Integrate Free param and Find mean sensitivity Specificity
   vmuSensitivity <- tapply(datCompEvents$Sensitivity,datCompEvents$ClassifierThres,mean)
@@ -210,6 +225,8 @@ vEyeThres <- round(100*seq(40,50,length=16))/100
   
     
   ## 
-
-  plot(1-datCompEvents$Specificity,datCompEvents$Sensitivity,main="All ROC points")
+  strPlotName = paste(strPlotExportPath,"/ROC_Allpoints",sep="")
+  pdf(strPlotName,onefile=T)
+      plot(1-datCompEvents$Specificity,datCompEvents$Sensitivity,main="All ROC points",pch=20)
+  dev.off()    
   
