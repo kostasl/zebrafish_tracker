@@ -40,9 +40,9 @@ DIM_ROI_DIAMETER_MM  <- 515*DIM_MMPERPX
 G_APPROXFPS              <- 60
 
 G_THRESHUNTANGLE         <- 14 #Define Min Angle Both Eyes need to exceed for a hunting event to be assumed
-G_THRESHUNTVERGENCEANGLE <- 45 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
-G_HUNTSCORETHRES         <- 0.5 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
-G_THRESHCLIPEYEDATA      <- 50 ##Limit To Which Eye Angle Data is filtered to lie within
+G_THRESHUNTVERGENCEANGLE <- 48 ## When Eyes pointing Inwards Their Vergence (L-R)needs to exceed this value for Hunting To be considered
+G_HUNTSCORETHRES         <- 0.4 ## Detection Thresh for DNN HUNT event detections (Based on fish image)
+G_THRESHCLIPEYEDATA      <- 47 ##Limit To Which Eye Angle Data is filtered to lie within
 G_MINGAPBETWEENEPISODES  <- G_APPROXFPS/3
 G_MINEPISODEDURATION     <- G_APPROXFPS/3
 HUNTEVENT_MATCHING_OFFSET <- 3*G_APPROXFPS # Max frames to accept as mismatch when matching manual to auto detected huntevents during tracker validation - frames to Used in validateHuntEventsAgainstUserAnnotated
@@ -221,10 +221,11 @@ setEnvFileLocations <- function(strSetName)
     strTrackerPath    <<- "/home/meyerlab/workspace/build-zebraprey_track-Desktop_Qt_5_14_2_GCC_64bit-Release"
     strTrackeroutPath <<- "/mnt/Datastore/Olivia/Thesis/Track"
     strTrackInputPath <<- "/mnt/Datastore/Olivia/Thesis/Track" ##Where to source the Tracker csv files from 
-    strDatDir         <<- "/mnt/Datastore/Olivia/Thesis/Track_hunt/Data" ##Where Are the Imported RData Stored
-    strDataExportDir  <<- "/mnt/Datastore/Olivia/Thesis/Track_hunt/Data"
-    strDataStore      <<-  "/mnt/Datastore/Olivia/Thesis/Track_hunt/Data" ##Where Large Data Is stored because Dropbox-Overflows
-    strPlotExportPath <<- "/mnt/Datastore/Olivia/Thesis/Track_hunt/Plots"
+    strDatDir         <<- "/mnt/Datastore/Olivia/Thesis/Analysis/outData" ##Where Are the Imported RData Stored
+    strValidationDatDir <<- "/mnt/Datastore/Olivia/Thesis/ValidationData" ##Where Are the Imported RData Stored
+    strDataExportDir  <<- "/mnt/Datastore/Olivia/Thesis/Analysis/outData"
+    strDataStore      <<-  "/mnt/Datastore/Olivia/Thesis/Analysis/outData" ##Where Large Data Is stored because Dropbox-Overflows
+    strPlotExportPath <<- "/mnt/Datastore/Olivia/Thesis/Analysis/Plots"
     
   }
   }

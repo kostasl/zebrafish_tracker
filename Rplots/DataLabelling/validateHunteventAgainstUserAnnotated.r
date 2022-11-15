@@ -7,8 +7,8 @@
 # / Kostas Lagogiannis 2022 /
 source("config_lib.R")
 source("HuntingEventAnalysis_lib.r")
-#setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
-#load(paste0(strDataStore,"/setn1_Dataset_TrackerValidation_081022.RData"))
+setEnvFileLocations("LABOLIVIA") #HOME,OFFICE,#LAPTOP
+load(paste0(strDataStore,"/setn1_Dataset_VAL081022.RData"))
 
 
 G_THRESHUNTANGLE          <- 14 #Define Min Angle Both Eyes need to exceed for a hunting event to be assumed
@@ -25,7 +25,7 @@ HUNTEVENT_MATCHING_OFFSET <- 3*G_APPROXFPS # Max frames to accept as mismatch wh
 vExpID <- unique(datAllFrames$expID)
 
 lCompHuntEvents <- list()
-vHuntScores <- c(0.1, round(100*seq(0.5,0.90,length=5))/100,0.99)
+vHuntScores <- c(round(100*seq(0.1,0.90,length=9)/100,0.99))
 vEyeThres <- round(100*seq(40,50,length=11))/100
 
 
@@ -36,16 +36,17 @@ vEyeThres <- round(100*seq(40,50,length=11))/100
     {
       for (G_HUNTSCORETHRES in vHuntScores)
       {    
-        message(expID)
+        message("ExpID:",expID)
         ## Load Manually Labelled Data for Exp
-        strFileUserHuntEvents <- paste0(strDataExportDir,"/ManuallyLabelled/fish",expID,"_video_mpeg_fixed_huntEvents.csv") 
+        
+        strFileUserHuntEvents <- paste0(strValidationDatDir,"/ManuallyLabelledHuntEvents/fish",expID,"_video_mpeg_fixed_huntEvents.csv") 
         if (!file.exists(strFileUserHuntEvents))
         {
+          message("MISSING hunt event file for expID:",expID,"-",strFileUserHuntEvents ,"*Skiped. ")
           warning("MISSING hunt event file for expID:",expID,"-",strFileUserHuntEvents ,"*Skiped. ")
           next
         }
-        datHuntEventsM <- read.csv(
-          file=strFileUserHuntEvents, header = T)
+        datHuntEventsM <- read.csv( file=strFileUserHuntEvents, header = T)
         
         ## Load Automated detection
         datHuntEvents <- detectHuntEvents(datAllFrames,expID,"LR",1,
@@ -136,7 +137,7 @@ vEyeThres <- round(100*seq(40,50,length=11))/100
                                                                FalseNegativeFrames = nFalseNegativeDetected,
                                                                ManualCount=NROW(datHuntEventsM),
                                                                AutomaticCount=NROW(datHuntEvents),
-                                                               Matched=nTruePositiveDetected,
+                                                               Matched=nUniquelyMatchedManualEvents,
                                                                Sensitivity=sensitivity,
                                                                Specificity=specificity,
                                                                PPV=PositivepredictiveValue,
@@ -227,7 +228,7 @@ vEyeThres <- round(100*seq(40,50,length=11))/100
   
     
   ## 
-  strPlotName = paste(strPlotExportPath,"/ROC_Allpoints",sep="")
+  strPlotName = paste(strPlotExportPath,"/ROC_Allpoints.pdf",sep="")
   pdf(strPlotName,onefile=T)
       plot(1-datCompEvents$Specificity,datCompEvents$Sensitivity,main="All ROC points",pch=20)
   dev.off()    

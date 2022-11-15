@@ -60,7 +60,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
                                    #"B2/",
                                    #"B3/",
                                    #"B4/",
-                                   "DATA081022"##VAL DATA
+                                   "VAL081022"##VAL DATA
                                    #"/ReTrack_081022"
                                    ),sep="/")
   
@@ -111,8 +111,12 @@ source("DataLabelling/labelHuntEvents_lib.r")
   strCondTags <- names(groupsrcdatList)
   source("processLoadedData.r") ##Detects HuntEvents
 
+  
+  
   # ^^^^^^^
   #### RUN UP TO THIS POINT TO GET DATA IMPORTED AND EVENTS DETECTED ####
+  
+  
   ## The Frames Are in datAllFrames , the huntEvents are in datAllHuntEvents
 
   ## Compare Number of Hunt Events Per Group
