@@ -60,8 +60,8 @@ source("DataLabelling/labelHuntEvents_lib.r")
                                    #"B2/",
                                    #"B3/",
                                    #"B4/",
-                                   "VAL081022"##VAL DATA
-                                   #"/ReTrack_081022"
+                                   #"VAL081022"
+                                   "DATA081022"
                                    ),sep="/")
   
    
@@ -126,7 +126,8 @@ source("DataLabelling/labelHuntEvents_lib.r")
   rownames(datEventsPerExpID) <- as.character(datEventsPerExpID$ExpID)
   datEventsPerExpID[names(vGroupPerExpID),"groupID"] <- vGroupPerExpID
   
-  plot(density(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",]$nHuntEvents),col="blue")
+  BW = "10"
+  plot(density(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",]$nHuntEvents,bw=BW),col="blue")
   lines(density(datEventsPerExpID[datEventsPerExpID$groupID == "HET",]$nHuntEvents),col="magenta")
   lines(density(datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents),col="red")
   

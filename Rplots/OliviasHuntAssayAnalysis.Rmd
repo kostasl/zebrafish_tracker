@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 source("config_lib.R")
 
-setEnvFileLocations("HOME") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LABOLIVIA") #HOME,OFFICE,#LAPTOP
 
 source("HuntingEventAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
@@ -32,12 +32,11 @@ pchH <- list(HET= 1,
              WT=22) #rgb(0.01,0.7,0.01,0.2),
 
 ##Load Hunt event data
-strHuntEventFile <- "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/FeedingAssay/HB_allHuntEvents.rds"
+strHuntEventFile <- "/mnt/Datastore/Olivia/Thesis/Analysis/outData/HB_allHuntEvents.rds"
 datHuntEvents <-readRDS(strHuntEventFile)
 
 ##load Tracked Frames
-strdatTrackedFramesFile = "/media/kostasl/D445GB_ext4/kostasl/Dropbox/Calculations/zebrafishtrackerData/out/FeedingAssay/setn1_Dataset_tracking_May2022.rds"
-
+strdatTrackedFramesFile = "/mnt/Datastore/Olivia/Thesis/Analysis/outData/setn1_Dataset_DATA081022.rds"
 datAllFrames <- readRDS(strdatTrackedFramesFile)
 
 vGroupIDs <- c("WT","HET","HOM") #(unique(datAllFrames$group)) ##Rearing Group names(groupsrcdatList)
@@ -221,9 +220,9 @@ print(tapply(datHuntEventDurationPerGroup$HuntDurationPerLarva,datHuntEventDurat
 ```
 
 
-## Mean hunt-event duration
+## Mean hunt-event episode duration
 
-The duration of each hunt event may be different between genetypes. In previous work I have found that the duration of a hunt episode appears to be intrinsically controlled - like an internal timer- clock that is not strongly influenced by external stimuli.
+The duration of each hunt event may be different between genotypes. In previous work I have found that the duration of a hunt episode appears to be intrinsically controlled - like an internal timer- clock that is not strongly influenced by external stimuli.
 We compare the mean duration of hunt-events between groups, by comparing the mean hunt-episode duration between larva of each group
 
 ```{r durationperhuntevent,echo = FALSE}
@@ -317,6 +316,19 @@ Plot prey Trajectories per group
 
 x <- PreyCountSampleFrames$WT/(50*60)
 plot(x,muPreyCount$WT,col=colourH$WT,type="l",xlim=c(1,18),xlab="Time (min)",ylab="Mean prey count",lwd=1,ylim=c(40,70))
+x <- PreyCountSampleFrames$HET/(50*60)
+lines(x,muPreyCount$HET,col=colourH$HET,type="l",lwd=1)
+x <- PreyCountSampleFrames$HOM/(50*60)
+lines(x,muPreyCount$HOM-7,col=colourH$HOM,type="l",lwd=3)
+x <- PreyCountSampleFrames$ROT/(50*60)
+lines(x,muPreyCount$ROT-40,col=colourH$ROT,type="l",lwd=3)
+legend("topright",legend=c("WT","HET","HOM","ROT"), col=c(colourH$WT,colourH$HET,colourH$HOM,colourH$ROT),lty=1,lwd=2 )
+
+  
+  
+  
+x <- PreyCountSampleFrames$WT/(50*60)
+plot(x,muPreyCount$WT,col=colourH$WT,type="l",xlim=c(1,18),xlab="Time (min)",ylab="Mean prey count",lwd=1,ylim=c(40,70))
 #lines(x,muPreyCount$WT+errPreyCount$WT,col=colourH$WT,lwd=2)
 polygon(c(rev(x),x), c(rev(muPreyCount$WT-errPreyCount$WT), (muPreyCount$WT+errPreyCount$WT) ),
         density = 40,angle = -45, col=colourH$WT,lwd=1)
@@ -332,6 +344,8 @@ x <- PreyCountSampleFrames$HOM/(50*60)
 lines(x,muPreyCount$HOM,col=colourH$HOM,type="l",lwd=3)
 polygon(c(rev(x),x), c(rev(muPreyCount$HOM-errPreyCount$HOM), (muPreyCount$HOM+errPreyCount$HOM) ),
         density = 22,angle = 45, col=colourH$HOM,lwd=1)
+
+
 
 ##Add The Mean Rotifer Trend
 x <- PreyCountSampleFrames$ROT/(50*60) #which(!is.na(muPreyCount$ROT))##Because Rot tracks have missing frames /recorded at intervals
