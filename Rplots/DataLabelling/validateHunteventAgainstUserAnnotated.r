@@ -22,15 +22,6 @@ HUNTEVENT_MATCHING_OFFSET <- 2*G_APPROXFPS # Max frames to accept as mismatch wh
 
 #load(paste0(strDataStore,"/setn1_Dataset_VAL.RData"))
 
-vExpID <- unique(datAllFrames$expID)
-mingapep <-c(G_APPROXFPS/2, G_APPROXFPS/3, G_APPROXFPS/4)
-minepdu <-c(G_APPROXFPS/2, G_APPROXFPS/3, G_APPROXFPS/4)
-matchof <-c(2*G_APPROXFPS, 3*G_APPROXFPS)
-
-# mingapep <-c(30,20,15)
-# minepdu <-c(30,20,15)
-# matchof <-C(120,180)
-
 lCompHuntEvents <- list()
 vHuntScores <- c(round(100*seq(0.1,0.90,length=9))/100)
 vEyeThres <- round(100*seq(40,50,length=11))/100
@@ -38,12 +29,6 @@ vEyeThres <- round(100*seq(40,50,length=11))/100
 for (expID in vExpID)
 {
   n=0;
-  for (G_MINGAPBETWEENEPISODES in mingapep)
-  {
-    for (G_MINEPISODEDURATION in minepdu)
-    {
-      for (HUNTEVENT_MATCHING_OFFSET in matchof)
-      {
         for (G_THRESHUNTVERGENCEANGLE in vEyeThres)
         {
           for (G_HUNTSCORETHRES in vHuntScores)
@@ -143,9 +128,6 @@ for (expID in vExpID)
             lCompHuntEvents[[paste0(expID,"_",n)]] <- data.frame(expID=expID,
                                                                  ClassifierThres = G_HUNTSCORETHRES,
                                                                  EyeVThres=G_THRESHUNTVERGENCEANGLE,
-                                                                 mingapep =G_MINGAPBETWEENEPISODES,
-                                                                 minepdu =G_MINEPISODEDURATION,
-                                                                 matchof=HUNTEVENT_MATCHING_OFFSET,
                                                                  TruePositiveHuntFrames=nTruePositiveHuntFrames,
                                                                  FalsePositiveFrames=nFalsePositiveFrames,
                                                                  TrueNegativeFrames = nTrueNegative,
@@ -163,9 +145,6 @@ for (expID in vExpID)
             n = n + 1
           } ## Eye V
         } # VHuntScore 
-      } # time
-    } # gapep
-  } # epduration
 } ## each experiment
 
 ## Do Linear Fit Through 
