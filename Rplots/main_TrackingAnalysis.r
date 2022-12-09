@@ -40,7 +40,7 @@ rm("temp","subsetDat","TrackerData","frameNAll");
 #setwd(here())
 source("config_lib.R")
 
-setEnvFileLocations("LABOLIVIA") #HOME,OFFICE,#LAPTOP, LABOLIVIA
+setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP, LABOLIVIA
 source("HuntEpisodeAnalysis/HuntEpisodeAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
 source("DataLabelling/labelHuntEvents_lib.r")
@@ -61,7 +61,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
                                    #"B3/",
                                    #"B4/",
                                    #"VAL081022"
-                                   "DATA081022"
+                                   "ReTrack_081022"
                                    ),sep="/")
   
    

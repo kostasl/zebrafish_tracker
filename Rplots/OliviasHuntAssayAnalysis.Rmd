@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 source("config_lib.R")
 
-setEnvFileLocations("LABOLIVIA") #HOME,OFFICE,#LAPTOP
+setEnvFileLocations("LAPTOP") #HOME,OFFICE,#LAPTOP
 
 source("HuntingEventAnalysis_lib.r")
 source("TrajectoryAnalysis.r")
@@ -32,11 +32,11 @@ pchH <- list(HET= 1,
              WT=22) #rgb(0.01,0.7,0.01,0.2),
 
 ##Load Hunt event data
-strHuntEventFile <- "/mnt/Datastore/Olivia/Thesis/Analysis/outData/HB_allHuntEvents.rds"
+strHuntEventFile <- paste0(strDataStore,"/HB_allHuntEvents.rds")
 datHuntEvents <-readRDS(strHuntEventFile)
 
 ##load Tracked Frames
-strdatTrackedFramesFile = "/mnt/Datastore/Olivia/Thesis/Analysis/outData/setn1_Dataset_DATA081022.rds"
+strdatTrackedFramesFile = paste0(strDataStore,"/setn1_Dataset_DATA081022.rds")
 datAllFrames <- readRDS(strdatTrackedFramesFile)
 
 vGroupIDs <- c("WT","HET","HOM") #(unique(datAllFrames$group)) ##Rearing Group names(groupsrcdatList)

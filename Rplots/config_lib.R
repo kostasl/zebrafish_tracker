@@ -189,14 +189,18 @@ setEnvFileLocations <- function(strSetName)
   {
     ## Laptop ##
     setwd("~/workspace/zebrafishtrack/Rplots")
-    strVideoFilePath  <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples"
-    strTrackerPath    <<-  "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_11_2_GCC_64bit-Release"
-    strTrackeroutPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/"
-    strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/"##Where to source the Tracker csv files from 
-    strDatDir         <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/" ##Where Are the Imported RData Stored
-    strDataExportDir  <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat/"
-    strDataStore      <<-  "/media/kostasl/zFish-Heta-T7/OliviaExp/Appetitesamples/tracked_org/Analysis/dat" ##Where Large Data Is stored because Dropbox-Overflows
-    strPlotExportPath <<- "/mnt/data/Dropbox/Calculations/zebrafishtrackerData/plots"
+    message("Set Global path parameters to ", strSetName, " environment")
+    ## Required Variables - Locations -- Choose According To 
+    # Home Desktop
+    setwd("/home/kostasl/workspace/zebrafishtrack/Rplots")
+    strVideoFilePath  <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/AppetitiveExpVids"
+    strTrackerPath    <<- "/home/kostasl/workspace/build-zebraprey_track-Desktop_Qt_5_15_0_GCC_64bit-Release" 
+    strTrackeroutPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/tracking_temp"
+    strTrackInputPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/tracked_org/Datasets" 
+    strDatDir         <<-  "/media/kostasl/zFish-Heta-T7/OliviaExp/tracked_org/Analysis/dat"
+    strDataExportDir  <<-  "/media/kostasl/zFish-Heta-T7/OliviaExp/tracked_org/Analysis/dat"
+    strDataStore      <<-  "/media/kostasl/zFish-Heta-T7/OliviaExp/tracked_org/Analysis/dat"
+    strPlotExportPath <<- "/media/kostasl/zFish-Heta-T7/OliviaExp/tracked_org/Analysis/plots"
     
   }  
   
