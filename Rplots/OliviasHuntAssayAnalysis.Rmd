@@ -101,18 +101,23 @@ Box plots comparing number of hunt events per larva across groups. Initial a bas
                         WT  =  density(datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents)               
                         )
   BW = "20"
-  plot(densHuntEventCounts$HOM,col=unlist(colourH["HOM"]), lwd=3,main="Distribution of Hunt events per group ")
-  lines(densHuntEventCounts$HET,col=(colourH["HET"][[1]] ), lwd=3)
-  lines(densHuntEventCounts$WT,col=unlist(colourH["WT"]), lwd=3)
-  legend("topright",legend=paste(vGroupIDs),lwd=3,col=c(colourH[[vGroupIDs[1] ]], colourH[[vGroupIDs[2] ]], colourH[[vGroupIDs[3] ]] ))
+#pdf(paste0(strPlotExportPath,"/huntcounts_densities_empirical.pdf"),width=7,height=5,title="Gaussian Kernel Estimated Distribution of hunt event counts per group") 
   
-  t.test(datEventsPerExpID[datEventsPerExpID$groupID == "HET",]$nHuntEvents,datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents)
-  
-  message("HOM Event Count Stats")
-  print(densHuntEventCounts$HOM)
+    plot(densHuntEventCounts$HOM,col=unlist(colourH["HOM"]), lwd=3,lty=lineTypeL[1],main="Hunt-event counts per group ",xlim=c(0,350),ylim=c(0,0.01))
+    lines(densHuntEventCounts$HET,col=(colourH["HET"][[1]] ), lwd=3,lty=lineTypeL[2])
+    lines(densHuntEventCounts$WT,col=unlist(colourH["WT"]), lwd=3,lty=lineTypeL[3])
+    legend("topright",legend=paste(vGroupIDs),lwd=3,col=c(colourH[["HOM"]], colourH[["HET"]], colourH[["WT" ]]),lty=lineTypeL )
+    mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Hunt Events per larva in 20min") )  ) #(",lambda," )
 
-  message("WT Event Count Stats")
-  print(densHuntEventCounts$WT)
+#dev.off()
+    # t.test(datEventsPerExpID[datEventsPerExpID$groupID == "HET",]$nHuntEvents,datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents)
+    
+    #message("HOM Event Count Stats")
+    #print(densHuntEventCounts$HOM)
+  
+    #message("WT Event Count Stats")
+    #print(densHuntEventCounts$WT)
+
 
 ```
   
@@ -214,18 +219,36 @@ Plot CDS of empirical and Statistical model to validate fit
 
 ```{r huntrate data vs stat model CDF }
 
+pdf(paste0(strPlotExportPath,"/huntcounts_modelVsData_CDF_HOM.pdf"),width=7,height=5,title="CDF Model hunt event counts per group") 
+
   plotEventCountDistribution_cdf(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",],
                                  drawSamples_HOM,colourHLine[["HOM" ]],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
- title("HOM Huntrate CDF model")  
+   mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Number of hunt events in 20min") )  ) #(",lambda," )
+  title("HOM Huntrate CDF model")  
+dev.off()
+
+pdf(paste0(strPlotExportPath,"/huntcounts_modelVsData_CDF_HET.pdf"),width=7,height=5,title="CDF Model hunt event counts per group") 
 
   plotEventCountDistribution_cdf(datEventsPerExpID[datEventsPerExpID$groupID == "HET",],drawSamples_HET, colourHLine[["HET"]],pchL[2],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
- title("HET Huntrate CDF model")  
+ mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Number of hunt events in 20min") )  ) #(",lambda," )
+
+   title("HET Huntrate CDF model")  
+dev.off()
  
+ 
+pdf(paste0(strPlotExportPath,"/huntcounts_modelVsData_CDF_WT.pdf"),width=7,height=5,title="CDF Model hunt event counts per group") 
+
   plotEventCountDistribution_cdf(datEventsPerExpID[datEventsPerExpID$groupID == "WT",],drawSamples_WT, colourHLine[["WT"]],pchL[3],lineTypeL[3],Plim,plotsamples,newPlot=TRUE )
- title("WT Huntrate CDF model")  
+   mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Number of hunt events in 20min") )  ) #(",lambda," )
+
+   title("WT Huntrate CDF model")  
+ 
+dev.off()
+
+
 ```
   
-After checking model fit with CDF, then compare inferred huntrates per group
+After checking model fit with CDF, then compare (Poisson) inferred huntrates per group using model 
 
 ```{r huntrate model compare}
 
@@ -243,11 +266,15 @@ HEventHuntGammaShape_HOM <- tail(drawSamples_HOM$r[,,schain],plotsamples);
 HEventHuntGammaShape_HET <- tail(drawSamples_HET$r[,,schain],plotsamples)
 HEventHuntGammaShape_WT <- tail(drawSamples_WT$r[,,schain],plotsamples);
 
+## Calc and Save POisson Rate Samples
+lPoissonHuntRates <- list(HOM=HEventHuntGammaShape_HOM*1/HEventHuntGammaRate_HOM,
+                          HET=HEventHuntGammaShape_HET*1/HEventHuntGammaRate_HET,
+                          WT=HEventHuntGammaShape_HET*1/HEventHuntGammaRate_WT)
 ## Calculate Hunt Rates ###
-pBW = 10
-densHPoissonRate_HOM <- density( HEventHuntGammaShape_HOM*1/HEventHuntGammaRate_HOM,bw=pBW)
-densHPoissonRate_HET <- density( HEventHuntGammaShape_HET*1/HEventHuntGammaRate_HET,bw=pBW)
-densHPoissonRate_WT <- density( HEventHuntGammaShape_WT*1/HEventHuntGammaRate_WT,bw=pBW)
+pBW = 2
+densHPoissonRate_HOM <- density( lPoissonHuntRates$HOM,bw=pBW)
+densHPoissonRate_HET <- density( lPoissonHuntRates$HET,bw=pBW)
+densHPoissonRate_WT <- density( lPoissonHuntRates$WT,bw=pBW)
 
 ##  Estimate  Hunt Rates Distributions ###
 densHPoissonRate <- list(HOM= density( HEventHuntGammaShape_HOM*1/HEventHuntGammaRate_HOM,bw=pBW),
@@ -255,23 +282,29 @@ densHPoissonRate <- list(HOM= density( HEventHuntGammaShape_HOM*1/HEventHuntGamm
                          WT= density( HEventHuntGammaShape_WT*1/HEventHuntGammaRate_WT,bw=pBW)
                          )
 
-  Ylim <- 0.03
-  plot(densHPoissonRate$HOM$x, densHPoissonRate$HOM$y,type='l',lty=lineTypeL[1],col=colourH["HOM"][[1]] ,lwd=4,ylab=NA,xlab=NA,xlim=c(0,350),ylim=c(0,Ylim),cex=cex,cex.axis=cex )
+
+Ylim <- 0.04
+pdf(paste0(strPlotExportPath,"/huntPoissonRate_modelComparison.pdf"),width=7,height=5,title=" Model Inferred hunt rates per group") 
+
+    plot(densHPoissonRate$HOM$x, densHPoissonRate$HOM$y,type='l',lty=lineTypeL[1],col=colourH["HOM"][[1]] ,lwd=4,ylab=NA,xlab=NA,xlim=c(0,230),ylim=c(0,Ylim),cex=cex,cex.axis=cex )
   lines(densHPoissonRate$HET$x, densHPoissonRate$HET$y,type='l',lty=lineTypeL[2],col=colourH["HET"][[1]],lwd=4,ylab=NA,xlab=NA)
   lines(densHPoissonRate$WT$x, densHPoissonRate$WT$y,type='l',lty=lineTypeL[3],col=colourH["WT"][[1]],lwd=4,ylab=NA,xlab=NA)
   
   legend("topright",legend=paste(vGroupIDs),lwd=3,
-         col=c(colourH[[vGroupIDs[1] ]], colourH[[vGroupIDs[2] ]], colourH[[vGroupIDs[3] ]] ),
+         col=c(colourH[["HOM"]], colourH[["HET" ]], colourH[["WT" ]] ),
          lty=lineTypeL)
 
     
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated hunt rate (N/20min)") )  ) #(",lambda," )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Gaussian estimate of inferred Poisson hunt-rate (N/20min)") )  ) #(",lambda," )
   mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
- title("Model inferred hunt rates ")
- 
+ title("Distribution of model-inferred hunt rates ")
+
+dev.off()
  
 ```
-  
+ It is clear that HETs have higher huntrates to Control (WT) and HOM. From this analysis we may further infer probabilities of a HET larvae having higher huntrates 
+ 
+ 
 ```{r, hunteventsperGroup_huntStat, echo = FALSE}
 
 #print(table(datAllHuntEvent$groupID))
