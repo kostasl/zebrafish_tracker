@@ -127,7 +127,7 @@ source("DataLabelling/labelHuntEvents_lib.r")
   datEventsPerExpID[names(vGroupPerExpID),"groupID"] <- vGroupPerExpID
   
   BW = "10"
-  plot(density(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",]$nHuntEvents,bw=BW),col="blue")
+  plot(density(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",]$nHuntEvents),col="blue")
   lines(density(datEventsPerExpID[datEventsPerExpID$groupID == "HET",]$nHuntEvents),col="magenta")
   lines(density(datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents),col="red")
   

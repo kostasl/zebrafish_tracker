@@ -20,13 +20,21 @@ library(RColorBrewer);
 library(ggplot2)
 library(ggpubr) ##install.packages("ggpubr")
 
-mypalette<-brewer.pal(3,"Set1")
+mypalette <- brewer.pal(8,"Set1")
+mypal_rgb <- col2rgb(mypalette,alpha = 1)
+mypal_rgb["alpha",1:8] <-55 ##Opacity
 
 colourH <- list(HET= mypalette[2], #rgb(0.9,0.01,0.01,0.2),
                 HOM = mypalette[3], #rgb(0.01,0.01,0.9,0.2))
                 WT=mypalette[1],
                 ROT="black") #rgb(0.01,0.7,0.01,0.2),
-                
+
+colourHLine <- list(HET= col2hex(mypal_rgb)[2], #rgb(0.9,0.01,0.01,0.2),
+                HOM = col2hex(mypal_rgb)[3], #rgb(0.01,0.01,0.9,0.2))
+                WT=col2hex(mypal_rgb)[1],
+                ROT="black") #rgb(0.01,0.7,0.01,0.2),
+ ##Transparent For MCMC Samples (Live) #c(rgb(0.95,0.01,0.01,0.1),rgb(0.01,0.7,0.01,0.1),rgb(0.01,0.01,0.9,0.1),rgb(0.00,0.00,0.0,1.0)) ####Transparent For MCMC Samples (Empty)
+
 pchH <- list(HET= 1,
              HOM = 16, #rgb(0.01,0.01,0.9,0.2))
              WT=22) #rgb(0.01,0.7,0.01,0.2),
@@ -72,7 +80,199 @@ datHuntStat = do.call(rbind,lHuntStat)#
 
 Box plots comparing number of hunt events per larva across groups. Initial a basic boxplot without the test and p-values, followed by a plot with Wilcox non parametric test and a boxplot with pairwise parametric tests.
 
+ The Frames Are in datAllFrames , the huntEvents are in datAllHuntEvents
+## Gaussian Kernel Empirical distribution 
+
 ```{r, hunteventsperGroup, echo = FALSE}
+
+  ## Compare Number of Hunt Events Per Group
+  vEventsPerFish <- tapply(datHuntEvents$groupID,datHuntEvents$expID,length)
+  vInitialPreyPerExp <- tapply(datHuntEvents$InitPreyCount,datHuntEvents$expID,max)
+  datEventsPerExpID<- cbind.data.frame(nHuntEvents=as.numeric(vEventsPerFish),
+                                       nInitPrey=vInitialPreyPerExp[names(vEventsPerFish)],
+                                       ExpID=names(vEventsPerFish),
+                                       groupID = NA)
+  vGroupPerExpID <-tapply(datHuntEvents$groupID,datHuntEvents$expID,unique)
+  rownames(datEventsPerExpID) <- as.character(datEventsPerExpID$ExpID)
+  datEventsPerExpID[names(vGroupPerExpID),"groupID"] <- vGroupPerExpID
+  
+  densHuntEventCounts <- list(HOM = density(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",]$nHuntEvents),
+                        HET = density(datEventsPerExpID[datEventsPerExpID$groupID == "HET",]$nHuntEvents),
+                        WT  =  density(datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents)               
+                        )
+  BW = "20"
+  plot(densHuntEventCounts$HOM,col=unlist(colourH["HOM"]), lwd=3,main="Distribution of Hunt events per group ")
+  lines(densHuntEventCounts$HET,col=(colourH["HET"][[1]] ), lwd=3)
+  lines(densHuntEventCounts$WT,col=unlist(colourH["WT"]), lwd=3)
+  legend("topright",legend=paste(vGroupIDs),lwd=3,col=c(colourH[[vGroupIDs[1] ]], colourH[[vGroupIDs[2] ]], colourH[[vGroupIDs[3] ]] ))
+  
+  t.test(datEventsPerExpID[datEventsPerExpID$groupID == "HET",]$nHuntEvents,datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents)
+  
+  message("HOM Event Count Stats")
+  print(densHuntEventCounts$HOM)
+
+  message("WT Event Count Stats")
+  print(densHuntEventCounts$WT)
+
+```
+  
+### Statistical Model comparison
+
+```{r huntrate statistical model inference-setup}
+library(rjags)
+
+
+## Run Baysian Inference on Model for Hunt Event Counts IN A Group/ Test Condition
+## Return Samples Drawn structure
+mcmc_drawEventCountModels <- function(datHuntVsPrey,preyCntRange,strModelFilename)
+{
+  varnames1=c("n","q","r")
+  burn_in=1000;
+  steps=5000;
+  plotsamples = 1000
+  thin=2;
+  chains = 3
+  
+  
+  ##Larva Event Counts Slice
+  datSliceF <- datHuntVsPrey[datHuntVsPrey$nInitPrey >= preyCntRange[1] & datHuntVsPrey$nInitPrey <= preyCntRange[2], ]
+  
+  ##Select the event Count Column 2
+  nEvents=as.numeric(datSliceF$nHuntEvents)
+  nDat = length(nEvents);
+  dataG=list(n=nEvents,NTOT=nDat,
+             prey=as.integer(datSliceF$nInitPrey));
+  
+  model=jags.model(file=strModelFilename,data=dataG,n.chains=chains);
+  
+  update(model,burn_in)
+  
+  drawSamples=jags.samples(model,steps,thin=thin,variable.names=varnames1)
+  
+  return(drawSamples) 
+}
+
+
+## Compare Model TO Data Using CDF ##
+plotEventCountDistribution_cdf <- function(datHEventCount,drawHEvent,lcolour="black",lpch=16,lty=1,Plim,nplotSamples=100,newPlot = FALSE)
+{
+  XLim <- 400
+  x <- seq(0,XLim,1)
+
+  cdfD_N <- ecdf(datHEventCount$nHuntEvents)
+
+  plot(cdfD_N,col=lcolour,pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=cex+0.1,cex.axis=cex,cex.lab=cex,add=!newPlot)
+  ##Construct CDF of Model by Sampling randomly from Model distribution for exp rate parameter
+  for (c in 1:NROW(drawHEvent$q[1,1,])) {
+    for (j in (NROW(drawHEvent$q[,,c])-nplotSamples):NROW(drawHEvent$q[,,c]) )
+    {
+      cdfM <- dnbinom(x,size=drawHEvent$r[,j,c],prob=  drawHEvent$q[,j,c]  )##1-exp(-q*x) ##ecdf(  dexp( x, q  ) )
+      lines(x,cumsum(cdfM),col=lcolour,lty=lty) #add=TRUE,
+    }
+  }
+  plot(cdfD_N,col=colourP[4],pch=lpch,xlab=NA,ylab=NA,main="",xlim=c(0,XLim),ylim=c(0,1),cex=cex+0.1,cex.axis=cex,cex.lab=cex,add=TRUE)
+  #axis(side = 4)
+  #mtext(side = 4, line = 2.1, 'Counts')
+  ### Draw Distribution oF Hunt Rates - 
+  ## For Poisson- gamma mixture we recover Gamma Params from nbinomial as shape r>shape r and scale theta:(1-p)/p
+  
+  ##For the EXP Mixture with Poisson The Exp Rate was recovered as :
+  ##(z= p/(1-p))
+#  hist( (1-tail(drawHEvent$q[,,c],nplotSamples))/tail(drawHEvent$q[,,c],nplotSamples)  )
+  
+  
+}
+
+## Discrete - Geometric Cause Mixture of rates - assuming rates drawn from most informative Prior distribution (EXP)
+## Assuming nbinom(r,p) Poisson(L|a,b) Gamma(a,b) then r=a, p=1/(b+1) -> b=(1-p)/p
+## Give geometric
+modelGEventRateGeom="model { 
+q ~ dunif(0.0,1)
+r ~ dgamma(1,1)
+
+for(j in 1:NTOT){
+  n[j] ~  dnegbin(q,r) ##Model Number Of Hunt Events Per Larvae
+  }
+}"
+
+
+
+strModelName = "modelGroupEventRate.tmp"
+fileConn=file(strModelName)
+writeLines(modelGEventRateGeom,fileConn);
+close(fileConn)
+
+### Cut And Examine The data Where There Are Between L and M rotifers Initially
+preyCntRange <- c(0,1100)
+plotsamples <- 10
+drawSamples_HOM <- mcmc_drawEventCountModels(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",],preyCntRange,"modelGroupEventRate.tmp")
+drawSamples_HET <- mcmc_drawEventCountModels(datEventsPerExpID[datEventsPerExpID$groupID == "HET",],preyCntRange,"modelGroupEventRate.tmp")
+drawSamples_WT <- mcmc_drawEventCountModels(datEventsPerExpID[datEventsPerExpID$groupID == "WT",],preyCntRange,"modelGroupEventRate.tmp")
+```
+
+Plot CDS of empirical and Statistical model to validate fit  
+
+```{r huntrate data vs stat model CDF }
+
+  plotEventCountDistribution_cdf(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",],
+                                 drawSamples_HOM,colourHLine[["HOM" ]],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
+ title("HOM Huntrate CDF model")  
+
+  plotEventCountDistribution_cdf(datEventsPerExpID[datEventsPerExpID$groupID == "HET",],drawSamples_HET, colourHLine[["HET"]],pchL[2],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
+ title("HET Huntrate CDF model")  
+ 
+  plotEventCountDistribution_cdf(datEventsPerExpID[datEventsPerExpID$groupID == "WT",],drawSamples_WT, colourHLine[["WT"]],pchL[3],lineTypeL[3],Plim,plotsamples,newPlot=TRUE )
+ title("WT Huntrate CDF model")  
+```
+  
+After checking model fit with CDF, then compare inferred huntrates per group
+
+```{r huntrate model compare}
+
+
+### Draw Distribution oF Hunt Rates - 
+## for the exp draw (z= p/(1-p)) ## But it is the same for Rate Of Gamma Too / Or inverse for scale
+plotsamples <- 5000
+schain <-1:3
+
+### The Prob Of Success p from NegBinom translates to Gamma Rate p/(1-p), or scale: (1-p)/p
+HEventHuntGammaRate_HOM <-tail(drawSamples_HOM$q[,,schain],plotsamples)/(1-tail(drawSamples_HOM$q[,,schain],plotsamples));
+HEventHuntGammaRate_HET <-tail(drawSamples_HET$q[,,schain],plotsamples)/(1-tail(drawSamples_HET$q[,,schain],plotsamples));
+HEventHuntGammaRate_WT <- tail(drawSamples_WT$q[,,schain],plotsamples)/(1-tail(drawSamples_WT$q[,,schain],plotsamples));
+HEventHuntGammaShape_HOM <- tail(drawSamples_HOM$r[,,schain],plotsamples);
+HEventHuntGammaShape_HET <- tail(drawSamples_HET$r[,,schain],plotsamples)
+HEventHuntGammaShape_WT <- tail(drawSamples_WT$r[,,schain],plotsamples);
+
+## Calculate Hunt Rates ###
+pBW = 10
+densHPoissonRate_HOM <- density( HEventHuntGammaShape_HOM*1/HEventHuntGammaRate_HOM,bw=pBW)
+densHPoissonRate_HET <- density( HEventHuntGammaShape_HET*1/HEventHuntGammaRate_HET,bw=pBW)
+densHPoissonRate_WT <- density( HEventHuntGammaShape_WT*1/HEventHuntGammaRate_WT,bw=pBW)
+
+##  Estimate  Hunt Rates Distributions ###
+densHPoissonRate <- list(HOM= density( HEventHuntGammaShape_HOM*1/HEventHuntGammaRate_HOM,bw=pBW),
+                         HET= density( HEventHuntGammaShape_HET*1/HEventHuntGammaRate_HET,bw=pBW),
+                         WT= density( HEventHuntGammaShape_WT*1/HEventHuntGammaRate_WT,bw=pBW)
+                         )
+
+  Ylim <- 0.03
+  plot(densHPoissonRate$HOM$x, densHPoissonRate$HOM$y,type='l',lty=lineTypeL[1],col=colourH["HOM"][[1]] ,lwd=4,ylab=NA,xlab=NA,xlim=c(0,350),ylim=c(0,Ylim),cex=cex,cex.axis=cex )
+  lines(densHPoissonRate$HET$x, densHPoissonRate$HET$y,type='l',lty=lineTypeL[2],col=colourH["HET"][[1]],lwd=4,ylab=NA,xlab=NA)
+  lines(densHPoissonRate$WT$x, densHPoissonRate$WT$y,type='l',lty=lineTypeL[3],col=colourH["WT"][[1]],lwd=4,ylab=NA,xlab=NA)
+  
+  legend("topright",legend=paste(vGroupIDs),lwd=3,
+         col=c(colourH[[vGroupIDs[1] ]], colourH[[vGroupIDs[2] ]], colourH[[vGroupIDs[3] ]] ),
+         lty=lineTypeL)
+
+    
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Estimated hunt rate (N/20min)") )  ) #(",lambda," )
+  mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
+ title("Model inferred hunt rates ")
+ 
+ 
+```
+  
+```{r, hunteventsperGroup_huntStat, echo = FALSE}
 
 #print(table(datAllHuntEvent$groupID))
 
