@@ -109,27 +109,29 @@ source("DataLabelling/labelHuntEvents_lib.r")
   groupsrcdatList <- groupsrcdatListPerDataSet[[NROW(groupsrcdatListPerDataSet)]]
   dataSetsToProcess = seq(from=firstDataSet,to=lastDataSet)
   strCondTags <- names(groupsrcdatList)
-  source("processLoadedData.r") ##Detects HuntEvents
+  source("processLoadedData.r") ##Detects HuntEvents RETURNS datAllHuntEvents
 
   
   
   # ^^^^^^^
   #### RUN UP TO THIS POINT TO GET DATA IMPORTED AND EVENTS DETECTED ####
   
-  
+  ### PLOT Hunt Event Counts Distribution 
   ## The Frames Are in datAllFrames , the huntEvents are in datAllHuntEvents
-
-  ## Compare Number of Hunt Events Per Group
-  vEventsPerFish <- tapply(datAllHuntEvents$groupID,datAllHuntEvents$expID,length)
-  datEventsPerExpID<- cbind.data.frame(nHuntEvents=as.numeric(vEventsPerFish),ExpID=names(vEventsPerFish))
-  vGroupPerExpID <-tapply(datAllHuntEvents$groupID,datAllHuntEvents$expID,unique)
-  rownames(datEventsPerExpID) <- as.character(datEventsPerExpID$ExpID)
-  datEventsPerExpID[names(vGroupPerExpID),"groupID"] <- vGroupPerExpID
-  
+  datEventsPerExpID <- getHuntEventsCountsPerExp(datAllHuntEvents) 
   BW = "10"
-  plot(density(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",]$nHuntEvents),col="blue")
-  lines(density(datEventsPerExpID[datEventsPerExpID$groupID == "HET",]$nHuntEvents),col="magenta")
-  lines(density(datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents),col="red")
+  i <- 1
+  plot(0,main="Distribution of Hunt event counts per group",
+       xlim=c(0,max(datEventsPerExpID$nHuntEvents)),
+       ylim=c(0,0.02))
+  for (g in unique(datEventsPerExpID$groupID))
+  
+    {message(g)
+    lines(density(datEventsPerExpID[datEventsPerExpID$groupID == g,]$nHuntEvents),col=colourLegL[i],lwd=3)
+    i<- i + 1
+  }
+  legend("topright",legend=(unique(datEventsPerExpID$groupID)),col=colourLegL,lty=1,lwd=3 )
+  
   
   t.test(datEventsPerExpID[datEventsPerExpID$groupID == "HET",]$nHuntEvents,datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents)
   ##Once Processed you can Check and Validate Hunt Events Using main_LabellingBlind.r

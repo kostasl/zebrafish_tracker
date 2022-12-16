@@ -425,6 +425,25 @@ detectHuntEvents <- function(datAllGroupFrames,vexpID,ptestCond,vdatasetID,
   return (datHuntingEvents)
 }
 
+## Use List of extracted events TO Summarize into data frame with the number of hunt events
+getHuntEventsCountsPerExp <- function(datHuntEvents)
+{
+  ## Compare Number of Hunt Events Per Group
+  datHuntEvents <- datHuntEvents[datHuntEvents$endFrame-datHuntEvents$startFrame > 0 &
+                                   datHuntEvents$eventID   != 0 ,]
+  vEventsPerFish <- tapply(datHuntEvents$groupID,datHuntEvents$expID,length)
+  vInitialPreyPerExp <- tapply(datHuntEvents$InitPreyCount,datHuntEvents$expID,max)
+  datEventsPerExpID<- cbind.data.frame(nHuntEvents=as.numeric(vEventsPerFish),
+                                       nInitPrey=vInitialPreyPerExp[names(vEventsPerFish)],
+                                       ExpID=names(vEventsPerFish),
+                                       groupID = NA)
+  vGroupPerExpID <-tapply(datHuntEvents$groupID,datHuntEvents$expID,unique)
+  rownames(datEventsPerExpID) <- as.character(datEventsPerExpID$ExpID)
+  datEventsPerExpID[names(vGroupPerExpID),"groupID"] <- vGroupPerExpID
+  
+  return(datEventsPerExpID)
+} 
+
 
 ####### Calc Hunt Statistics Giving list of Hunting Events of a group - 
 ## Note:  Aadded Nabla Of Prey Count
@@ -458,8 +477,9 @@ calcHuntStat3 <- function(datHuntEvent)
   ##Events that include Some form of Target tracking 
   datHuntEventPursuitEpi <- datHuntEventNonZeroEpi[grepl("Success",datHuntEventNonZeroEpi$huntScore) | 
                                                      grepl("Fail",datHuntEventNonZeroEpi$huntScore) ,]
+  
   ##Calc number of hunting events stat per Experiment (Convert to numeric so as to select only exp from selected GroupID stats)
-  tblHuntsCounts<-table((datHuntEventNonZeroEpi$expID) ) 
+  tblHuntsCounts <-table((datHuntEventNonZeroEpi$expID) ) 
   tblHuntCaptureAttempt <- table((datHuntEventPursuitEpi$expID) ) 
   ##Given An Episode Occured
   tblMeanEpisodeDurationPerLarva  <- tapply(datHuntEventNonZeroEpi$endFrame-datHuntEventNonZeroEpi$startFrame, datHuntEventNonZeroEpi$expID,mean)

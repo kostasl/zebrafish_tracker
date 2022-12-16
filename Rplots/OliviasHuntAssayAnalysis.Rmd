@@ -3,8 +3,8 @@ title: "OliviaFeedingAssay"
 author: "Konstantinos Lagogiannis"
 date: "23/05/2022"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -85,20 +85,10 @@ Box plots comparing number of hunt events per larva across groups. Initial a bas
 
 ```{r, hunteventsperGroup, echo = FALSE}
 
-  ## Compare Number of Hunt Events Per Group
-  vEventsPerFish <- tapply(datHuntEvents$groupID,datHuntEvents$expID,length)
-  vInitialPreyPerExp <- tapply(datHuntEvents$InitPreyCount,datHuntEvents$expID,max)
-  datEventsPerExpID<- cbind.data.frame(nHuntEvents=as.numeric(vEventsPerFish),
-                                       nInitPrey=vInitialPreyPerExp[names(vEventsPerFish)],
-                                       ExpID=names(vEventsPerFish),
-                                       groupID = NA)
-  vGroupPerExpID <-tapply(datHuntEvents$groupID,datHuntEvents$expID,unique)
-  rownames(datEventsPerExpID) <- as.character(datEventsPerExpID$ExpID)
-  datEventsPerExpID[names(vGroupPerExpID),"groupID"] <- vGroupPerExpID
-  
-  densHuntEventCounts <- list(HOM = density(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",]$nHuntEvents),
-                        HET = density(datEventsPerExpID[datEventsPerExpID$groupID == "HET",]$nHuntEvents),
-                        WT  =  density(datEventsPerExpID[datEventsPerExpID$groupID == "WT",]$nHuntEvents)               
+  datEventsPerExpID <- getHuntEventsCountsPerExp(datHuntEvents)
+  densHuntEventCounts <- list(HOM = density(datHuntStat["HOM",]$vHLarvaEventCount),
+                        HET = density(datHuntStat["HET",]$vHLarvaEventCount),
+                        WT  =  density(datHuntStat["WT",]$vHLarvaEventCount)               
                         )
   BW = "20"
 #pdf(paste0(strPlotExportPath,"/huntcounts_densities_empirical.pdf"),width=7,height=5,title="Gaussian Kernel Estimated Distribution of hunt event counts per group") 
@@ -129,24 +119,20 @@ library(rjags)
 
 ## Run Baysian Inference on Model for Hunt Event Counts IN A Group/ Test Condition
 ## Return Samples Drawn structure
-mcmc_drawEventCountModels <- function(datHuntVsPrey,preyCntRange,strModelFilename)
+mcmc_drawEventCountModels <- function(nGroupEvents,strModelFilename)
 {
   varnames1=c("n","q","r")
   burn_in=1000;
-  steps=5000;
+  steps=15000;
   plotsamples = 1000
   thin=2;
   chains = 3
   
   
-  ##Larva Event Counts Slice
-  datSliceF <- datHuntVsPrey[datHuntVsPrey$nInitPrey >= preyCntRange[1] & datHuntVsPrey$nInitPrey <= preyCntRange[2], ]
-  
   ##Select the event Count Column 2
-  nEvents=as.numeric(datSliceF$nHuntEvents)
+  nEvents=as.numeric(nGroupEvents)
   nDat = length(nEvents);
-  dataG=list(n=nEvents,NTOT=nDat,
-             prey=as.integer(datSliceF$nInitPrey));
+  dataG=list(n=nEvents,NTOT=nDat);
   
   model=jags.model(file=strModelFilename,data=dataG,n.chains=chains);
   
@@ -209,41 +195,41 @@ close(fileConn)
 
 ### Cut And Examine The data Where There Are Between L and M rotifers Initially
 preyCntRange <- c(0,1100)
-plotsamples <- 10
-drawSamples_HOM <- mcmc_drawEventCountModels(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",],preyCntRange,"modelGroupEventRate.tmp")
-drawSamples_HET <- mcmc_drawEventCountModels(datEventsPerExpID[datEventsPerExpID$groupID == "HET",],preyCntRange,"modelGroupEventRate.tmp")
-drawSamples_WT <- mcmc_drawEventCountModels(datEventsPerExpID[datEventsPerExpID$groupID == "WT",],preyCntRange,"modelGroupEventRate.tmp")
+plotsamples <- 20
+drawSamples_HOM <- mcmc_drawEventCountModels(datHuntStat["HOM",]$vHLarvaEventCount,"modelGroupEventRate.tmp")
+drawSamples_HET <- mcmc_drawEventCountModels(datHuntStat["HET",]$vHLarvaEventCount,"modelGroupEventRate.tmp")
+drawSamples_WT <- mcmc_drawEventCountModels(datHuntStat["WT",]$vHLarvaEventCount,"modelGroupEventRate.tmp")
 ```
 
 Plot CDS of empirical and Statistical model to validate fit  
 
 ```{r huntrate data vs stat model CDF }
 
-pdf(paste0(strPlotExportPath,"/huntcounts_modelVsData_CDF_HOM.pdf"),width=7,height=5,title="CDF Model hunt event counts per group") 
+#pdf(paste0(strPlotExportPath,"/huntcounts_modelVsData_CDF_HOM.pdf"),width=7,height=5,title="CDF Model hunt event counts per group") 
 
   plotEventCountDistribution_cdf(datEventsPerExpID[datEventsPerExpID$groupID == "HOM",],
                                  drawSamples_HOM,colourHLine[["HOM" ]],pchL[1],lineTypeL[1],Plim,plotsamples,newPlot=TRUE )
    mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Number of hunt events in 20min") )  ) #(",lambda," )
   title("HOM Huntrate CDF model")  
-dev.off()
+#dev.off()
 
-pdf(paste0(strPlotExportPath,"/huntcounts_modelVsData_CDF_HET.pdf"),width=7,height=5,title="CDF Model hunt event counts per group") 
+#pdf(paste0(strPlotExportPath,"/huntcounts_modelVsData_CDF_HET.pdf"),width=7,height=5,title="CDF Model hunt event counts per group") 
 
   plotEventCountDistribution_cdf(datEventsPerExpID[datEventsPerExpID$groupID == "HET",],drawSamples_HET, colourHLine[["HET"]],pchL[2],lineTypeL[2],Plim,plotsamples,newPlot=TRUE )
  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Number of hunt events in 20min") )  ) #(",lambda," )
 
    title("HET Huntrate CDF model")  
-dev.off()
+#dev.off()
  
  
-pdf(paste0(strPlotExportPath,"/huntcounts_modelVsData_CDF_WT.pdf"),width=7,height=5,title="CDF Model hunt event counts per group") 
+#pdf(paste0(strPlotExportPath,"/huntcounts_modelVsData_CDF_WT.pdf"),width=7,height=5,title="CDF Model hunt event counts per group") 
 
   plotEventCountDistribution_cdf(datEventsPerExpID[datEventsPerExpID$groupID == "WT",],drawSamples_WT, colourHLine[["WT"]],pchL[3],lineTypeL[3],Plim,plotsamples,newPlot=TRUE )
    mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Number of hunt events in 20min") )  ) #(",lambda," )
 
    title("WT Huntrate CDF model")  
  
-dev.off()
+#dev.off()
 
 
 ```
@@ -269,7 +255,7 @@ HEventHuntGammaShape_WT <- tail(drawSamples_WT$r[,,schain],plotsamples);
 ## Calc and Save POisson Rate Samples
 lPoissonHuntRates <- list(HOM=HEventHuntGammaShape_HOM*1/HEventHuntGammaRate_HOM,
                           HET=HEventHuntGammaShape_HET*1/HEventHuntGammaRate_HET,
-                          WT=HEventHuntGammaShape_HET*1/HEventHuntGammaRate_WT)
+                          WT=HEventHuntGammaShape_WT*1/HEventHuntGammaRate_WT)
 ## Calculate Hunt Rates ###
 pBW = 2
 densHPoissonRate_HOM <- density( lPoissonHuntRates$HOM,bw=pBW)
@@ -277,14 +263,14 @@ densHPoissonRate_HET <- density( lPoissonHuntRates$HET,bw=pBW)
 densHPoissonRate_WT <- density( lPoissonHuntRates$WT,bw=pBW)
 
 ##  Estimate  Hunt Rates Distributions ###
-densHPoissonRate <- list(HOM= density( HEventHuntGammaShape_HOM*1/HEventHuntGammaRate_HOM,bw=pBW),
-                         HET= density( HEventHuntGammaShape_HET*1/HEventHuntGammaRate_HET,bw=pBW),
-                         WT= density( HEventHuntGammaShape_WT*1/HEventHuntGammaRate_WT,bw=pBW)
+densHPoissonRate <- list(HOM= densHPoissonRate_HOM,
+                         HET= densHPoissonRate_HET,
+                         WT= densHPoissonRate_WT
                          )
 
 
 Ylim <- 0.04
-pdf(paste0(strPlotExportPath,"/huntPoissonRate_modelComparison.pdf"),width=7,height=5,title=" Model Inferred hunt rates per group") 
+#pdf(paste0(strPlotExportPath,"/huntPoissonRate_modelComparison.pdf"),width=7,height=5,title=" Model Inferred hunt rates per group") 
 
     plot(densHPoissonRate$HOM$x, densHPoissonRate$HOM$y,type='l',lty=lineTypeL[1],col=colourH["HOM"][[1]] ,lwd=4,ylab=NA,xlab=NA,xlim=c(0,230),ylim=c(0,Ylim),cex=cex,cex.axis=cex )
   lines(densHPoissonRate$HET$x, densHPoissonRate$HET$y,type='l',lty=lineTypeL[2],col=colourH["HET"][[1]],lwd=4,ylab=NA,xlab=NA)
@@ -295,15 +281,34 @@ pdf(paste0(strPlotExportPath,"/huntPoissonRate_modelComparison.pdf"),width=7,hei
          lty=lineTypeL)
 
     
-  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Gaussian estimate of inferred Poisson hunt-rate (N/20min)") )  ) #(",lambda," )
+  mtext(side = 1,cex=cex, line = lineAxis, expression(paste("Inferred hunt-rate from statistical model  (N/20 min.)") )  ) #(",lambda," )
   mtext(side = 2,cex=cex, line = lineAxis, " Density function ")
  title("Distribution of model-inferred hunt rates ")
 
-dev.off()
+ message("test HOM vs WT PoissonRate model param")
+ print(t.test(lPoissonHuntRates$HOM,lPoissonHuntRates$WT))
+#dev.off()
  
+ message("test HOM vs WT PoissonRate model param")
+ print(t.test(lPoissonHuntRates$HET,lPoissonHuntRates$WT))
+#dev.off()
 ```
  It is clear that HETs have higher huntrates to Control (WT) and HOM. From this analysis we may further infer probabilities of a HET larvae having higher huntrates 
  
+ 
+The empirical mean number vs the model based mean of of hunt-events estimated per group is :
+
+```{r mean-huntevent_summary,echo=FALSE}
+lmuModelRates <- list(HET=mean(lPoissonHuntRates$HET),
+                      HOM=mean(lPoissonHuntRates$HOM),
+                      WT=mean(lPoissonHuntRates$WT)
+                      )
+print(tapply(datHuntEventCountsPerGroup$LarvalEventCount,datHuntEventCountsPerGroup$Group,mean))
+print(data.frame(lmuModelRates) )
+message("with SD :")
+
+print(tapply(datHuntEventCountsPerGroup$LarvalEventCount,datHuntEventCountsPerGroup$Group,sd))
+```
  
 ```{r, hunteventsperGroup_huntStat, echo = FALSE}
 
@@ -361,13 +366,6 @@ p + stat_compare_means(method = "t.test",comparisons = comp_pairs, label="p.form
 ```
 
 
-The mean number of hunt-events  estimated per group is :
-
-```{r mean-huntevent_summary,echo=FALSE}
-print(tapply(datHuntEventCountsPerGroup$LarvalEventCount,datHuntEventCountsPerGroup$Group,mean))
-message("with SD :")
-print(tapply(datHuntEventCountsPerGroup$LarvalEventCount,datHuntEventCountsPerGroup$Group,sd))
-```
 
 
 
