@@ -5,7 +5,7 @@ Developed while a research associate in Martin Meyer's lab, Centre for developme
 as a tool for the automated tracking of larval zebrafish behaviour that was used in the [eLife publication](https://elifesciences.org/articles/55119) "Learning steers the ontogeny of hunting behaviour in larval zebrafish"
 
 
-![Tracking zebrafish motion sample](https://github.com/kostasl/zebrafishtrack/blob/master/img/TrackerSample.jpg?raw=true)
+![Tracking zebrafish motion sample](https://github.com/dafishcode/zebrafishtrack/blob/master/img/TrackerSample.jpg?raw=true)
 
 ### What is this repository for? ###
 
