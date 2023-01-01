@@ -12,10 +12,13 @@ as a tool for the automated tracking of larval zebrafish behaviour that was used
 * Quick summary
 This is a larval zebrafish behavioural tracking software that processes monochrome IR DarkField highspeed (100-450 fps) images/videos to extract larva body centroid and orientation, Eye angle, tail spine posture and prey count. It also allows for tracking user indicated prey items.
 The tracker exports csv table data files containing pixel coordinates and angles in degrees of tracked items that are located with a ROI.
-The package further contains a subfolder /RPlots, that allows for importing and analysing the tracker data.
+The package further contains a subfolder /RPlots, that allows for importing and analysing the tracker data using R scripts.
 The tracker deals only with extracting information from image pixels, and so filtering and analysis of tracker data is handled externally by those R scripts.
 
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+The video recording apparatus uses darkfield IR illumination based on a custom IR light ring I designed, and is summarized here:
+
+![Tracking zebrafish Apparatus](https://github.com/dafishcode/zebrafishtrack/blob/master/img/ZebrafishTrack_Apparatus.jpg?raw=true)
+
 
 
 ### How do I get set up? 
