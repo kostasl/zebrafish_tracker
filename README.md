@@ -1,9 +1,11 @@
 # README Zebrafish Behaviour Analysis Software #
 
 @author : Konstantinos Lagogiannis
-Developed while postdoc in Martin Meyer's lab, KCL
-to analyse data for article "Learning steers the ontogeny of hunting behaviour in larval zebrafish"
-BioArxiv PrePrint: https://doi.org/10.1101/2019.12.19.883157
+Developed while a research associate in Martin Meyer's lab, Centre for developmental neuroscience, at King's College London
+as a tool for the automated tracking of larval zebrafish behaviour that was used in the [eLife publication](https://elifesciences.org/articles/55119) "Learning steers the ontogeny of hunting behaviour in larval zebrafish"
+
+
+![Tracking zebrafish motion sample](https://github.com/kostasl/zebrafishtrack/blob/master/img/TrackerSample.jpg?raw=true)
 
 ### What is this repository for? ###
 
