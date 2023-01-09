@@ -1,2 +1,0 @@
-##Move selected Files With Directory Structure  ##
-rsync -rv --include '*/' --include '*.js' --exclude '*' --prune-empty-dirs Source/ Target/

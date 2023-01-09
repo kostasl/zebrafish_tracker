@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>712</width>
+    <width>912</width>
     <height>843</height>
    </rect>
   </property>
@@ -207,8 +207,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>231</width>
-            <height>543</height>
+            <width>240</width>
+            <height>571</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -227,6 +227,12 @@
            <size>
             <width>240</width>
             <height>2500</height>
+           </size>
+          </property>
+          <property name="sizeIncrement">
+           <size>
+            <width>2</width>
+            <height>1</height>
            </size>
           </property>
           <property name="layoutDirection">
@@ -394,6 +400,7 @@
            <property name="font">
             <font>
              <family>FreeMono</family>
+             <weight>75</weight>
              <bold>true</bold>
             </font>
            </property>
@@ -669,6 +676,7 @@
            <property name="font">
             <font>
              <family>FreeMono</family>
+             <weight>75</weight>
              <bold>true</bold>
             </font>
            </property>
@@ -901,6 +909,7 @@
            <property name="font">
             <font>
              <family>FreeMono</family>
+             <weight>75</weight>
              <bold>true</bold>
             </font>
            </property>
@@ -1246,11 +1255,11 @@
               <attribute name="horizontalHeaderCascadingSectionResizes">
                <bool>true</bool>
               </attribute>
-              <attribute name="horizontalHeaderMinimumSectionSize">
-               <number>10</number>
-              </attribute>
               <attribute name="horizontalHeaderDefaultSectionSize">
                <number>70</number>
+              </attribute>
+              <attribute name="horizontalHeaderMinimumSectionSize">
+               <number>10</number>
               </attribute>
               <attribute name="horizontalHeaderStretchLastSection">
                <bool>true</bool>
@@ -1320,7 +1329,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>712</width>
+     <width>912</width>
      <height>20</height>
     </rect>
    </property>
